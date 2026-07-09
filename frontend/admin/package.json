@@ -1,0 +1,41 @@
+{
+  "name": "dvijok-admin",
+  "version": "0.0.1",
+  "private": true,
+  "description": "DVIJOK — админ-панель платформы автосервисов",
+  "keywords": [
+    "admin",
+    "auto-service",
+    "dvijok",
+    "quasar",
+    "vite",
+    "vue"
+  ],
+  "author": "prostocaron <ll996459@gmail.com>",
+  "type": "module",
+  "scripts": {
+    "lint": "oxfmt && oxlint --fix",
+    "lint:check": "oxfmt --check && oxlint",
+    "dev": "quasar dev",
+    "build": "quasar build",
+    "postinstall": "quasar prepare --silent"
+  },
+  "dependencies": {
+    "@quasar/extras": "^2.0.0",
+    "pinia": "^3.0.4",
+    "quasar": "^2.21.1",
+    "vue": "^3.5.22",
+    "vue-router": "^5.0.6"
+  },
+  "devDependencies": {
+    "@quasar/app-vite": "^3.0.0",
+    "autoprefixer": "^10.4.27",
+    "oxfmt": "^0.x",
+    "oxlint": "^1.x",
+    "postcss": "^8.5.8"
+  },
+  "engines": {
+    "node": ">= 26 || ^24 || ^22.12"
+  },
+  "productName": "DVIJOK Admin"
+}

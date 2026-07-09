@@ -1,0 +1,54 @@
+const routes = [
+  {
+    path: '/login',
+    component: () => import('@/layouts/AuthLayout.vue'),
+    children: [
+      {
+        path: '',
+        name: 'login',
+        component: () => import('@/pages/auth/LoginPage.vue'),
+        meta: { title: 'Вход' }
+      }
+    ]
+  },
+
+  {
+    path: '/',
+    component: () => import('@/layouts/AdminLayout.vue'),
+    children: [
+      {
+        path: '',
+        name: 'schedule',
+        component: () => import('@/pages/SchedulePage.vue'),
+        meta: { title: 'Расписание', requiresAuth: true }
+      },
+      {
+        path: 'crm',
+        name: 'crm',
+        component: () => import('@/pages/CrmPage.vue'),
+        meta: { title: 'CRM', requiresAuth: true }
+      },
+      {
+        path: 'services',
+        name: 'services',
+        component: () => import('@/pages/ServicesPage.vue'),
+        meta: { title: 'Услуги', requiresAuth: true }
+      },
+      {
+        path: 'settings',
+        name: 'settings',
+        component: () => import('@/pages/SettingsPage.vue'),
+        meta: { title: 'Настройки', requiresAuth: true }
+      }
+    ]
+  },
+
+  // Always leave this as last one
+  {
+    path: '/:catchAll(.*)*',
+    name: 'not-found',
+    component: () => import('@/pages/ErrorNotFound.vue')
+  }
+]
+
+export default routes
