@@ -7,13 +7,13 @@ export default defineConfig((/* ctx */) => {
   return {
     // app boot file (/src/boot)
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
-    boot: [],
+    boot: ['fonts'],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#css
     css: ['app.scss'],
 
     // https://github.com/quasarframework/quasar/tree/dev/extras
-    extras: ['roboto-font', 'material-icons'],
+    extras: ['material-icons'],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#build
     build: {

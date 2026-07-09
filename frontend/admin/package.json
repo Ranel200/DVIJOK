@@ -21,6 +21,7 @@
     "postinstall": "quasar prepare --silent"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.2.8",
     "@quasar/extras": "^2.0.0",
     "pinia": "^3.0.4",
     "quasar": "^2.21.1",
