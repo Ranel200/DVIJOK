@@ -3,21 +3,25 @@ import { computed, ref } from 'vue'
 import { authApi } from '@/api/index.js'
 import { setAuthToken } from '@dvijok/shared/api/http.js'
 
-// Mock-авторизация. По умолчанию пользователь считается авторизованным (dev),
-// чтобы навигация работала до появления реальной формы входа.
-// Для строгой блокировки задайте начальные значения null/false.
+// Auth-стор админки. Строгий режим: по умолчанию не авторизован,
+// форма входа доступна для проверки моков.
+// Демо-доступ: admin / admin
 export const useAuthStore = defineStore('auth', () => {
-  const user = ref({
-    id: 1,
-    name: 'Администратор',
-    email: 'admin@dvijok.local'
-  })
-  const token = ref('mock-token')
+  const user = ref(null)
+  const token = ref(null)
 
   const isAuthenticated = computed(() => Boolean(token.value))
 
   async function login(credentials) {
     const { token: nextToken, user: nextUser } = await authApi.login(credentials)
+    token.value = nextToken
+    user.value = nextUser
+    setAuthToken(nextToken)
+    return nextUser
+  }
+
+  async function register(payload) {
+    const { token: nextToken, user: nextUser } = await authApi.register(payload)
     token.value = nextToken
     user.value = nextUser
     setAuthToken(nextToken)
@@ -36,6 +40,7 @@ export const useAuthStore = defineStore('auth', () => {
     token,
     isAuthenticated,
     login,
+    register,
     logout
   }
 })

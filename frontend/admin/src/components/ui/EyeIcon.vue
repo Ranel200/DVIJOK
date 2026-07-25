@@ -34,6 +34,6 @@ const closedPath =
 <style scoped>
 .eye-icon {
   display: block;
-  color: #7a82a0;
+  color: var(--dvijok-text-secondary);
 }
 </style>

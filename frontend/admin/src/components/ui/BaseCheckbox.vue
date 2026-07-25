@@ -58,6 +58,7 @@ function onChange(event) {
 
 <style scoped lang="scss">
 .base-checkbox {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -79,11 +80,11 @@ function onChange(event) {
 .base-checkbox__box {
   display: block;
   flex-shrink: 0;
-  color: #2a4ec4;
+  color: var(--dvijok-link);
 }
 
 .base-checkbox__label {
-  color: #051b54;
+  color: var(--dvijok-bg-dark);
   font-size: 14px;
   line-height: 16px;
   text-align: left;

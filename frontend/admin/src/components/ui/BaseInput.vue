@@ -83,8 +83,8 @@ function onUpdate(value) {
 <style scoped lang="scss">
 .base-input {
   :deep(.q-field__control) {
-    background-color: #ffffff;
-    border: 1px solid #7a82a0;
+    background-color: var(--dvijok-white);
+    border: 1px solid var(--dvijok-text-secondary);
     border-radius: 10px;
     padding: 7px 14px;
     min-height: auto;
@@ -99,13 +99,13 @@ function onUpdate(value) {
   }
 
   :deep(.q-field__native) {
-    color: #051b54;
+    color: var(--dvijok-bg-dark);
     font-size: 12px;
     line-height: 16px;
     padding: 0;
 
     &::placeholder {
-      color: #7a82a0;
+      color: var(--dvijok-text-secondary);
     }
   }
 
@@ -116,7 +116,7 @@ function onUpdate(value) {
   }
 
   :deep(.q-field__label) {
-    color: #7a82a0;
+    color: var(--dvijok-text-secondary);
     font-size: 12px;
     line-height: 16px;
     top: 7px;
@@ -129,7 +129,7 @@ function onUpdate(value) {
 
 .base-input.q-field--focused {
   :deep(.q-field__control) {
-    border-color: #051b54;
+    border-color: var(--dvijok-bg-dark);
   }
 }
 

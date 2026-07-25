@@ -1,5 +1,7 @@
 // Хелперы для работы с моками, пока нет реального бэкенда.
 
+import { ApiError } from './http.js'
+
 const DEFAULT_DELAY = 300
 
 export function delay(ms = DEFAULT_DELAY) {
@@ -13,7 +15,7 @@ export async function mockOk(data, ms = DEFAULT_DELAY) {
 }
 
 // Имитация ошибки сервера с задержкой.
-export async function mockFail(message = 'Mock error', ms = DEFAULT_DELAY) {
+export async function mockReject(status, data, ms = DEFAULT_DELAY) {
   await delay(ms)
-  throw new Error(message)
+  throw new ApiError(`Mock error: ${status}`, { status, data })
 }

@@ -1,0 +1,19 @@
+// Общие цветовые токены админки.
+// Используются через var(--dvijok-*) в любом .vue без @use.
+
+:root {
+  --dvijok-white: #ffffff;
+  --dvijok-bg-dark: #051b54;
+  --dvijok-blue-primary: #093095;
+  --dvijok-blue-light: #3061e2;
+  --dvijok-blue-pale: #7ea0fa;
+  --dvijok-muted: #d1daf3;
+  --dvijok-text-secondary: #7a82a0;
+  --dvijok-text-heading: #0f1f4a;
+  --dvijok-text-tertiary: #9aa0bc;
+  --dvijok-link: #2a4ec4;
+  --dvijok-link-hover: #0f245b;
+  --dvijok-danger: #e53935;
+  --dvijok-overlay: rgba(20, 37, 94, 0.5);
+  --dvijok-choice-active: #b3c8ff;
+}

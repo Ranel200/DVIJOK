@@ -2,31 +2,76 @@
 // Когда появится бэкенд — заменяем тело методов на вызовы http.* (импорт уже готов).
 
 import { http, USE_MOCK } from '@dvijok/shared/api/http.js'
-import { mockOk } from '@dvijok/shared/api/mock.js'
+import { mockOk, mockReject } from '@dvijok/shared/api/mock.js'
+
+const mockUsers = [
+  { id: 1, name: 'Администратор', email: 'admin', password: 'admin' }
+]
+let mockUserIdSeq = 2
+
+let currentUserId = null
+
+function issueToken(user) {
+  currentUserId = user.id
+  return `mock-token-${user.id}-${Date.now()}`
+}
+
+function publicUser(user) {
+  const { password: _password, ...rest } = user
+  return rest
+}
 
 export const authApi = {
-  async login({ email }) {
+  async login({ email, password }) {
     if (USE_MOCK) {
-      return mockOk({
-        token: 'mock-token',
-        user: { id: 1, name: 'Администратор', email }
-      })
+      const user = mockUsers.find(u => u.email === email)
+      if (!user || user.password !== password) {
+        return mockReject(401, { message: 'Неверный email или пароль' })
+      }
+      const token = issueToken(user)
+      return mockOk({ token, user: publicUser(user) })
     }
-    return http.post('/auth/login', { email })
+    return http.post('/auth/login', { email, password })
+  },
+
+  async register(payload) {
+    if (USE_MOCK) {
+      const email = payload.email
+      if (mockUsers.some(u => u.email === email)) {
+        return mockReject(409, { message: 'Пользователь с таким email уже существует' })
+      }
+      const user = {
+        id: mockUserIdSeq++,
+        name: payload.contactName || payload.headName || 'Автосервис',
+        email,
+        password: payload.password
+      }
+      mockUsers.push(user)
+      const token = issueToken(user)
+      return mockOk({ token, user: publicUser(user) })
+    }
+    return http.post('/auth/register', payload)
   },
 
   async logout() {
-    if (USE_MOCK) return mockOk({ success: true })
+    if (USE_MOCK) {
+      currentUserId = null
+      return mockOk({ success: true })
+    }
     return http.post('/auth/logout')
   },
 
   async me() {
-    if (USE_MOCK)
-      return mockOk({
-        id: 1,
-        name: 'Администратор',
-        email: 'admin@dvijok.local'
-      })
+    if (USE_MOCK) {
+      if (currentUserId == null) {
+        return mockReject(401, { message: 'Не авторизован' })
+      }
+      const user = mockUsers.find(u => u.id === currentUserId)
+      if (!user) {
+        return mockReject(401, { message: 'Не авторизован' })
+      }
+      return mockOk(publicUser(user))
+    }
     return http.get('/auth/me')
   }
 }

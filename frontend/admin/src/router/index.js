@@ -48,6 +48,10 @@ export default defineRouter((/* { store, ssrContext } */) => {
       return { name: 'schedule' }
     }
 
+    if (to.name === 'register' && auth.isAuthenticated) {
+      return { name: 'schedule' }
+    }
+
     return true
   })
 

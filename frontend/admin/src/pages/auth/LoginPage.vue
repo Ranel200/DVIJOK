@@ -1,8 +1,6 @@
 <template>
   <q-page class="login">
-    <aside class="login__sidebar">
-      <div class="login__brand">DVIJOK</div>
-    </aside>
+    <AuthSidebar mode="login" @toggle="goRegister" />
 
     <section class="login__main">
       <div class="login__card">
@@ -52,6 +50,7 @@
         </div>
 
         <div class="login__actions">
+          <p v-if="errorMessage" class="login__error">{{ errorMessage }}</p>
           <BaseButton
             color="blue1"
             scheme="solid-light-outlined"
@@ -70,7 +69,7 @@
             scheme="outlined-solid-light"
             size="lg"
             block
-            @click="onRegister"
+            @click="goRegister"
           >
             Зарегистрироваться
           </BaseButton>
@@ -85,6 +84,7 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import AuthSidebar from '@/components/auth/AuthSidebar.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseCheckbox from '@/components/ui/BaseCheckbox.vue'
 import BaseField from '@/components/ui/BaseField.vue'
@@ -101,18 +101,24 @@ const form = reactive({
 const showPassword = ref(false)
 const loading = ref(false)
 const remember = ref(false)
+const errorMessage = ref('')
 
 async function onSubmit() {
   loading.value = true
+  errorMessage.value = ''
   try {
     await authStore.login({ email: form.login, password: form.password })
     router.push({ name: 'schedule' })
+  } catch (err) {
+    errorMessage.value = err?.data?.message || 'Не удалось войти'
   } finally {
     loading.value = false
   }
 }
 
-function onRegister() {}
+function goRegister() {
+  router.push({ name: 'register' })
+}
 
 function onRemember() {
   remember.value = !remember.value
@@ -125,26 +131,7 @@ function onForgotPassword() {}
 .login {
   display: flex;
   min-height: 100vh;
-  background-color: #d1daf3;
-}
-
-.login__sidebar {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 60px;
-  width: 446px;
-  flex-shrink: 0;
-  padding: 20px;
-  background-color: #051b54;
-}
-
-.login__brand {
-  color: #fff;
-  font-size: 28px;
-  font-weight: 700;
-  letter-spacing: 1px;
+  background-color: var(--dvijok-muted);
 }
 
 .login__main {
@@ -164,7 +151,7 @@ function onForgotPassword() {}
   width: 100%;
   max-width: 680px;
   padding: 75px;
-  background-color: #ffffff;
+  background-color: var(--dvijok-white);
   border-radius: 15px;
 }
 
@@ -175,7 +162,7 @@ function onForgotPassword() {}
 
 .login__title {
   margin: 0;
-  color: #0f1f4a;
+  color: var(--dvijok-text-heading);
   font-size: 32px;
   font-weight: 700;
   line-height: 39px;
@@ -184,7 +171,7 @@ function onForgotPassword() {}
 
 .login__subtitle {
   margin: 0;
-  color: #7a82a0;
+  color: var(--dvijok-text-secondary);
   font-size: 14px;
   font-weight: 400;
   line-height: 17px;
@@ -220,9 +207,18 @@ function onForgotPassword() {}
   gap: 5px;
 }
 
+.login__error {
+  margin: 0 0 5px;
+  color: var(--dvijok-danger, #e53935);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 16px;
+  text-align: center;
+}
+
 .login__or {
   text-align: center;
-  color: #7a82a0;
+  color: var(--dvijok-text-secondary);
   font-size: 12px;
   line-height: 17px;
 }
@@ -240,7 +236,7 @@ function onForgotPassword() {}
   position: absolute;
   bottom: 20px;
   margin: 0;
-  color: #9aa0bc;
+  color: var(--dvijok-text-tertiary);
   font-size: 11px;
   font-weight: 500;
   line-height: 13px;

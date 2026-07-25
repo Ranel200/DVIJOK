@@ -8,6 +8,12 @@ const routes = [
         name: 'login',
         component: () => import('@/pages/auth/LoginPage.vue'),
         meta: { title: 'Вход' }
+      },
+      {
+        path: 'register',
+        name: 'register',
+        component: () => import('@/pages/auth/RegisterPage.vue'),
+        meta: { title: 'Регистрация' }
       }
     ]
   },

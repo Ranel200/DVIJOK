@@ -101,7 +101,7 @@ function onUpdate(value) {
 }
 
 .base-field__label {
-  color: #051b54;
+  color: var(--dvijok-bg-dark);
   font-size: 14px;
   line-height: 16px;
   text-align: left;

@@ -24,11 +24,11 @@ import { computed } from 'vue'
 import { BUTTON_SCHEMES, DEFAULT_BUTTON_SCHEME } from './buttonSchemes.js'
 
 const VARIANT_STYLE = {
-  solid: { bg: 'var(--btn-solid)', color: '#fff', border: 'transparent' },
-  light: { bg: 'var(--btn-light)', color: '#fff', border: 'transparent' },
+  solid: { bg: 'var(--btn-solid)', color: 'var(--dvijok-white)', border: 'transparent' },
+  light: { bg: 'var(--btn-light)', color: 'var(--dvijok-white)', border: 'transparent' },
   accent: {
     bg: 'var(--btn-accent-fill)',
-    color: '#fff',
+    color: 'var(--dvijok-white)',
     border: 'transparent'
   },
   outlined: {
@@ -112,13 +112,13 @@ const stateVars = computed(() => {
     border-color 0.18s ease,
     color 0.18s ease;
 
-  &:hover {
+  &:not(:disabled):not(.q-btn--disabled):hover {
     color: var(--btn-state-hover-color);
     border-color: var(--btn-state-hover-border);
     background: var(--btn-state-hover-bg);
   }
 
-  &:active {
+  &:not(:disabled):not(.q-btn--disabled):active {
     color: var(--btn-state-active-color);
     border-color: var(--btn-state-active-border);
     background: var(--btn-state-active-bg);
@@ -149,17 +149,29 @@ const stateVars = computed(() => {
 }
 
 .base-btn--blue1 {
-  --btn-solid: linear-gradient(131.23deg, #093095 5.3%, #030f2f 116%);
-  --btn-light: linear-gradient(112.95deg, #3061e2 2.5%, #093095 100%);
-  --btn-accent: #093095;
-  --btn-accent-fill: linear-gradient(#093095, #093095);
+  --btn-solid: linear-gradient(131.23deg, var(--dvijok-blue-primary) 5.3%, #030f2f 116%);
+  --btn-light: linear-gradient(
+    112.95deg,
+    var(--dvijok-blue-light) 2.5%,
+    var(--dvijok-blue-primary) 100%
+  );
+  --btn-accent: var(--dvijok-blue-primary);
+  --btn-accent-fill: linear-gradient(var(--dvijok-blue-primary), var(--dvijok-blue-primary));
 }
 
 .base-btn--blue2 {
-  --btn-solid: linear-gradient(131.23deg, #7ea0fa 12.3%, #093095 128.8%);
-  --btn-light: linear-gradient(112.95deg, #3061e2 2.5%, #093095 100%);
-  --btn-accent: #ffffff;
-  --btn-accent-fill: linear-gradient(#ffffff, #ffffff);
+  --btn-solid: linear-gradient(
+    131.23deg,
+    var(--dvijok-blue-pale) 12.3%,
+    var(--dvijok-blue-primary) 128.8%
+  );
+  --btn-light: linear-gradient(
+    112.95deg,
+    var(--dvijok-blue-light) 2.5%,
+    var(--dvijok-blue-primary) 100%
+  );
+  --btn-accent: var(--dvijok-white);
+  --btn-accent-fill: linear-gradient(var(--dvijok-white), var(--dvijok-white));
 }
 
 .base-btn--green {
@@ -186,7 +198,7 @@ const stateVars = computed(() => {
   background: transparent !important;
   font-size: 14px;
   line-height: 17px;
-  color: #2a4ec4;
+  color: var(--dvijok-link);
   text-decoration: underline;
 }
 
@@ -197,7 +209,7 @@ const stateVars = computed(() => {
 }
 
 .base-btn--text:hover {
-  color: #0f245b;
+  color: var(--dvijok-link-hover);
   text-decoration: underline;
 }
 
@@ -214,5 +226,7 @@ const stateVars = computed(() => {
 .base-btn.q-btn--disabled {
   cursor: not-allowed;
   opacity: 0.5;
+  transition: none;
+  pointer-events: none;
 }
 </style>
