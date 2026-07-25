@@ -41,6 +41,18 @@ const routes = [
         meta: { title: 'Услуги', requiresAuth: true }
       },
       {
+        path: 'tasks',
+        name: 'tasks',
+        component: () => import('@/pages/TasksPage.vue'),
+        meta: { title: 'Задачник', requiresAuth: true }
+      },
+      {
+        path: 'qr',
+        name: 'qr',
+        component: () => import('@/pages/QrPage.vue'),
+        meta: { title: 'QR-код', requiresAuth: true }
+      },
+      {
         path: 'settings',
         name: 'settings',
         component: () => import('@/pages/SettingsPage.vue'),
