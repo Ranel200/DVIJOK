@@ -10,9 +10,11 @@
     :error="error"
     :error-message="errorMessage"
     :label="label"
+    :for="inputId"
     :dense="dense"
     :outlined="false"
     :borderless="true"
+    no-error-icon
     hide-bottom-space
     @update:model-value="onUpdate"
   >
@@ -40,6 +42,10 @@ defineProps({
     default: ''
   },
   label: {
+    type: String,
+    default: ''
+  },
+  inputId: {
     type: String,
     default: ''
   },

@@ -5,7 +5,13 @@ import { http, USE_MOCK } from '@dvijok/shared/api/http.js'
 import { mockOk, mockReject } from '@dvijok/shared/api/mock.js'
 
 const mockUsers = [
-  { id: 1, name: 'Администратор', email: 'admin', password: 'admin' }
+  {
+    id: 1,
+    name: 'Михайлов Артем Сергеевич',
+    role: 'Владелец',
+    email: 'admin',
+    password: 'admin'
+  }
 ]
 let mockUserIdSeq = 2
 
@@ -43,6 +49,7 @@ export const authApi = {
       const user = {
         id: mockUserIdSeq++,
         name: payload.contactName || payload.headName || 'Автосервис',
+        role: mockUsers[0].role,
         email,
         password: payload.password
       }

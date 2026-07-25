@@ -171,7 +171,8 @@ function validate() {
   const innDigits = v.inn.replace(/\D/g, '')
   if (!innDigits) e.inn = 'Введите ИНН'
   else if (innDigits.length < 10) e.inn = 'ИНН должен содержать минимум 10 цифр'
-  if (v.phone.replace(/\D/g, '').length !== 11) e.phone = 'Введите телефон в формате +7 999 999 99 99'
+  if (v.phone.replace(/\D/g, '').length !== 11)
+    e.phone = 'Введите телефон в формате +7 999 999 99 99'
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.email)) e.email = 'Введите корректный email'
   if (!v.contactName.trim()) e.contactName = 'Введите ФИО контактного лица'
   if (!v.address.trim()) e.address = 'Введите адрес'

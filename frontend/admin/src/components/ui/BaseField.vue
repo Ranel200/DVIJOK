@@ -4,7 +4,7 @@
       {{ label }}
     </label>
     <BaseInput
-      :id="fieldId"
+      :input-id="fieldId"
       :class="['base-field__input']"
       :model-value="modelValue"
       :type="type"
