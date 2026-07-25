@@ -11,17 +11,44 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <header class="header">
-      <div class="logo">DVIJOK</div>
-    </header>
+    <div class="round round--1" aria-hidden="true"></div>
+    <div class="rounds" aria-hidden="true">
+      <div class="round round--2"></div>
+      <div class="round round--3"></div>
+    </div>
 
-    <main class="hero">
-      <h1 class="hero__title">Платформа автосервисов</h1>
-      <p class="hero__lead">Запись, расписание, CRM — в одном месте.</p>
-      <div class="hero__actions">
-        <a class="btn btn--primary" href="/admin/login">Войти в админку</a>
-        <a class="btn" href="/client/login">Клиентский кабинет</a>
+    <main class="page">
+      <div class="page__logo">
+        <img src="assets/logo.svg" alt="DVIJOK" />
       </div>
+
+      <section class="page__info">
+        <h1 class="page__welcome">Добро пожаловать!</h1>
+        <p class="page__lead">
+          Команда «Комит» рада представить новый сервис для оптимизации
+          работы<br />
+          автомастерских — CRM-систему и клиентский сервис «Движок».
+        </p>
+      </section>
+
+      <section class="page__actions">
+        <div class="action">
+          <img class="action__icon" src="assets/car.svg" alt="" />
+          <p class="action__text">
+            Если вы — владелец автомобиля,<br />
+            перейдите в веб-приложение:
+          </p>
+          <a class="btn" href="/client/">Перейти в клиентский сервис</a>
+        </div>
+        <div class="action">
+          <img class="action__icon" src="assets/groups.svg" alt="" />
+          <p class="action__text">
+            Если вы — владелец автосервиса, зарегистрируйте<br />
+            свой бизнес на платформе и начните работу прямо сейчас:
+          </p>
+          <a class="btn" href="/admin/">Перейти в CRM-систему для бизнеса</a>
+        </div>
+      </section>
     </main>
 
     <script src="script.js"></script>

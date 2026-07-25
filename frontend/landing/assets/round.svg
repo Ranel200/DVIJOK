@@ -1,0 +1,27 @@
+<svg width="608" height="608" viewBox="0 0 608 608" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="rim" x1="0" y1="0" x2="608" y2="608" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="0.25" stop-color="#a0c4ff" stop-opacity="0.3"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.75" stop-color="#a0c4ff" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.95"/>
+    </linearGradient>
+    <linearGradient id="rimOuter" x1="0" y1="0" x2="608" y2="608" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.5"/>
+      <stop offset="0.25" stop-color="#a0c4ff" stop-opacity="0.15"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.75" stop-color="#a0c4ff" stop-opacity="0.15"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.5"/>
+    </linearGradient>
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+  <circle cx="304" cy="304" r="304" fill="white" fill-opacity="0.04"/>
+  <circle cx="304" cy="304" r="197.6" fill="white" fill-opacity="0.04"/>
+  <circle cx="304" cy="304" r="304" fill="none" stroke="url(#rimOuter)" stroke-width="1.5"/>
+  <circle cx="304" cy="304" r="304" fill="none" stroke="url(#rimOuter)" stroke-width="3" filter="url(#softGlow)"/>
+  <circle cx="304" cy="304" r="197.6" fill="none" stroke="url(#rim)" stroke-width="1.5"/>
+  <circle cx="304" cy="304" r="197.6" fill="none" stroke="url(#rim)" stroke-width="3" filter="url(#softGlow)"/>
+</svg>
