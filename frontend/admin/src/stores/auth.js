@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { authApi } from '@/api/index.js'
-import { setAuthToken } from '@/api/http.js'
+import { setAuthToken } from '@dvijok/shared/api/http.js'
 
 // Mock-авторизация. По умолчанию пользователь считается авторизованным (dev),
 // чтобы навигация работала до появления реальной формы входа.
@@ -17,8 +17,7 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => Boolean(token.value))
 
   async function login(credentials) {
-    const { token: nextToken, user: nextUser } =
-      await authApi.login(credentials)
+    const { token: nextToken, user: nextUser } = await authApi.login(credentials)
     token.value = nextToken
     user.value = nextUser
     setAuthToken(nextToken)

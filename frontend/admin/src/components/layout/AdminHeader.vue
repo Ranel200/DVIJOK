@@ -1,25 +1,11 @@
 <template>
   <q-header elevated>
     <q-toolbar>
-      <q-btn
-        flat
-        dense
-        round
-        icon="menu"
-        aria-label="Меню"
-        @click="appStore.toggleSidebar()"
-      />
+      <q-btn flat dense round icon="menu" aria-label="Меню" @click="appStore.toggleSidebar()" />
 
       <q-toolbar-title>{{ title }}</q-toolbar-title>
 
-      <q-btn
-        flat
-        dense
-        round
-        icon="logout"
-        aria-label="Выйти"
-        @click="onLogout"
-      />
+      <q-btn flat dense round icon="logout" aria-label="Выйти" @click="onLogout" />
     </q-toolbar>
   </q-header>
 </template>

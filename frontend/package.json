@@ -1,0 +1,19 @@
+{
+  "name": "dvijok-frontend",
+  "private": true,
+  "type": "module",
+  "workspaces": ["admin", "client", "shared"],
+  "scripts": {
+    "dev": "concurrently -n admin,client -c blue,magenta \"npm:dev:admin\" \"npm:dev:client\"",
+    "dev:admin": "npm run dev -w @dvijok/admin",
+    "dev:client": "npm run dev -w @dvijok/client",
+    "build": "npm run build --workspaces --if-present",
+    "build:admin": "npm run build -w @dvijok/admin",
+    "build:client": "npm run build -w @dvijok/client",
+    "lint": "npm run lint --workspaces --if-present",
+    "lint:check": "npm run lint:check --workspaces --if-present"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

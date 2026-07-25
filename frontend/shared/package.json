@@ -1,0 +1,14 @@
+{
+  "name": "@dvijok/shared",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./api/http.js": "./api/http.js",
+    "./api/mock.js": "./api/mock.js"
+  },
+  "scripts": {
+    "lint": "oxfmt && oxlint --fix",
+    "lint:check": "oxfmt --check && oxlint"
+  }
+}

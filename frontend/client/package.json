@@ -1,17 +1,16 @@
 {
-  "name": "@dvijok/admin",
+  "name": "@dvijok/client",
   "version": "0.0.1",
   "private": true,
-  "description": "DVIJOK — админ-панель платформы автосервисов",
+  "description": "DVIJOK — клиентский кабинет платформы автосервисов",
   "keywords": [
-    "admin",
     "auto-service",
+    "client",
     "dvijok",
     "quasar",
     "vite",
     "vue"
   ],
-  "author": "prostocaron <ll996459@gmail.com>",
   "type": "module",
   "scripts": {
     "lint": "oxfmt && oxlint --fix",
@@ -39,5 +38,5 @@
   "engines": {
     "node": ">= 26 || ^24 || ^22.12"
   },
-  "productName": "DVIJOK Admin"
+  "productName": "DVIJOK Client"
 }

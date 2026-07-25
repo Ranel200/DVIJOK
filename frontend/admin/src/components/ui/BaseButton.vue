@@ -26,8 +26,16 @@ import { BUTTON_SCHEMES, DEFAULT_BUTTON_SCHEME } from './buttonSchemes.js'
 const VARIANT_STYLE = {
   solid: { bg: 'var(--btn-solid)', color: '#fff', border: 'transparent' },
   light: { bg: 'var(--btn-light)', color: '#fff', border: 'transparent' },
-  accent: { bg: 'var(--btn-accent-fill)', color: '#fff', border: 'transparent' },
-  outlined: { bg: 'transparent', color: 'var(--btn-accent)', border: 'var(--btn-accent)' }
+  accent: {
+    bg: 'var(--btn-accent-fill)',
+    color: '#fff',
+    border: 'transparent'
+  },
+  outlined: {
+    bg: 'transparent',
+    color: 'var(--btn-accent)',
+    border: 'var(--btn-accent)'
+  }
 }
 
 const props = defineProps({

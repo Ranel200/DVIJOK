@@ -1,8 +1,8 @@
 // Фасад доменных сервисов. Сейчас все методы возвращают моки.
 // Когда появится бэкенд — заменяем тело методов на вызовы http.* (импорт уже готов).
 
-import { http, USE_MOCK } from './http.js'
-import { mockOk } from './mock.js'
+import { http, USE_MOCK } from '@dvijok/shared/api/http.js'
+import { mockOk } from '@dvijok/shared/api/mock.js'
 
 export const authApi = {
   async login({ email }) {

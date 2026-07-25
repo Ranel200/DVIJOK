@@ -77,9 +77,7 @@
         </div>
       </div>
 
-      <p class="login__support"
-        >Техподдержка: support@dvijok.ru · 8 800 000-00-00</p
-      >
+      <p class="login__support">Техподдержка: support@dvijok.ru · 8 800 000-00-00</p>
     </section>
   </q-page>
 </template>

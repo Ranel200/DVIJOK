@@ -1,0 +1,16 @@
+# Нормализация переносов строк: LF в индексе независимо от ОС.
+* text=auto eol=lf
+
+# Бинарные ресурсы — без нормализации и без diff-шума.
+*.png binary
+*.ico binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.svg binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.pdf binary
