@@ -14,8 +14,14 @@
     :disable="disable"
     @click="$emit('click', $event)"
   >
+    <span v-if="$slots.prepend" class="base-btn__prepend">
+      <slot name="prepend" />
+    </span>
     <q-icon v-if="icon" :name="icon" size="1.2em" class="base-btn__icon" />
     <slot />
+    <span v-if="$slots.append" class="base-btn__append">
+      <slot name="append" />
+    </span>
   </q-btn>
 </template>
 
@@ -33,6 +39,11 @@ const VARIANT_STYLE = {
   },
   outlined: {
     bg: 'transparent',
+    color: 'var(--btn-accent)',
+    border: 'var(--btn-accent)'
+  },
+  outlinedWhite: {
+    bg: 'var(--dvijok-white)',
     color: 'var(--btn-accent)',
     border: 'var(--btn-accent)'
   }
@@ -77,6 +88,10 @@ const props = defineProps({
   text: {
     type: Boolean,
     default: false
+  },
+  iconSpacing: {
+    type: [Number, String],
+    default: null
   }
 })
 
@@ -92,41 +107,62 @@ const stateVars = computed(() => {
       [`--btn-state-${key}-border`]: v.border
     }
   }
-  return { ...build('default'), ...build('hover'), ...build('active') }
+  const spacing =
+    props.iconSpacing === null || props.iconSpacing === undefined
+      ? null
+      : typeof props.iconSpacing === 'number'
+        ? `${props.iconSpacing}px`
+        : props.iconSpacing
+  return {
+    ...build('default'),
+    ...build('hover'),
+    ...build('active'),
+    ...(spacing ? { '--btn-icon-spacing': spacing } : {})
+  }
 })
 </script>
 
 <style scoped lang="scss">
 .base-btn {
-  border: 2px solid transparent;
+  border: none;
   border-radius: 10px;
   font-weight: 600;
   font-size: 14px;
   letter-spacing: 0;
   text-transform: none;
   color: var(--btn-state-default-color);
-  border-color: var(--btn-state-default-border);
+  box-shadow: inset 0 0 0 2px var(--btn-state-default-border);
   background: var(--btn-state-default-bg);
   transition:
     background 0.18s ease,
-    border-color 0.18s ease,
+    box-shadow 0.18s ease,
     color 0.18s ease;
 
   &:not(:disabled):not(.q-btn--disabled):hover {
     color: var(--btn-state-hover-color);
-    border-color: var(--btn-state-hover-border);
+    box-shadow: inset 0 0 0 2px var(--btn-state-hover-border);
     background: var(--btn-state-hover-bg);
   }
 
   &:not(:disabled):not(.q-btn--disabled):active {
     color: var(--btn-state-active-color);
-    border-color: var(--btn-state-active-border);
+    box-shadow: inset 0 0 0 2px var(--btn-state-active-border);
     background: var(--btn-state-active-bg);
   }
 }
 
 .base-btn__icon {
-  margin-right: 8px;
+  margin-right: var(--btn-icon-spacing, 8px);
+}
+
+.base-btn__prepend {
+  display: inline-flex;
+  margin-right: var(--btn-icon-spacing, 8px);
+}
+
+.base-btn__append {
+  display: inline-flex;
+  margin-left: var(--btn-icon-spacing, 8px);
 }
 
 .base-btn--block {
@@ -135,14 +171,14 @@ const stateVars = computed(() => {
 }
 
 .base-btn--lg {
-  padding: 13px 30px;
+  padding: 15px 32px;
   border-radius: 10px;
   font-size: 14px;
   line-height: 17px;
 }
 
 .base-btn--sm {
-  padding: 10px 20px;
+  padding: 12px 22px;
   border-radius: 50px;
   font-size: 10px;
   line-height: 12px;
@@ -195,6 +231,7 @@ const stateVars = computed(() => {
   padding: 0;
   min-height: 0;
   border: none;
+  box-shadow: none;
   background: transparent !important;
   font-size: 14px;
   line-height: 17px;

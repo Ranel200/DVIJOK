@@ -131,7 +131,6 @@ function onForgotPassword() {}
 .login {
   display: flex;
   min-height: 100vh;
-  background-color: var(--dvijok-muted);
 }
 
 .login__main {

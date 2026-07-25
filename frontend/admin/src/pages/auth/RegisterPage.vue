@@ -218,7 +218,6 @@ async function onSubmit() {
   display: flex;
   height: 100vh;
   overflow: hidden;
-  background-color: var(--dvijok-muted);
 }
 
 .register__main {

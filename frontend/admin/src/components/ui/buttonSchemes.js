@@ -1,4 +1,4 @@
-export const BUTTON_VARIANTS = ['solid', 'light', 'outlined', 'accent']
+export const BUTTON_VARIANTS = ['solid', 'light', 'outlined', 'outlinedWhite', 'accent']
 
 export const BUTTON_SCHEMES = {
   'solid-light-outlined': {
@@ -8,6 +8,11 @@ export const BUTTON_SCHEMES = {
   },
   'outlined-solid-light': {
     default: 'outlined',
+    hover: 'solid',
+    active: 'light'
+  },
+  'outlinedWhite-solid-light': {
+    default: 'outlinedWhite',
     hover: 'solid',
     active: 'light'
   },

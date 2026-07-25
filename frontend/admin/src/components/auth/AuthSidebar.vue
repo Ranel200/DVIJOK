@@ -66,7 +66,11 @@
         <span class="auth-sidebar__register-action">
           {{ isLogin ? 'Зарегистрировать автосервис' : 'Войти в систему' }}
         </span>
-        <img class="auth-sidebar__register-arrow" src="/admin/icons/auth/arrow-right.svg" alt="" />
+        <ArrowIcon
+          class="auth-sidebar__register-arrow"
+          direction="right"
+          color="var(--dvijok-white)"
+        />
       </div>
     </div>
   </aside>
@@ -74,6 +78,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import ArrowIcon from '@/components/ui/ArrowIcon.vue'
 
 const props = defineProps({
   mode: {

@@ -32,7 +32,7 @@ const routes = [
         path: 'crm',
         name: 'crm',
         component: () => import('@/pages/CrmPage.vue'),
-        meta: { title: 'CRM', requiresAuth: true }
+        meta: { title: 'Заказы', requiresAuth: true }
       },
       {
         path: 'services',
@@ -44,7 +44,7 @@ const routes = [
         path: 'tasks',
         name: 'tasks',
         component: () => import('@/pages/TasksPage.vue'),
-        meta: { title: 'Задачник', requiresAuth: true }
+        meta: { title: 'Задачи', requiresAuth: true }
       },
       {
         path: 'qr',
