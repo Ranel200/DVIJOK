@@ -12,6 +12,21 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isAuthenticated = computed(() => Boolean(token.value))
 
+  async function init() {
+    try {
+      const { token: nextToken, user: nextUser } = await authApi.restoreSession()
+      user.value = nextUser
+      if (nextToken !== undefined) {
+        token.value = nextToken
+        setAuthToken(nextToken)
+      }
+    } catch {
+      token.value = null
+      user.value = null
+      setAuthToken(null)
+    }
+  }
+
   async function login(credentials) {
     const { token: nextToken, user: nextUser } = await authApi.login(credentials)
     token.value = nextToken
@@ -39,6 +54,7 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     token,
     isAuthenticated,
+    init,
     login,
     register,
     logout
