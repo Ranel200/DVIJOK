@@ -419,8 +419,172 @@ export const crmApi = {
       return mockOk(columns)
     }
     return http.get('/crm/columns')
+  },
+
+  async listDeals() {
+    if (USE_MOCK) return mockOk(mockCrmDeals.map(deal => ({ ...deal })))
+    return http.get('/crm/deals')
   }
 }
+
+const mockCrmDeals = [
+  {
+    id: 'l1',
+    number: 1,
+    status: 'new',
+    clientName: 'Иванов Пётр',
+    carBrand: 'Toyota Camry',
+    carYear: 2021,
+    amount: 23000,
+    services: ['Замена масла', 'Диагностика'],
+    master: 'Смирнов Алексей',
+    createdAt: '14 июля',
+    updatedAt: '17 июля'
+  },
+  {
+    id: 'l2',
+    number: 2,
+    status: 'new',
+    clientName: 'Кузнецова Мария',
+    carBrand: 'Kia Rio',
+    carYear: 2019,
+    amount: 9200,
+    services: ['Шиномонтаж'],
+    master: 'Петров Иван',
+    createdAt: '18 июля',
+    updatedAt: '18 июля'
+  },
+  {
+    id: 'l3',
+    number: 3,
+    status: 'in_progress',
+    clientName: 'Соколов Олег',
+    carBrand: 'Hyundai Solaris',
+    carYear: 2020,
+    amount: 12400,
+    services: ['ТО-1', 'Замена фильтров'],
+    master: 'Орлов Дмитрий',
+    createdAt: '12 июля',
+    updatedAt: '15 июля'
+  },
+  {
+    id: 'l4',
+    number: 4,
+    status: 'in_progress',
+    clientName: 'Романов Павел',
+    carBrand: 'Lada Vesta',
+    carYear: 2022,
+    amount: 21300,
+    services: ['Замена ГРМ', 'Антифриз'],
+    master: 'Семёнов Артём',
+    createdAt: '5 июля',
+    updatedAt: '20 июля'
+  },
+  {
+    id: 'l5',
+    number: 5,
+    status: 'in_progress',
+    clientName: 'Ковалёв Артём',
+    carBrand: 'Ford Focus',
+    carYear: 2018,
+    amount: 14200,
+    services: ['Покраска бампера'],
+    master: 'Зайцев Максим',
+    createdAt: '7 июля',
+    updatedAt: '18 июля'
+  },
+  {
+    id: 'l6',
+    number: 6,
+    status: 'approval',
+    clientName: 'Никитин Сергей',
+    carBrand: 'BMW X5',
+    carYear: 2023,
+    amount: 45200,
+    services: ['Замена тормозных дисков', 'Развал-схождение', 'Химчистка'],
+    master: 'Фёдоров Илья',
+    createdAt: '8 июля',
+    updatedAt: '19 июля'
+  },
+  {
+    id: 'l7',
+    number: 7,
+    status: 'approval',
+    clientName: 'Михайлова Елена',
+    carBrand: 'Renault Duster',
+    carYear: 2017,
+    amount: 16750,
+    services: ['Ремонт подвески', 'Замена стоек'],
+    master: 'Григорьев Никита',
+    createdAt: '6 июля',
+    updatedAt: '19 июля'
+  },
+  {
+    id: 'l8',
+    number: 8,
+    status: 'done',
+    clientName: 'Белова Юлия',
+    carBrand: 'Mazda 6',
+    carYear: 2021,
+    amount: 30400,
+    services: ['Полное ТО', 'Замена колодок'],
+    master: 'Гусев Владислав',
+    createdAt: '28 июня',
+    updatedAt: '14 июля'
+  },
+  {
+    id: 'l9',
+    number: 9,
+    status: 'done',
+    clientName: 'Степанова Наталья',
+    carBrand: 'Audi A4',
+    carYear: 2020,
+    amount: 28900,
+    services: ['Замена сцепления', 'Диагностика АКПП'],
+    master: 'Тихонов Денис',
+    createdAt: '4 июля',
+    updatedAt: '20 июля'
+  },
+  {
+    id: 'l10',
+    number: 10,
+    status: 'new',
+    clientName: 'Дмитриев Виктор',
+    carBrand: 'Chevrolet Cruze',
+    carYear: 2016,
+    amount: 11500,
+    services: ['Замена масла', 'Фильтр салона', 'Свечи'],
+    master: 'Андреев Роман',
+    createdAt: '9 июля',
+    updatedAt: '16 июля'
+  },
+  {
+    id: 'l11',
+    number: 11,
+    status: 'in_progress',
+    clientName: 'Фомина Ольга',
+    carBrand: 'Mitsubishi Outlander',
+    carYear: 2019,
+    amount: 33100,
+    services: ['Ремонт кондиционера'],
+    master: 'Борисов Егор',
+    createdAt: '3 июля',
+    updatedAt: '19 июля'
+  },
+  {
+    id: 'l12',
+    number: 12,
+    status: 'done',
+    clientName: 'Жуков Кирилл',
+    carBrand: 'Honda Civic',
+    carYear: 2018,
+    amount: 19800,
+    services: ['Полировка', 'Керамика'],
+    master: 'Власов Игорь',
+    createdAt: '13 июля',
+    updatedAt: '17 июля'
+  }
+]
 
 const mockServices = [
   {
