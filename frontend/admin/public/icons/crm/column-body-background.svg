@@ -1,0 +1,23 @@
+<svg width="280" height="400" viewBox="0 0 280 400" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="columnGlassFill" x1="140" y1="0" x2="140" y2="400" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.34"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.18"/>
+    </linearGradient>
+    <linearGradient id="columnEdgeVertical" x1="0" y1="0" x2="0" y2="400" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.7"/>
+      <stop offset="0.04" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.96" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.55"/>
+    </linearGradient>
+    <linearGradient id="columnEdgeHorizontal" x1="0" y1="200" x2="280" y2="200" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="0.06" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.94" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.55"/>
+    </linearGradient>
+  </defs>
+  <rect x="0.5" y="0.5" width="279" height="399" rx="0" fill="url(#columnGlassFill)"/>
+  <rect x="0.5" y="0.5" width="279" height="399" rx="0" fill="none" stroke="url(#columnEdgeVertical)" stroke-width="1"/>
+  <rect x="0.5" y="0.5" width="279" height="399" rx="0" fill="none" stroke="url(#columnEdgeHorizontal)" stroke-width="1"/>
+</svg>

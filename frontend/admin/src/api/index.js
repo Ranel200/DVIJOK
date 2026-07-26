@@ -138,10 +138,287 @@ export const scheduleApi = {
   }
 }
 
+const mockCrmColumns = [
+  {
+    id: 'new',
+    title: 'Новая сделка',
+    gradient: 'linear-gradient(94.25deg, #0031B1 11.54%, #02167F 100%)',
+    items: [
+      {
+        id: 'n1',
+        number: 1,
+        amount: 23000,
+        clientName: 'Иванов Пётр',
+        phone: '+7 903 214 55 18',
+        carBrand: 'Toyota Camry',
+        plate: 'А 123 ВС 116',
+        services: ['Замена масла', 'Диагностика'],
+        masters: 'Смирнов Алексей, Козлов',
+        createdAt: '14 июля',
+        updatedAt: '17 июля'
+      },
+      {
+        id: 'n2',
+        number: 2,
+        amount: 9200,
+        clientName: 'Кузнецова Мария',
+        phone: '+7 917 440 12 03',
+        carBrand: 'Kia Rio',
+        plate: 'К 451 МН 116',
+        services: ['Шиномонтаж'],
+        masters: 'Петров Иван',
+        createdAt: '18 июля',
+        updatedAt: '18 июля'
+      }
+    ]
+  },
+  {
+    id: 'primary',
+    title: 'Первичная запись',
+    gradient: 'linear-gradient(94.25deg, #007CB1 11.54%, #02517F 100%)',
+    items: [
+      {
+        id: 'p1',
+        number: 3,
+        amount: 12400,
+        clientName: 'Соколов Олег',
+        phone: '+7 987 301 66 42',
+        carBrand: 'Hyundai Solaris',
+        plate: 'Е 782 ОР 116',
+        services: ['ТО-1', 'Замена фильтров'],
+        masters: 'Орлов Дмитрий, Волков',
+        createdAt: '12 июля',
+        updatedAt: '15 июля'
+      }
+    ]
+  },
+  {
+    id: 'diagnostics',
+    title: 'Диагностика',
+    gradient: 'linear-gradient(94.25deg, #EA9515 0%, #D87503 100%)',
+    items: [
+      {
+        id: 'd1',
+        number: 4,
+        amount: 5600,
+        clientName: 'Васильева Анна',
+        phone: '+7 950 118 90 27',
+        carBrand: 'Volkswagen Polo',
+        plate: 'М 019 ТК 116',
+        services: ['Компьютерная диагностика', 'Проверка подвески'],
+        masters: 'Морозов Сергей',
+        createdAt: '10 июля',
+        updatedAt: '16 июля'
+      },
+      {
+        id: 'd2',
+        number: 5,
+        amount: 7800,
+        clientName: 'Лебедев Дмитрий',
+        phone: '+7 927 665 44 10',
+        carBrand: 'Skoda Octavia',
+        plate: 'Т 330 УХ 116',
+        services: ['Диагностика двигателя'],
+        masters: 'Новиков Павел, Егоров',
+        createdAt: '11 июля',
+        updatedAt: '17 июля'
+      }
+    ]
+  },
+  {
+    id: 'approval',
+    title: 'Согласование работ',
+    gradient: 'linear-gradient(94.25deg, #A838DD 0%, #530097 100%)',
+    items: [
+      {
+        id: 'a1',
+        number: 6,
+        amount: 45200,
+        clientName: 'Никитин Сергей',
+        phone: '+7 903 778 21 54',
+        carBrand: 'BMW X5',
+        plate: 'Х 777 КК 116',
+        services: ['Замена тормозных дисков', 'Развал-схождение', 'Химчистка'],
+        masters: 'Фёдоров Илья, Белов',
+        createdAt: '8 июля',
+        updatedAt: '19 июля'
+      }
+    ]
+  },
+  {
+    id: 'secondary',
+    title: 'Вторичная запись',
+    gradient: 'linear-gradient(94.25deg, #007CB1 11.54%, #02517F 100%)',
+    items: []
+  },
+  {
+    id: 'in_progress',
+    title: 'В работе',
+    gradient: 'linear-gradient(94.25deg, #EA6415 0%, #D83803 100%)',
+    items: [
+      {
+        id: 'w1',
+        number: 7,
+        amount: 21300,
+        clientName: 'Романов Павел',
+        phone: '+7 916 203 88 71',
+        carBrand: 'Lada Vesta',
+        plate: 'В 214 СН 116',
+        services: ['Замена ГРМ', 'Антифриз'],
+        masters: 'Семёнов Артём',
+        createdAt: '5 июля',
+        updatedAt: '20 июля'
+      },
+      {
+        id: 'w2',
+        number: 8,
+        amount: 16750,
+        clientName: 'Михайлова Елена',
+        phone: '+7 999 145 03 62',
+        carBrand: 'Renault Duster',
+        plate: 'С 560 АЕ 116',
+        services: ['Ремонт подвески', 'Замена стоек'],
+        masters: 'Григорьев Никита, Павлов',
+        createdAt: '6 июля',
+        updatedAt: '19 июля'
+      },
+      {
+        id: 'w3',
+        number: 9,
+        amount: 14200,
+        clientName: 'Ковалёв Артём',
+        phone: '+7 937 812 49 05',
+        carBrand: 'Ford Focus',
+        plate: 'О 891 РТ 116',
+        services: ['Покраска бампера'],
+        masters: 'Зайцев Максим',
+        createdAt: '7 июля',
+        updatedAt: '18 июля'
+      },
+      {
+        id: 'w4',
+        number: 10,
+        amount: 28900,
+        clientName: 'Степанова Наталья',
+        phone: '+7 902 334 17 86',
+        carBrand: 'Audi A4',
+        plate: 'Р 045 ВМ 116',
+        services: ['Замена сцепления', 'Диагностика АКПП'],
+        masters: 'Тихонов Денис, Яковлев',
+        createdAt: '4 июля',
+        updatedAt: '20 июля'
+      },
+      {
+        id: 'w5',
+        number: 11,
+        amount: 11500,
+        clientName: 'Дмитриев Виктор',
+        phone: '+7 987 650 28 39',
+        carBrand: 'Chevrolet Cruze',
+        plate: 'У 673 КП 116',
+        services: ['Замена масла', 'Фильтр салона', 'Свечи'],
+        masters: 'Андреев Роман',
+        createdAt: '9 июля',
+        updatedAt: '16 июля'
+      },
+      {
+        id: 'w6',
+        number: 12,
+        amount: 33100,
+        clientName: 'Фомина Ольга',
+        phone: '+7 917 228 74 11',
+        carBrand: 'Mitsubishi Outlander',
+        plate: 'Н 318 ДС 116',
+        services: ['Ремонт кондиционера'],
+        masters: 'Борисов Егор, Макаров',
+        createdAt: '3 июля',
+        updatedAt: '19 июля'
+      },
+      {
+        id: 'w7',
+        number: 13,
+        amount: 19800,
+        clientName: 'Жуков Кирилл',
+        phone: '+7 964 501 93 20',
+        carBrand: 'Honda Civic',
+        plate: 'Х 000 ХХ 116',
+        services: ['Полировка', 'Керамика'],
+        masters: 'Власов Игорь',
+        createdAt: '13 июля',
+        updatedAt: '17 июля'
+      },
+      {
+        id: 'w8',
+        number: 14,
+        amount: 24600,
+        clientName: 'Медведева Татьяна',
+        phone: '+7 000 000 00 00',
+        carBrand: 'Subaru Forester',
+        plate: 'А 777 ТО 116',
+        services: ['Замена ремня', 'Ролики', 'Помпа'],
+        masters: 'Киселёв Антон, Савельев',
+        createdAt: '2 июля',
+        updatedAt: '20 июля'
+      }
+    ]
+  },
+  {
+    id: 'waiting',
+    title: 'Ожидание',
+    gradient: 'linear-gradient(94.25deg, #7F38DD 0%, #410097 100%)',
+    items: [
+      {
+        id: 'h1',
+        number: 15,
+        amount: 9800,
+        clientName: 'Трофимов Игорь',
+        phone: '+7 925 410 67 33',
+        carBrand: 'Nissan Qashqai',
+        plate: 'К 222 ЛМ 116',
+        services: ['Ожидание запчасти'],
+        masters: 'Соловьёв Юрий',
+        createdAt: '1 июля',
+        updatedAt: '15 июля'
+      }
+    ]
+  },
+  {
+    id: 'done',
+    title: 'Выдано/завершено',
+    gradient: 'linear-gradient(94.25deg, #7FCB37 0%, #006D1F 100%)',
+    items: [
+      {
+        id: 'c1',
+        number: 16,
+        amount: 30400,
+        clientName: 'Белова Юлия',
+        phone: '+7 903 156 82 49',
+        carBrand: 'Mazda 6',
+        plate: 'Е 909 СН 116',
+        services: ['Полное ТО', 'Замена колодок'],
+        masters: 'Гусев Владислав, Крылов',
+        createdAt: '28 июня',
+        updatedAt: '14 июля'
+      }
+    ]
+  }
+]
+
 export const crmApi = {
   async listClients(params) {
     if (USE_MOCK) return mockOk([])
     return http.get('/crm/clients', { params })
+  },
+
+  async listColumns() {
+    if (USE_MOCK) {
+      const columns = mockCrmColumns.map(column => ({
+        ...column,
+        items: [...column.items]
+      }))
+      return mockOk(columns)
+    }
+    return http.get('/crm/columns')
   }
 }
 
