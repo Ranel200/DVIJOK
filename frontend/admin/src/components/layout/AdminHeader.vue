@@ -4,6 +4,9 @@
       <div class="admin-header__title-group">
         <slot name="leading" />
         <h1 class="admin-header__title">{{ title }}</h1>
+        <div v-if="$slots['title-trailing']" class="admin-header__title-trailing">
+          <slot name="title-trailing" />
+        </div>
       </div>
       <div v-if="$slots.trailing || action" class="admin-header__actions">
         <slot name="trailing" />
@@ -96,6 +99,13 @@ const gapValue = computed(() => {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.admin-header__title-trailing {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-left: 18px;
 }
 
 .admin-header__actions {

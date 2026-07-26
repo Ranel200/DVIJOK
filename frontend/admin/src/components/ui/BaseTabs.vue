@@ -14,11 +14,16 @@
     >
       {{ option.label }}
     </button>
+    <span
+      ref="indicatorRef"
+      class="base-tabs__indicator"
+      :class="{ 'base-tabs__indicator--ready': ready }"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 
 const props = defineProps({
   modelValue: {
@@ -34,6 +39,8 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue'])
 
 const tabRefs = ref([])
+const indicatorRef = ref(null)
+const ready = ref(false)
 
 function isActive(value) {
   return props.modelValue === value
@@ -51,6 +58,47 @@ function focusTab(index) {
 function onFocus(value) {
   if (!isActive(value)) select(value)
 }
+
+function updateIndicator() {
+  const index = props.options.findIndex(o => o.value === props.modelValue)
+  const tab = tabRefs.value[index]
+  const indicator = indicatorRef.value
+  if (!tab || !indicator) return
+  const pad = 10
+  const barHeight = 2
+  const x = tab.offsetLeft + pad
+  const y = tab.offsetTop + tab.offsetHeight - 9 - barHeight
+  indicator.style.transform = `translate(${x}px, ${y}px)`
+  indicator.style.width = `${tab.offsetWidth - pad * 2}px`
+  if (!ready.value) {
+    requestAnimationFrame(() => {
+      ready.value = true
+    })
+  }
+}
+
+function onResize() {
+  updateIndicator()
+}
+
+watch(
+  () => props.modelValue,
+  () => nextTick(updateIndicator)
+)
+watch(
+  () => props.options,
+  () => nextTick(updateIndicator),
+  { deep: true }
+)
+
+onMounted(() => {
+  nextTick(updateIndicator)
+  window.addEventListener('resize', onResize)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', onResize)
+})
 
 function onKeydown(e) {
   const count = props.options.length
@@ -83,6 +131,7 @@ function onKeydown(e) {
 
 <style scoped lang="scss">
 .base-tabs {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
@@ -100,29 +149,29 @@ function onKeydown(e) {
   font-weight: 400;
   color: var(--dvijok-text-secondary);
   transition: color 0.18s ease;
-
-  &::after {
-    content: '';
-    position: absolute;
-    left: 10px;
-    right: 10px;
-    bottom: 9px;
-    height: 2px;
-    background: var(--dvijok-blue-primary);
-    opacity: 0;
-    transition: opacity 0.18s ease;
-  }
 }
 
 .base-tabs__tab--active {
   color: var(--dvijok-blue-primary);
-
-  &::after {
-    opacity: 1;
-  }
 }
 
 .base-tabs__tab:hover:not(.base-tabs__tab--active) {
   color: var(--dvijok-bg-dark);
+}
+
+.base-tabs__indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 2px;
+  background: var(--dvijok-blue-primary);
+  pointer-events: none;
+  will-change: transform, width;
+}
+
+.base-tabs__indicator--ready {
+  transition:
+    transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 </style>

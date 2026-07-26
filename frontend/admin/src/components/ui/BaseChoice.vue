@@ -1,11 +1,15 @@
 <template>
-  <div :class="['base-choice', `base-choice--${shape}`]">
+  <div
+    :class="['base-choice', `base-choice--${shape}`, { 'base-choice--block': block }]"
+    :style="{ gap }"
+  >
     <button
       v-for="option in options"
       :key="option.value"
       type="button"
       :class="['base-choice__option', { 'base-choice__option--active': isActive(option.value) }]"
       :aria-pressed="isActive(option.value)"
+      :style="optionStyle(option, isActive(option.value))"
       @click="select(option.value)"
     >
       {{ option.label }}
@@ -16,7 +20,7 @@
 <script setup>
 const props = defineProps({
   modelValue: {
-    type: [String, Number],
+    type: [String, Number, Array],
     default: ''
   },
   options: {
@@ -27,17 +31,63 @@ const props = defineProps({
     type: String,
     default: 'rounded',
     validator: value => ['pill', 'rounded'].includes(value)
+  },
+  multiple: {
+    type: Boolean,
+    default: false
+  },
+  gap: {
+    type: String,
+    default: '17px'
+  },
+  block: {
+    type: Boolean,
+    default: true
   }
 })
 
 const emit = defineEmits(['update:modelValue'])
 
 function isActive(value) {
+  if (props.multiple) {
+    return Array.isArray(props.modelValue) && props.modelValue.includes(value)
+  }
   return props.modelValue === value
 }
 
+function activeStyle(option) {
+  const style = {}
+  if (option.activeColor) style.color = option.activeColor
+  if (option.activeBg) style.backgroundColor = option.activeBg
+  if (option.activeBorder) style.borderColor = option.activeBorder
+  return style
+}
+
+function optionStyle(option, active) {
+  if (!option.color && !option.bg) {
+    return active ? activeStyle(option) : null
+  }
+  const color = active ? option.bg : option.color
+  const bg = active ? option.color : option.bg
+  const style = {}
+  if (color) {
+    style.color = color
+    style.borderColor = color
+  }
+  if (bg) style.backgroundColor = bg
+  return style
+}
+
 function select(value) {
-  emit('update:modelValue', value)
+  if (props.multiple) {
+    const current = Array.isArray(props.modelValue) ? [...props.modelValue] : []
+    const index = current.indexOf(value)
+    if (index === -1) current.push(value)
+    else current.splice(index, 1)
+    emit('update:modelValue', current)
+  } else {
+    emit('update:modelValue', value)
+  }
 }
 </script>
 
@@ -45,10 +95,12 @@ function select(value) {
 .base-choice {
   display: flex;
   flex-wrap: wrap;
-  width: 100%;
   align-items: center;
+}
+
+.base-choice--block {
+  width: 100%;
   justify-content: space-between;
-  gap: 17px;
 }
 
 .base-choice__option {
@@ -74,7 +126,7 @@ function select(value) {
 }
 
 .base-choice--pill .base-choice__option {
-  padding: 10px 25px;
+  padding: 9px 25px;
   border-radius: 50px;
 }
 

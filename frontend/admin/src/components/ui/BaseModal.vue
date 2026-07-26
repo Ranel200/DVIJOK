@@ -10,7 +10,7 @@
   >
     <div class="base-modal__card" role="dialog" aria-modal="true">
       <button type="button" class="base-modal__close" aria-label="Закрыть" @click="close">
-        <img src="/admin/icons/close.svg" alt="" width="22" height="22" />
+        <img src="/admin/icons/close-22.svg" alt="" width="22" height="22" />
       </button>
       <div class="base-modal__content">
         <slot />

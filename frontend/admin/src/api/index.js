@@ -101,6 +101,45 @@ export const servicesApi = {
   async list(params) {
     if (USE_MOCK) return mockOk([])
     return http.get('/services', { params })
+  },
+
+  async summary() {
+    if (USE_MOCK) {
+      return mockOk({
+        totalServices: 24,
+        averageCheck: 1500,
+        popularService: { name: 'Замена масла', ordersPerMonth: 47 },
+        revenuePerMonth: 287500,
+        activeMasters: 8
+      })
+    }
+    return http.get('/services/summary')
+  }
+}
+
+export const tasksApi = {
+  async summary() {
+    if (USE_MOCK) {
+      return mockOk({
+        today: { count: 12, overdue: 3 },
+        planned: 28,
+        donePerWeek: 45
+      })
+    }
+    return http.get('/tasks/summary')
+  },
+
+  async employees() {
+    if (USE_MOCK) {
+      return mockOk([
+        { id: 1, name: 'Михайлов Артем Сергеевич', role: 'Владелец' },
+        { id: 2, name: 'Петров Иван Сергеевич', role: 'Мастер' },
+        { id: 3, name: 'Сидоров Алексей Николаевич', role: 'Менеджер' },
+        { id: 4, name: 'Кузнецова Мария Андреевна', role: 'Мастер' },
+        { id: 5, name: 'Смирнов Дмитрий Олегович', role: 'Администратор' }
+      ])
+    }
+    return http.get('/tasks/employees')
   }
 }
 
