@@ -3,15 +3,20 @@
     <AdminHeader :tabs="tabs" v-model:active-tab="activeTab" :gap="0" />
 
     <ServiceSettingsTab
-      v-if="activeTab === 'service'"
+      v-show="activeTab === 'service'"
+      ref="serviceTabRef"
       v-model:form="form"
       :subscription="subscription"
+      @saved="onServiceSaved"
     />
     <SecuritySettingsTab
-      v-else-if="activeTab === 'security'"
+      v-show="activeTab === 'security'"
       :service-name="form.name"
+      :email="form.email"
+      :phone="form.phone"
       v-model:security="security"
       @logout="logoutConfirmOpen = true"
+      @edit-service="openServiceEdit"
     />
 
     <BaseModal v-model="logoutConfirmOpen">
@@ -40,7 +45,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { nextTick, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminHeader from '@/components/layout/AdminHeader.vue'
 import SecuritySettingsTab from '@/components/settings/SecuritySettingsTab.vue'
@@ -59,9 +64,20 @@ const tabs = [
   { label: 'Безопасность', value: 'security' }
 ]
 const activeTab = ref('service')
+const serviceTabRef = ref(null)
 const logoutConfirmOpen = ref(false)
 const logoutDoneOpen = ref(false)
 const logoutLoading = ref(false)
+
+async function openServiceEdit(fieldKey) {
+  await nextTick()
+  serviceTabRef.value?.openEdit(fieldKey)
+}
+
+function onServiceSaved(payload) {
+  if (payload?.email != null) security.value.email = payload.email
+  if (payload?.phone != null) security.value.phone = payload.phone
+}
 
 const form = ref({
   name: '',
@@ -71,6 +87,9 @@ const form = ref({
   inn: '',
   ogrn: '',
   phone: '',
+  email: '',
+  address: '',
+  logo: '',
   description: ''
 })
 

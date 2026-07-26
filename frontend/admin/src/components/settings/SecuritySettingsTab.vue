@@ -31,7 +31,7 @@
               </q-btn>
             </template>
           </BaseField>
-          <BaseButton text :icon-spacing="10">
+          <BaseButton text :icon-spacing="10" @click="openPasswordEdit">
             Изменить пароль
             <template #append>
               <ArrowIcon direction="right" :size="14" />
@@ -54,10 +54,10 @@
           <div class="confirm-method__body">
             <div class="confirm-method__info">
               <span class="confirm-method__hint">При каждом входе на почту</span>
-              <span class="confirm-method__value">{{ security.email }}</span>
+              <span class="confirm-method__value">{{ email }}</span>
               <span class="confirm-method__hint">будет отправлено письмо подтверждения</span>
             </div>
-            <BaseButton text :icon-spacing="10">
+            <BaseButton text :icon-spacing="10" @click="emit('edit-service', 'email')">
               Изменить почту
               <template #append>
                 <ArrowIcon direction="right" :size="14" />
@@ -77,10 +77,10 @@
           <div class="confirm-method__body">
             <div class="confirm-method__info">
               <span class="confirm-method__hint">При каждом входе на номер</span>
-              <span class="confirm-method__value">{{ security.phone }}</span>
+              <span class="confirm-method__value">{{ phone }}</span>
               <span class="confirm-method__hint">будет отправлено SMS-подтверждения</span>
             </div>
-            <BaseButton text :icon-spacing="10">
+            <BaseButton text :icon-spacing="10" @click="emit('edit-service', 'phone')">
               Изменить номер
               <template #append>
                 <ArrowIcon direction="right" :size="14" />
@@ -105,7 +105,7 @@
           </BaseButton>
         </div>
 
-        <div class="sessions-list">
+        <TransitionGroup name="session" tag="div" class="sessions-list">
           <div
             v-for="session in sessions"
             :key="session.id"
@@ -136,7 +136,7 @@
               </BaseButton>
             </div>
           </div>
-        </div>
+        </TransitionGroup>
       </section>
 
       <section class="settings-card">
@@ -174,30 +174,182 @@
         </div>
       </section>
     </div>
+
+    <BaseModal v-model="passwordEditOpen" fit hide-close>
+      <div class="password-edit">
+        <h2 class="password-edit__title">Изменение пароля</h2>
+        <div class="password-edit__body">
+          <BaseField
+            v-model="passwordDraft.oldPassword"
+            :type="visible.old ? 'text' : 'password'"
+            label="Введите старый пароль"
+            placeholder="Пароль"
+            :error="Boolean(passwordErrors.oldPassword)"
+            :error-message="passwordErrors.oldPassword"
+            block
+          >
+            <template #append>
+              <q-btn
+                flat
+                dense
+                type="button"
+                class="password-edit__eye"
+                :aria-label="visible.old ? 'Скрыть пароль' : 'Показать пароль'"
+                @click="visible.old = !visible.old"
+              >
+                <EyeIcon :closed="visible.old" />
+              </q-btn>
+            </template>
+          </BaseField>
+
+          <div class="password-edit__new">
+            <BaseField
+              v-model="passwordDraft.newPassword"
+              :type="visible.next ? 'text' : 'password'"
+              label="Придумайте новый пароль"
+              placeholder="Пароль"
+              :error="Boolean(passwordErrors.newPassword)"
+              :error-message="passwordErrors.newPassword"
+              block
+            >
+              <template #append>
+                <q-btn
+                  flat
+                  dense
+                  type="button"
+                  class="password-edit__eye"
+                  :aria-label="visible.next ? 'Скрыть пароль' : 'Показать пароль'"
+                  @click="visible.next = !visible.next"
+                >
+                  <EyeIcon :closed="visible.next" />
+                </q-btn>
+              </template>
+            </BaseField>
+            <BaseField
+              v-model="passwordDraft.confirmPassword"
+              :type="visible.confirm ? 'text' : 'password'"
+              label="Повторите новый пароль"
+              placeholder="Пароль"
+              :error="Boolean(passwordErrors.confirmPassword)"
+              :error-message="passwordErrors.confirmPassword"
+              block
+            >
+              <template #append>
+                <q-btn
+                  flat
+                  dense
+                  type="button"
+                  class="password-edit__eye"
+                  :aria-label="visible.confirm ? 'Скрыть пароль' : 'Показать пароль'"
+                  @click="visible.confirm = !visible.confirm"
+                >
+                  <EyeIcon :closed="visible.confirm" />
+                </q-btn>
+              </template>
+            </BaseField>
+          </div>
+
+          <div class="password-edit__code-block">
+            <div class="password-edit__send-wrap">
+              <BaseButton
+                color="blue1"
+                size="lg"
+                class="password-edit__send"
+                :loading="codeSending"
+                @click="sendCode"
+              >
+                Отправить код
+              </BaseButton>
+              <p class="password-edit__hint">
+                *Код подтверждения смены пароля придет на почту {{ email }}
+              </p>
+            </div>
+            <BaseField
+              v-model="passwordDraft.code"
+              label="Код подтверждения"
+              placeholder="Код"
+              :error="Boolean(passwordErrors.code)"
+              :error-message="passwordErrors.code"
+              class="password-edit__code"
+            />
+          </div>
+        </div>
+      </div>
+      <template #actions>
+        <div class="password-edit__actions">
+          <BaseButton
+            color="blue1"
+            scheme="outlinedWhite-solid-outlinedWhite"
+            size="lg"
+            @click="passwordEditOpen = false"
+          >
+            Отмена
+          </BaseButton>
+          <BaseButton color="green" size="lg" :loading="passwordSaving" @click="savePassword">
+            Сохранить изменения
+          </BaseButton>
+        </div>
+      </template>
+    </BaseModal>
+
+    <BaseModal v-model="passwordSavedOpen">
+      <div class="password-saved">
+        <h2 class="password-saved__title">Пароль сохранен!</h2>
+        <BaseButton color="blue1" size="lg" @click="passwordSavedOpen = false">Ок</BaseButton>
+      </div>
+    </BaseModal>
   </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import ArrowIcon from '@/components/ui/ArrowIcon.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseField from '@/components/ui/BaseField.vue'
+import BaseModal from '@/components/ui/BaseModal.vue'
 import BaseSwitcher from '@/components/ui/BaseSwitcher.vue'
 import EyeIcon from '@/components/ui/EyeIcon.vue'
 import Radio from '@/components/ui/Radio.vue'
+import { settingsApi } from '@/api/index.js'
 import { formatDateTime, formatRuDateShort } from '@/utils/formatDateRu.js'
 
-defineProps({
+const props = defineProps({
   serviceName: {
+    type: String,
+    default: ''
+  },
+  email: {
+    type: String,
+    default: ''
+  },
+  phone: {
     type: String,
     default: ''
   }
 })
 
 const security = defineModel('security', { type: Object, required: true })
-const emit = defineEmits(['logout'])
+const emit = defineEmits(['logout', 'edit-service'])
 
 const showPassword = ref(false)
+const passwordEditOpen = ref(false)
+const passwordSavedOpen = ref(false)
+const passwordSaving = ref(false)
+const codeSending = ref(false)
+const codeSent = ref(false)
+const visible = reactive({ old: false, next: false, confirm: false })
+const passwordDraft = ref({
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: '',
+  code: ''
+})
+const passwordErrors = reactive({
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: '',
+  code: ''
+})
 
 const sessions = computed(() => security.value.sessions || [])
 const otherSessions = computed(() => sessions.value.filter(session => !session.current))
@@ -207,6 +359,102 @@ const passwordChangedHint = computed(() => {
   const date = formatRuDateShort(security.value.passwordChangedAt)
   return date ? `Последн. изм. ${date}` : ''
 })
+
+function clearPasswordErrors() {
+  passwordErrors.oldPassword = ''
+  passwordErrors.newPassword = ''
+  passwordErrors.confirmPassword = ''
+  passwordErrors.code = ''
+}
+
+function openPasswordEdit() {
+  passwordDraft.value = {
+    oldPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+    code: ''
+  }
+  clearPasswordErrors()
+  codeSent.value = false
+  visible.old = false
+  visible.next = false
+  visible.confirm = false
+  passwordEditOpen.value = true
+}
+
+function validatePasswordDraft() {
+  clearPasswordErrors()
+  const draft = passwordDraft.value
+  let valid = true
+
+  if (!draft.oldPassword.trim()) {
+    passwordErrors.oldPassword = 'Введите старый пароль'
+    valid = false
+  } else if (draft.oldPassword !== security.value.currentPassword) {
+    passwordErrors.oldPassword = 'Неверный старый пароль'
+    valid = false
+  }
+
+  if (!draft.newPassword.trim()) {
+    passwordErrors.newPassword = 'Введите новый пароль'
+    valid = false
+  } else if (draft.newPassword === draft.oldPassword) {
+    passwordErrors.newPassword = 'Новый пароль должен отличаться от старого'
+    valid = false
+  }
+
+  if (!draft.confirmPassword.trim()) {
+    passwordErrors.confirmPassword = 'Повторите новый пароль'
+    valid = false
+  } else if (draft.confirmPassword !== draft.newPassword) {
+    passwordErrors.confirmPassword = 'Пароли не совпадают'
+    valid = false
+  }
+
+  if (!codeSent.value) {
+    passwordErrors.code = 'Сначала отправьте код подтверждения'
+    valid = false
+  } else if (!draft.code.trim()) {
+    passwordErrors.code = 'Введите код подтверждения'
+    valid = false
+  }
+
+  return valid
+}
+
+async function sendCode() {
+  codeSending.value = true
+  try {
+    await settingsApi.update({ action: 'sendPasswordCode', email: props.email })
+    codeSent.value = true
+    passwordErrors.code = ''
+  } finally {
+    codeSending.value = false
+  }
+}
+
+async function savePassword() {
+  if (!validatePasswordDraft()) return
+
+  passwordSaving.value = true
+  try {
+    const today = new Date().toISOString().slice(0, 10)
+    await settingsApi.update({
+      security: {
+        currentPassword: passwordDraft.value.newPassword,
+        passwordChangedAt: today,
+        oldPassword: passwordDraft.value.oldPassword,
+        code: passwordDraft.value.code
+      }
+    })
+    security.value.currentPassword = passwordDraft.value.newPassword
+    security.value.passwordChangedAt = today
+    passwordEditOpen.value = false
+    passwordSavedOpen.value = true
+  } finally {
+    passwordSaving.value = false
+  }
+}
 
 function terminateSession(id) {
   security.value.sessions = security.value.sessions.filter(session => session.id !== id)
@@ -222,6 +470,101 @@ function terminateAllSessions() {
 
 .settings-card--gap-15 {
   gap: 15px;
+}
+
+.password-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+.password-edit__title {
+  margin: 0;
+  color: var(--dvijok-bg-dark);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 19px;
+  text-transform: uppercase;
+}
+
+.password-edit__body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+.password-edit__new {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.password-edit__code-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+}
+
+.password-edit__send-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+.password-edit__send {
+  width: fit-content;
+}
+
+.password-edit__hint {
+  margin: 0;
+  color: var(--dvijok-text-secondary);
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 15px;
+}
+
+.password-edit__code {
+  width: 150px;
+}
+
+.password-edit__eye {
+  min-height: auto;
+  padding: 0;
+  pointer-events: auto;
+  cursor: pointer;
+
+  :deep(.q-btn__content) {
+    padding: 0;
+  }
+}
+
+.password-edit__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.password-saved {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+}
+
+.password-saved__title {
+  margin: 0;
+  color: var(--dvijok-bg-dark);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 29px;
+  text-align: center;
 }
 
 .account__name {
@@ -315,12 +658,26 @@ function terminateAllSessions() {
 
 .session-item {
   box-sizing: border-box;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   padding: 10px;
   border-radius: 10px;
+}
+
+.session-leave-active {
+  overflow: hidden;
+  transition: max-height 0.28s ease, padding 0.28s ease, opacity 0.2s ease;
+  max-height: 77px;
+}
+
+.session-leave-to {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  opacity: 0;
 }
 
 .session-item--active {

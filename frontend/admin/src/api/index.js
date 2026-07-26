@@ -390,6 +390,9 @@ export const settingsApi = {
           inn: '7701234567',
           ogrn: '1027700132195',
           phone: '+7 495 123 45 67',
+          email: 'service@dvijok.ru',
+          address: 'г. Москва, ул. Автозаводская, д. 12',
+          logo: '',
           description:
             'Полный спектр услуг по ремонту и обслуживанию легковых автомобилей. Диагностика, кузовной ремонт, шиномонтаж и замена масла.'
         },
@@ -413,7 +416,7 @@ export const settingsApi = {
           emailConfirmEnabled: true,
           email: 'service@dvijok.ru',
           phoneConfirmEnabled: false,
-          phone: '+7 000 000 00 00',
+          phone: '+7 495 123 45 67',
           sessions: [
             {
               id: 's1',

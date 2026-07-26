@@ -12,7 +12,12 @@
             :key="row.id"
             :class="['base-form__row', { 'base-form__row--inline': row.inline }]"
           >
-            <div v-for="field in row.fields" :key="field.key" class="base-form__field">
+            <div
+              v-for="field in row.fields"
+              :key="field.key"
+              class="base-form__field"
+              :data-field-key="field.key"
+            >
               <BaseField
                 v-if="isText(field)"
                 :model-value="modelValue[field.key]"
@@ -66,6 +71,8 @@
                   >
                 </p>
               </div>
+
+              <div v-else-if="field.type === 'empty'" class="base-form__empty" aria-hidden="true" />
             </div>
           </div>
         </BaseFormBlock>
@@ -202,6 +209,47 @@ function rowsOf(fields) {
   }
   return rows
 }
+
+function findScrollParent(el) {
+  let node = el
+  while (node && node !== document.body) {
+    const style = window.getComputedStyle(node)
+    const overflowY = style.overflowY
+    if (
+      (overflowY === 'auto' || overflowY === 'scroll') &&
+      node.scrollHeight > node.clientHeight + 1
+    ) {
+      return node
+    }
+    node = node.parentElement
+  }
+  return null
+}
+
+async function focusField(key, { offset = 24 } = {}) {
+  await nextTick()
+  const root = scrollRef.value
+  if (!root) return
+  const fieldEl = root.querySelector(`[data-field-key="${key}"]`)
+  if (!fieldEl) return
+
+  const scroller = findScrollParent(fieldEl) || root
+  const scrollerRect = scroller.getBoundingClientRect()
+  const fieldRect = fieldEl.getBoundingClientRect()
+  const delta = fieldRect.top - scrollerRect.top - offset
+  if (typeof scroller.scrollBy === 'function') {
+    scroller.scrollBy({ top: delta, behavior: 'smooth' })
+  } else {
+    fieldEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+
+  const input = fieldEl.querySelector('input, textarea')
+  if (input && typeof input.focus === 'function') {
+    input.focus()
+  }
+}
+
+defineExpose({ focusField })
 </script>
 
 <style scoped lang="scss">
@@ -277,6 +325,8 @@ function rowsOf(fields) {
   flex: 1;
   display: flex;
   flex-direction: column;
+  scroll-margin-top: 24px;
+  scroll-margin-bottom: 24px;
 }
 
 .base-form__choice {
@@ -284,6 +334,11 @@ function rowsOf(fields) {
   flex-direction: column;
   align-items: flex-start;
   gap: 10px;
+}
+
+.base-form__empty {
+  width: 100%;
+  min-height: 1px;
 }
 
 .base-form__label {

@@ -4,7 +4,12 @@
       <section class="settings-card">
         <div class="settings-card__head">
           <h2 class="settings-card__title">Данные автосервиса</h2>
-          <button type="button" class="settings-card__edit" aria-label="Редактировать">
+          <button
+            type="button"
+            class="settings-card__edit"
+            aria-label="Редактировать"
+            @click="openEdit()"
+          >
             <img src="/admin/icons/services/edit.svg" alt="" />
           </button>
         </div>
@@ -80,14 +85,21 @@
       <section class="settings-card">
         <div class="settings-card__head">
           <h2 class="settings-card__title">Логотип и описание</h2>
-          <button type="button" class="settings-card__edit" aria-label="Редактировать">
+          <button
+            type="button"
+            class="settings-card__edit"
+            aria-label="Редактировать"
+            @click="openBrandingEdit"
+          >
             <img src="/admin/icons/services/edit.svg" alt="" />
           </button>
         </div>
         <div class="branding">
           <div class="branding__logo-block">
             <span class="branding__label">Ваш логотип</span>
-            <div class="branding__logo" aria-hidden="true" />
+            <div class="branding__logo" aria-hidden="true">
+              <img v-if="form.logo" :src="form.logo" alt="" />
+            </div>
           </div>
           <div class="branding__desc-block">
             <span class="branding__label">Описание автосервиса</span>
@@ -96,15 +108,107 @@
         </div>
       </section>
     </div>
+
+    <BaseModal v-model="editOpen" fit hide-close @show="onEditShow">
+      <div class="service-edit">
+        <h2 class="service-edit__title">Изменение данных автосервиса</h2>
+        <div class="service-edit__scroll">
+          <BaseForm ref="editFormRef" v-model="draft" :blocks="editBlocks" max-height="none" />
+        </div>
+      </div>
+      <template #actions>
+        <div class="service-edit__actions">
+          <BaseButton
+            color="blue1"
+            scheme="outlinedWhite-solid-outlinedWhite"
+            size="lg"
+            @click="editOpen = false"
+          >
+            Отмена
+          </BaseButton>
+          <BaseButton color="green" size="lg" :loading="saving" @click="saveEdit">
+            Сохранить изменения
+          </BaseButton>
+        </div>
+      </template>
+    </BaseModal>
+
+    <BaseModal v-model="brandingEditOpen" fit hide-close>
+      <div class="branding-edit">
+        <h2 class="branding-edit__title">Изменение логотипа и описания</h2>
+        <div class="branding-edit__body">
+          <div class="branding-edit__logos">
+            <div class="branding-edit__col">
+              <span class="branding-edit__label">Ваш логотип</span>
+              <label class="branding-edit__drop">
+                <input
+                  type="file"
+                  accept="image/*"
+                  class="branding-edit__file"
+                  @change="onLogoPick"
+                />
+                <img
+                  v-if="brandingDraft.logo"
+                  :src="brandingDraft.logo"
+                  alt=""
+                  class="branding-edit__drop-img"
+                />
+                <span v-else>Поместите сюда ваш логотип</span>
+              </label>
+            </div>
+            <div class="branding-edit__col">
+              <span class="branding-edit__label">Предыдущий логотип</span>
+              <div class="branding-edit__prev">
+                <img v-if="form.logo" :src="form.logo" alt="" />
+              </div>
+            </div>
+          </div>
+
+          <div class="branding-edit__desc-block">
+            <span class="branding-edit__label">Описание автосервиса</span>
+            <textarea
+              v-model="brandingDraft.description"
+              class="branding-edit__desc"
+              rows="4"
+              placeholder="Введите описание"
+            />
+          </div>
+        </div>
+      </div>
+      <template #actions>
+        <div class="branding-edit__actions">
+          <BaseButton
+            color="blue1"
+            scheme="outlinedWhite-solid-outlinedWhite"
+            size="lg"
+            @click="brandingEditOpen = false"
+          >
+            Отмена
+          </BaseButton>
+          <BaseButton color="green" size="lg" :loading="brandingSaving" @click="saveBranding">
+            Сохранить изменения
+          </BaseButton>
+        </div>
+      </template>
+    </BaseModal>
+
+    <BaseModal v-model="savedOpen">
+      <div class="service-saved">
+        <h2 class="service-saved__title">Изменения сохранены!</h2>
+        <BaseButton color="blue1" size="lg" @click="savedOpen = false">Ок</BaseButton>
+      </div>
+    </BaseModal>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import ArrowIcon from '@/components/ui/ArrowIcon.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseForm from '@/components/ui/BaseForm.vue'
+import BaseModal from '@/components/ui/BaseModal.vue'
 import Radio from '@/components/ui/Radio.vue'
+import { settingsApi } from '@/api/index.js'
 import { formatRuDate } from '@/utils/formatDateRu.js'
 import { pluralize } from '@/utils/pluralize.js'
 
@@ -115,6 +219,39 @@ const props = defineProps({
     type: Object,
     required: true
   }
+})
+
+const emit = defineEmits(['saved'])
+const editFormRef = ref(null)
+
+const LEGAL_OPTIONS = [
+  { label: 'ИП', value: 'ИП' },
+  { label: 'ООО', value: 'ООО' },
+  { label: 'ОАО', value: 'ОАО' },
+  { label: 'ЗАО', value: 'ЗАО' },
+  { label: 'ПАО', value: 'ПАО' }
+]
+
+const TAX_OPTIONS = [
+  { label: 'УСН (упрощенная)', value: 'УСН' },
+  { label: 'НДС 20%', value: 'НДС' }
+]
+
+const TAX_LABELS = {
+  УСН: 'УСН (упрощенная)',
+  НДС: 'НДС 20%'
+}
+
+const editOpen = ref(false)
+const brandingEditOpen = ref(false)
+const savedOpen = ref(false)
+const saving = ref(false)
+const brandingSaving = ref(false)
+const pendingFocusKey = ref(null)
+const draft = ref({})
+const brandingDraft = ref({
+  logo: '',
+  description: ''
 })
 
 const STATUS_MAP = {
@@ -163,11 +300,16 @@ const formBlocks = computed(() => [
         key: 'taxSystem',
         label: 'Система налогообложения',
         type: 'choice',
-        shape: 'pill',
+        shape: 'rounded',
         block: false,
         row: 'legal',
         options: form.value.taxSystem
-          ? [{ label: form.value.taxSystem, value: form.value.taxSystem }]
+          ? [
+              {
+                label: TAX_LABELS[form.value.taxSystem] || form.value.taxSystem,
+                value: form.value.taxSystem
+              }
+            ]
           : []
       },
       { key: 'inn', label: 'ИНН', row: 'ids' },
@@ -176,7 +318,53 @@ const formBlocks = computed(() => [
   },
   {
     title: '',
-    fields: [{ key: 'phone', label: 'Номер телефона' }]
+    fields: [
+      { key: 'phone', label: 'Номер телефона' },
+      { key: 'email', label: 'Адрес электронной почты' },
+      { key: 'address', label: 'Фактический адрес' }
+    ]
+  }
+])
+
+const editBlocks = computed(() => [
+  {
+    title: '',
+    fields: [
+      { key: 'name', label: 'Название автосервиса', placeholder: 'Введите название' },
+      { key: 'headName', label: 'ФИО руководителя', placeholder: 'Введите ФИО' }
+    ]
+  },
+  {
+    title: '',
+    fields: [
+      {
+        key: 'legalType',
+        label: 'Тип юридического лица',
+        type: 'choice',
+        shape: 'pill',
+        options: LEGAL_OPTIONS
+      },
+      { key: 'inn', label: 'ИНН', placeholder: 'Введите ИНН', row: 'ids' },
+      {
+        key: 'taxSystem',
+        label: 'Система налогообложения',
+        type: 'choice',
+        shape: 'rounded',
+        block: false,
+        row: 'ids',
+        options: TAX_OPTIONS
+      },
+      { key: 'ogrn', label: 'ОГРН', placeholder: 'Введите ОГРН', row: 'ogrn' },
+      { key: 'ogrnSpacer', type: 'empty', row: 'ogrn' }
+    ]
+  },
+  {
+    title: '',
+    fields: [
+      { key: 'phone', label: 'Номер телефона', placeholder: '+7 999 999 99 99' },
+      { key: 'email', label: 'Адрес электронной почты', placeholder: 'Введите почту' },
+      { key: 'address', label: 'Фактический адрес', placeholder: 'Введите адрес' }
+    ]
   }
 ])
 
@@ -198,6 +386,73 @@ const featureColumns = computed(() => {
   const mid = Math.ceil(list.length / 2)
   return [list.slice(0, mid), list.slice(mid)]
 })
+
+function openEdit(focusKey) {
+  draft.value = { ...form.value }
+  pendingFocusKey.value = typeof focusKey === 'string' && focusKey ? focusKey : null
+  editOpen.value = true
+}
+
+async function onEditShow() {
+  const key = pendingFocusKey.value
+  pendingFocusKey.value = null
+  if (!key) return
+  await nextTick()
+  editFormRef.value?.focusField(key)
+}
+
+async function saveEdit() {
+  saving.value = true
+  try {
+    const payload = { ...draft.value }
+    delete payload.ogrnSpacer
+    await settingsApi.update({ service: payload })
+    form.value = { ...form.value, ...payload }
+    editOpen.value = false
+    savedOpen.value = true
+    emit('saved', payload)
+  } finally {
+    saving.value = false
+  }
+}
+
+function openBrandingEdit() {
+  brandingDraft.value = {
+    logo: '',
+    description: form.value.description || ''
+  }
+  brandingEditOpen.value = true
+}
+
+function onLogoPick(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = () => {
+    brandingDraft.value.logo = String(reader.result || '')
+  }
+  reader.readAsDataURL(file)
+  event.target.value = ''
+}
+
+async function saveBranding() {
+  brandingSaving.value = true
+  try {
+    const payload = {
+      logo: brandingDraft.value.logo || form.value.logo || '',
+      description: brandingDraft.value.description
+    }
+    await settingsApi.update({ service: payload })
+    form.value = { ...form.value, ...payload }
+    brandingEditOpen.value = false
+    savedOpen.value = true
+    emit('saved', payload)
+  } finally {
+    brandingSaving.value = false
+  }
+}
+
+defineExpose({ openEdit })
 </script>
 
 <style scoped lang="scss">
@@ -221,10 +476,94 @@ const featureColumns = computed(() => {
 
 .settings-card :deep(.base-form__scroll) {
   overflow: visible;
+  gap: 20px;
 }
 
 .settings-card :deep(.base-form-block__fields) {
   gap: 15px;
+}
+
+.service-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.service-edit__title {
+  margin: 0;
+  flex-shrink: 0;
+  color: var(--dvijok-bg-dark);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 19px;
+  text-transform: uppercase;
+}
+
+.service-edit__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
+}
+
+.service-edit__scroll :deep(.base-form__scrollbar) {
+  display: none;
+}
+
+.service-edit__scroll :deep(.base-form) {
+  flex: none;
+  gap: 0;
+  overflow: visible;
+}
+
+.service-edit__scroll :deep(.base-form__body) {
+  flex: none;
+  max-height: none;
+  overflow: visible;
+}
+
+.service-edit__scroll :deep(.base-form__scroll) {
+  overflow: visible;
+  gap: 40px;
+}
+
+.service-edit__scroll :deep(.base-form-block__fields) {
+  gap: 15px;
+}
+
+.service-edit__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.service-saved {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+}
+
+.service-saved__title {
+  margin: 0;
+  color: var(--dvijok-bg-dark);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 29px;
+  text-align: center;
 }
 
 .subscription__status-row {
@@ -365,11 +704,22 @@ const featureColumns = computed(() => {
 }
 
 .branding__logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 64px;
   height: 64px;
   border: 1px dashed var(--dvijok-text-secondary);
   border-radius: 6px;
   box-sizing: border-box;
+  overflow: hidden;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
 }
 
 .branding__desc {
@@ -382,5 +732,143 @@ const featureColumns = computed(() => {
   font-size: 12px;
   line-height: 15px;
   color: var(--dvijok-text-secondary);
+}
+
+.branding-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+.branding-edit__title {
+  margin: 0;
+  color: var(--dvijok-bg-dark);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 19px;
+  text-transform: uppercase;
+}
+
+.branding-edit__body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+.branding-edit__logos {
+  display: flex;
+  flex-direction: row;
+  gap: 60px;
+  width: 100%;
+}
+
+.branding-edit__col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.branding-edit__label {
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 17px;
+  color: var(--dvijok-bg-dark);
+}
+
+.branding-edit__drop {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100px;
+  border: 1px dashed var(--dvijok-text-secondary);
+  border-radius: 6px;
+  background: var(--dvijok-choice-active);
+  box-sizing: border-box;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 17px;
+  color: var(--dvijok-text-secondary);
+  text-align: center;
+  overflow: hidden;
+}
+
+.branding-edit__file {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.branding-edit__drop-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.branding-edit__prev {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100px;
+  height: 100px;
+  border: 1px dashed var(--dvijok-text-secondary);
+  border-radius: 6px;
+  box-sizing: border-box;
+  overflow: hidden;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+}
+
+.branding-edit__desc-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.branding-edit__desc {
+  width: 100%;
+  min-height: 80px;
+  padding: 14px;
+  border: 1px solid var(--dvijok-text-secondary);
+  border-radius: 10px;
+  box-sizing: border-box;
+  resize: vertical;
+  background: var(--dvijok-white);
+  font-family: inherit;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 15px;
+  color: var(--dvijok-bg-dark);
+
+  &::placeholder {
+    color: var(--dvijok-text-secondary);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--dvijok-bg-dark);
+  }
+}
+
+.branding-edit__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
 }
 </style>
