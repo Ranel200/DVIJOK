@@ -53,7 +53,7 @@ const props = defineProps({
   color: {
     type: String,
     default: 'blue1',
-    validator: value => ['blue1', 'blue2', 'green', 'red'].includes(value)
+    validator: value => ['blue1', 'blue2', 'green', 'red', 'gray'].includes(value)
   },
   scheme: {
     type: String,
@@ -224,15 +224,25 @@ const stateVars = computed(() => {
   --btn-accent-fill: linear-gradient(#990a26, #990a26);
 }
 
-.base-btn--text,
-.base-btn--text:hover,
-.base-btn--text:active,
-.base-btn--text:focus {
+.base-btn--gray {
+  --btn-solid: var(--dvijok-text-secondary);
+  --btn-light: var(--dvijok-text-secondary);
+  --btn-accent: var(--dvijok-text-secondary);
+  --btn-accent-fill: var(--dvijok-text-secondary);
+}
+
+.base-btn.base-btn--text,
+.base-btn.base-btn--text:hover,
+.base-btn.base-btn--text:active,
+.base-btn.base-btn--text:focus,
+.base-btn.base-btn--text:not(:disabled):not(.q-btn--disabled):hover,
+.base-btn.base-btn--text:not(:disabled):not(.q-btn--disabled):active {
   padding: 0;
   min-height: 0;
   border: none;
-  box-shadow: none;
+  box-shadow: none !important;
   background: transparent !important;
+  background-color: transparent !important;
   font-size: 14px;
   line-height: 17px;
   color: var(--dvijok-link);
@@ -245,18 +255,56 @@ const stateVars = computed(() => {
   min-height: 17px;
 }
 
-.base-btn--text:hover {
+.base-btn.base-btn--text:hover,
+.base-btn.base-btn--text:not(:disabled):not(.q-btn--disabled):hover {
   color: var(--dvijok-link-hover);
+  background: transparent !important;
+  background-color: transparent !important;
   text-decoration: underline;
 }
 
-.base-btn--text:active {
+.base-btn.base-btn--text:active,
+.base-btn.base-btn--text:not(:disabled):not(.q-btn--disabled):active {
   color: #7f9ad1;
+  background: transparent !important;
+  background-color: transparent !important;
   text-decoration: none;
 }
 
-.base-btn--text :deep(.q-focus-helper) {
-  display: none;
+.base-btn.base-btn--text.base-btn--red,
+.base-btn.base-btn--text.base-btn--red:focus {
+  color: #ef0a0a;
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+.base-btn.base-btn--text.base-btn--red:hover,
+.base-btn.base-btn--text.base-btn--red:not(:disabled):not(.q-btn--disabled):hover {
+  color: #b60000;
+  background: transparent !important;
+  background-color: transparent !important;
+  text-decoration: underline;
+}
+
+.base-btn.base-btn--text.base-btn--red:active,
+.base-btn.base-btn--text.base-btn--red:not(:disabled):not(.q-btn--disabled):active {
+  color: #7a1b1b;
+  background: transparent !important;
+  background-color: transparent !important;
+  text-decoration: none;
+}
+
+.base-btn--text :deep(.q-focus-helper),
+.base-btn--text :deep(.q-ripple) {
+  display: none !important;
+  opacity: 0 !important;
+  background: transparent !important;
+}
+
+.base-btn--text :deep(.q-btn__wrapper),
+.base-btn--text::before,
+.base-btn--text::after {
+  background: transparent !important;
 }
 
 .base-btn:disabled,

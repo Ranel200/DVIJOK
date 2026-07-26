@@ -1,7 +1,7 @@
 <template>
   <div class="base-form">
-    <div class="base-form__body">
-      <div ref="scrollRef" class="base-form__scroll" @scroll="updateThumb">
+    <div class="base-form__body" :style="bodyStyle">
+      <div ref="scrollRef" class="base-form__scroll" :style="scrollStyle" @scroll="updateThumb">
         <BaseFormBlock
           v-for="(block, index) in blocks"
           :key="block.id ?? index"
@@ -21,6 +21,7 @@
                 :type="field.type === 'password' && !visible[field.key] ? 'password' : 'text'"
                 :error="Boolean(errors[field.key])"
                 :error-message="errors[field.key]"
+                :disable="isDisabled(field)"
                 block
                 @update:model-value="updateField(field, $event)"
               >
@@ -44,6 +45,8 @@
                   :model-value="modelValue[field.key]"
                   :options="field.options"
                   :shape="field.shape"
+                  :block="field.block !== false"
+                  :disable="isDisabled(field)"
                   @update:model-value="updateField(field, $event)"
                 />
               </div>
@@ -51,6 +54,7 @@
               <div v-else-if="field.type === 'consent'" class="base-form__consent">
                 <BaseCheckbox
                   :model-value="modelValue[field.key]"
+                  :disable="isDisabled(field)"
                   @update:model-value="updateField(field, $event)"
                 />
                 <p class="base-form__consent-text">
@@ -94,6 +98,14 @@ const props = defineProps({
   errors: {
     type: Object,
     default: () => ({})
+  },
+  disable: {
+    type: Boolean,
+    default: false
+  },
+  maxHeight: {
+    type: [String, Number],
+    default: '500px'
   }
 })
 
@@ -110,8 +122,31 @@ const thumbStyle = computed(() => ({
   transform: `translateY(${thumbTop.value}px)`
 }))
 
+const bodyStyle = computed(() => {
+  if (props.maxHeight === null || props.maxHeight === undefined || props.maxHeight === 'none') {
+    return { maxHeight: 'none', overflow: 'visible' }
+  }
+  const value = typeof props.maxHeight === 'number' ? `${props.maxHeight}px` : props.maxHeight
+  return { maxHeight: value }
+})
+
+const scrollStyle = computed(() => {
+  if (props.maxHeight === null || props.maxHeight === undefined || props.maxHeight === 'none') {
+    return { overflowY: 'visible' }
+  }
+  return null
+})
+
+const allowScroll = computed(
+  () => !(props.maxHeight === null || props.maxHeight === undefined || props.maxHeight === 'none')
+)
+
 function isText(field) {
   return !field.type || field.type === 'text' || field.type === 'password'
+}
+
+function isDisabled(field) {
+  return props.disable || Boolean(field.disable)
 }
 
 function toggleVisible(key) {
@@ -119,13 +154,17 @@ function toggleVisible(key) {
 }
 
 function updateField(field, value) {
+  if (isDisabled(field)) return
   const next = typeof field.transform === 'function' ? field.transform(value) : value
   emit('update:modelValue', { ...props.modelValue, [field.key]: next })
 }
 
 function updateThumb() {
   const el = scrollRef.value
-  if (!el) return
+  if (!el || !allowScroll.value) {
+    scrollable.value = false
+    return
+  }
   const trackHeight = el.clientHeight
   const maxScroll = el.scrollHeight - trackHeight
   scrollable.value = maxScroll > 1

@@ -1,6 +1,10 @@
 <template>
   <div
-    :class="['base-choice', `base-choice--${shape}`, { 'base-choice--block': block }]"
+    :class="[
+      'base-choice',
+      `base-choice--${shape}`,
+      { 'base-choice--block': block, 'base-choice--disabled': disable }
+    ]"
     :style="{ gap }"
   >
     <button
@@ -9,6 +13,7 @@
       type="button"
       :class="['base-choice__option', { 'base-choice__option--active': isActive(option.value) }]"
       :aria-pressed="isActive(option.value)"
+      :disabled="disable"
       :style="optionStyle(option, isActive(option.value))"
       @click="select(option.value)"
     >
@@ -43,6 +48,10 @@ const props = defineProps({
   block: {
     type: Boolean,
     default: true
+  },
+  disable: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -79,6 +88,7 @@ function optionStyle(option, active) {
 }
 
 function select(value) {
+  if (props.disable) return
   if (props.multiple) {
     const current = Array.isArray(props.modelValue) ? [...props.modelValue] : []
     const index = current.indexOf(value)
@@ -136,8 +146,14 @@ function select(value) {
   color: var(--dvijok-blue-primary);
 }
 
-.base-choice__option:hover:not(.base-choice__option--active) {
+.base-choice__option:hover:not(.base-choice__option--active):not(:disabled) {
   border-color: var(--dvijok-bg-dark);
   color: var(--dvijok-bg-dark);
+}
+
+.base-choice--disabled .base-choice__option,
+.base-choice__option:disabled {
+  cursor: default;
+  pointer-events: none;
 }
 </style>

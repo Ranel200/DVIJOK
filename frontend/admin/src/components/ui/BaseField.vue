@@ -3,28 +3,31 @@
     <label v-if="label" :for="fieldId" class="base-field__label">
       {{ label }}
     </label>
-    <BaseInput
-      :input-id="fieldId"
-      :class="['base-field__input']"
-      :model-value="modelValue"
-      :type="type"
-      :placeholder="placeholder"
-      :disable="disable"
-      :readonly="readonly"
-      :block="block"
-      :dense="dense"
-      :error="error"
-      :error-message="errorMessage"
-      :rules="rules"
-      @update:model-value="onUpdate"
-    >
-      <template v-if="$slots.prepend" #prepend>
-        <slot name="prepend" />
-      </template>
-      <template v-if="$slots.append" #append>
-        <slot name="append" />
-      </template>
-    </BaseInput>
+    <div class="base-field__control">
+      <BaseInput
+        :input-id="fieldId"
+        :class="['base-field__input']"
+        :model-value="modelValue"
+        :type="type"
+        :placeholder="placeholder"
+        :disable="disable"
+        :readonly="readonly"
+        :block="block"
+        :dense="dense"
+        :error="error"
+        :error-message="errorMessage"
+        :rules="rules"
+        @update:model-value="onUpdate"
+      >
+        <template v-if="$slots.prepend" #prepend>
+          <slot name="prepend" />
+        </template>
+        <template v-if="$slots.append" #append>
+          <slot name="append" />
+        </template>
+      </BaseInput>
+      <p v-if="hint" class="base-field__hint">{{ hint }}</p>
+    </div>
   </div>
 </template>
 
@@ -46,6 +49,10 @@ defineProps({
     default: ''
   },
   label: {
+    type: String,
+    default: ''
+  },
+  hint: {
     type: String,
     default: ''
   },
@@ -107,7 +114,22 @@ function onUpdate(value) {
   text-align: left;
 }
 
+.base-field__control {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+}
+
 .base-field__input {
   width: 100%;
+}
+
+.base-field__hint {
+  margin: 0;
+  color: var(--dvijok-text-secondary);
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 15px;
 }
 </style>

@@ -16,6 +16,11 @@ export const BUTTON_SCHEMES = {
     hover: 'solid',
     active: 'light'
   },
+  'outlinedWhite-solid-outlinedWhite': {
+    default: 'outlinedWhite',
+    hover: 'solid',
+    active: 'outlinedWhite'
+  },
   'solid-light-accent': { default: 'solid', hover: 'light', active: 'accent' },
   'accent-solid-light': { default: 'accent', hover: 'solid', active: 'light' },
   'light-solid-accent': { default: 'light', hover: 'solid', active: 'accent' },

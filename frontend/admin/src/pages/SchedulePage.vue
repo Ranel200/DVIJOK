@@ -73,9 +73,7 @@ const STAFF_ACTION = { label: 'Настройки графика' }
 
 const action = computed(() => (activeTab.value === 'staff' ? STAFF_ACTION : CALENDAR_ACTION))
 
-const CALENDAR_LEGEND = [
-  { label: 'Сегодня', bg: 'var(--dvijok-choice-active)', border: '#183D9C' }
-]
+const CALENDAR_LEGEND = [{ label: 'Сегодня', bg: 'var(--dvijok-choice-active)', border: '#183D9C' }]
 const STAFF_LEGEND = [
   { label: 'Сегодня', bg: 'var(--dvijok-choice-active)', border: '#183D9C' },
   { label: 'Рабочий день', bg: '#E8F5E9', border: '#2E7D32' },

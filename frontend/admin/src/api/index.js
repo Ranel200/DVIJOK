@@ -380,7 +380,141 @@ export const tasksApi = {
 
 export const settingsApi = {
   async get() {
-    if (USE_MOCK) return mockOk({})
+    if (USE_MOCK) {
+      return mockOk({
+        service: {
+          name: 'Автосервис «Движок»',
+          headName: 'Иванов Алексей Петрович',
+          legalType: 'ООО',
+          taxSystem: 'УСН',
+          inn: '7701234567',
+          ogrn: '1027700132195',
+          phone: '+7 495 123 45 67',
+          description:
+            'Полный спектр услуг по ремонту и обслуживанию легковых автомобилей. Диагностика, кузовной ремонт, шиномонтаж и замена масла.'
+        },
+        subscription: {
+          status: 'active',
+          plan: 'PRO',
+          activeUntil: '2026-12-31',
+          daysLeft: 158,
+          usedMonths: 4,
+          totalMonths: 12,
+          features: [
+            { icon: 'plane', label: 'Неограниченные заказы' },
+            { icon: 'analytic', label: 'Аналитика и отчеты' },
+            { icon: 'group', label: 'До 10 мастеров' },
+            { icon: 'support', label: 'Поддержка 24/7' }
+          ]
+        },
+        security: {
+          currentPassword: 'dvijok-demo',
+          passwordChangedAt: '2026-04-17',
+          emailConfirmEnabled: true,
+          email: 'service@dvijok.ru',
+          phoneConfirmEnabled: false,
+          phone: '+7 000 000 00 00',
+          sessions: [
+            {
+              id: 's1',
+              current: true,
+              type: 'pc',
+              deviceName: '',
+              browser: '',
+              city: 'Москва',
+              country: 'Россия',
+              ip: '185.12.45.78',
+              lastActiveAt: ''
+            },
+            {
+              id: 's2',
+              current: false,
+              type: 'pc',
+              deviceName: 'Windows Desktop',
+              browser: 'Edge',
+              city: 'Казань',
+              country: 'Россия',
+              ip: '91.214.18.33',
+              lastActiveAt: '2026-07-25T11:40:00'
+            },
+            {
+              id: 's3',
+              current: false,
+              type: 'phone',
+              deviceName: 'iPhone 15',
+              browser: 'Safari',
+              city: 'Санкт-Петербург',
+              country: 'Россия',
+              ip: '46.188.102.14',
+              lastActiveAt: '2026-07-24T09:05:00'
+            },
+            {
+              id: 's4',
+              current: false,
+              type: 'laptop',
+              deviceName: 'ThinkPad X1',
+              browser: 'Firefox',
+              city: 'Новосибирск',
+              country: 'Россия',
+              ip: '178.44.112.9',
+              lastActiveAt: '2026-07-20T16:22:00'
+            }
+          ],
+          loginHistory: [
+            {
+              id: 'h1',
+              success: true,
+              deviceName: 'MacBook Pro 14',
+              browser: 'Chrome',
+              city: 'Москва',
+              country: 'Россия',
+              ip: '185.12.45.78',
+              loggedAt: '2026-07-26T20:15:00'
+            },
+            {
+              id: 'h2',
+              success: false,
+              deviceName: 'Unknown Device',
+              browser: 'Chrome',
+              city: 'Минск',
+              country: 'Беларусь',
+              ip: '93.125.44.12',
+              loggedAt: '2026-07-26T14:02:00'
+            },
+            {
+              id: 'h3',
+              success: true,
+              deviceName: 'Windows Desktop',
+              browser: 'Edge',
+              city: 'Казань',
+              country: 'Россия',
+              ip: '91.214.18.33',
+              loggedAt: '2026-07-25T11:40:00'
+            },
+            {
+              id: 'h4',
+              success: true,
+              deviceName: 'iPhone 15',
+              browser: 'Safari',
+              city: 'Санкт-Петербург',
+              country: 'Россия',
+              ip: '46.188.102.14',
+              loggedAt: '2026-07-24T09:05:00'
+            },
+            {
+              id: 'h5',
+              success: false,
+              deviceName: 'Android Phone',
+              browser: 'Chrome',
+              city: 'Алматы',
+              country: 'Казахстан',
+              ip: '87.255.210.67',
+              loggedAt: '2026-07-22T22:18:00'
+            }
+          ]
+        }
+      })
+    }
     return http.get('/settings')
   },
 
