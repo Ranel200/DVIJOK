@@ -4,6 +4,27 @@
       <PrinterIcon />
     </template>
   </AdminHeader>
+  <div class="qr">
+    <div class="qr__card">
+      <div class="qr__code">
+        <img src="/admin/icons/qr/qr.svg" alt="QR-код" />
+      </div>
+      <div class="qr__info">
+        <img
+          src="/admin/icons/qr/logo-client.svg"
+          alt="Логотип клиентского сервиса"
+          class="qr__logo"
+        />
+        <div class="qr__text">
+          <h2 class="qr__title">Добро пожаловать в клиентский сервис!</h2>
+          <p class="qr__subtitle">
+            Войдите, чтобы управлять своими заказами<br />
+            и отслеживать состояние автомобиля
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -17,4 +38,46 @@ function onAction() {
 }
 </script>
 
-<style scoped></style>
+<style scoped lang="scss">
+.qr {
+  padding: 0 20px 20px;
+}
+
+.qr__card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 100px 80px;
+  background-color: var(--dvijok-white);
+  border-radius: 15px;
+}
+
+.qr__info {
+  display: flex;
+  flex-direction: column;
+  gap: 50px;
+  justify-content: center;
+}
+
+.qr__text {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.qr__title {
+  margin: 0;
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 24px;
+  color: var(--dvijok-bg-dark);
+}
+
+.qr__subtitle {
+  margin: 0;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 17px;
+  color: var(--dvijok-text-secondary);
+}
+</style>
