@@ -375,6 +375,20 @@ export const tasksApi = {
       ])
     }
     return http.get('/tasks')
+  },
+
+  async create(payload) {
+    if (USE_MOCK) {
+      return mockOk({
+        id: Date.now(),
+        title: payload.title,
+        description: payload.description || '',
+        status: payload.status || 'new',
+        deadline: payload.deadline || '',
+        employee: payload.employee
+      })
+    }
+    return http.post('/tasks', payload)
   }
 }
 

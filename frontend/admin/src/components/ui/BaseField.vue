@@ -17,6 +17,8 @@
         :error="error"
         :error-message="errorMessage"
         :rules="rules"
+        :mask="mask"
+        :fill-mask="fillMask"
         @update:model-value="onUpdate"
       >
         <template v-if="$slots.prepend" #prepend>
@@ -83,6 +85,14 @@ defineProps({
   rules: {
     type: Array,
     default: () => []
+  },
+  mask: {
+    type: String,
+    default: ''
+  },
+  fillMask: {
+    type: [Boolean, String],
+    default: false
   }
 })
 

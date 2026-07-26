@@ -9,10 +9,13 @@
     @show="onShow"
     @hide="onHide"
   >
-    <div class="base-modal__shell">
+    <div class="base-modal__shell" :class="{ 'base-modal__shell--short': size === 'short' }">
       <div
         class="base-modal__card"
-        :class="{ 'base-modal__card--fit': fit }"
+        :class="{
+          'base-modal__card--fit': fit && size !== 'short',
+          'base-modal__card--short': size === 'short'
+        }"
         :style="cardStyle"
         role="dialog"
         aria-modal="true"
@@ -26,7 +29,13 @@
         >
           <img src="/admin/icons/close-22.svg" alt="" width="22" height="22" />
         </button>
-        <div class="base-modal__content" :class="{ 'base-modal__content--fit': fit }">
+        <div
+          class="base-modal__content"
+          :class="{
+            'base-modal__content--fit': fit && size !== 'short',
+            'base-modal__content--short': size === 'short'
+          }"
+        >
           <slot />
         </div>
       </div>
@@ -50,20 +59,22 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
-  /** Высота по контенту вместо фиксированных 300px */
   fit: {
     type: Boolean,
     default: false
   },
-  /** Скрыть крестик закрытия */
   hideClose: {
     type: Boolean,
     default: false
   },
-  /** Внутренний отступ карточки */
+  size: {
+    type: String,
+    default: 'default',
+    validator: value => ['default', 'short'].includes(value)
+  },
   padding: {
     type: String,
-    default: '20px'
+    default: ''
   }
 })
 
@@ -74,9 +85,10 @@ const modelValueProxy = computed({
   set: value => emit('update:modelValue', value)
 })
 
-const cardStyle = computed(() => ({
-  padding: props.padding
-}))
+const cardStyle = computed(() => {
+  const padding = props.padding || (props.size === 'short' ? '25px 15px' : '20px')
+  return { padding }
+})
 
 function close() {
   emit('update:modelValue', false)
@@ -132,6 +144,11 @@ function onHide() {
   max-height: 100%;
 }
 
+.base-modal__shell--short {
+  width: 480px;
+  height: 100%;
+}
+
 .base-modal__card {
   position: relative;
   width: 100%;
@@ -155,6 +172,15 @@ function onHide() {
   flex-direction: column;
   align-items: stretch;
   justify-content: flex-start;
+}
+
+.base-modal__card--short {
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  overflow: visible;
 }
 
 .base-modal__close {
@@ -197,6 +223,15 @@ function onHide() {
   align-items: stretch;
   justify-content: flex-start;
   overflow: hidden;
+}
+
+.base-modal__content--short {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  align-items: stretch;
+  justify-content: flex-start;
+  overflow: visible;
 }
 
 .base-modal__actions {

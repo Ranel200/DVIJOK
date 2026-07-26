@@ -669,7 +669,10 @@ function terminateAllSessions() {
 
 .session-leave-active {
   overflow: hidden;
-  transition: max-height 0.28s ease, padding 0.28s ease, opacity 0.2s ease;
+  transition:
+    max-height 0.28s ease,
+    padding 0.28s ease,
+    opacity 0.2s ease;
   max-height: 77px;
 }
 

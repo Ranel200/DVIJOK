@@ -12,6 +12,8 @@
     :label="label"
     :for="inputId"
     :dense="dense"
+    :mask="mask"
+    :fill-mask="fillMask"
     :outlined="false"
     :borderless="true"
     no-error-icon
@@ -76,6 +78,14 @@ defineProps({
   rules: {
     type: Array,
     default: () => []
+  },
+  mask: {
+    type: String,
+    default: ''
+  },
+  fillMask: {
+    type: [Boolean, String],
+    default: false
   }
 })
 
