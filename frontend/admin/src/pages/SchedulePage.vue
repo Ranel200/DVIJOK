@@ -73,11 +73,13 @@ const STAFF_ACTION = { label: 'Настройки графика' }
 
 const action = computed(() => (activeTab.value === 'staff' ? STAFF_ACTION : CALENDAR_ACTION))
 
-const CALENDAR_LEGEND = [{ label: 'Сегодня', bg: '#B3C8FF', border: '#183D9C' }]
+const CALENDAR_LEGEND = [
+  { label: 'Сегодня', bg: 'var(--dvijok-choice-active)', border: '#183D9C' }
+]
 const STAFF_LEGEND = [
-  { label: 'Сегодня', bg: '#B3C8FF', border: '#183D9C' },
+  { label: 'Сегодня', bg: 'var(--dvijok-choice-active)', border: '#183D9C' },
   { label: 'Рабочий день', bg: '#E8F5E9', border: '#2E7D32' },
-  { label: 'Выходной день', bg: '#FFFFFF', border: '#7A82A0' }
+  { label: 'Выходной день', bg: 'var(--dvijok-white)', border: 'var(--dvijok-text-secondary)' }
 ]
 
 const legendItems = computed(() => (activeTab.value === 'staff' ? STAFF_LEGEND : CALENDAR_LEGEND))
@@ -116,8 +118,8 @@ onMounted(() => scheduleFilter.resetToCurrent())
   border: none;
   border-radius: 10px;
   background: var(--dvijok-white);
-  box-shadow: inset 0 0 0 2px #7a82a0;
-  color: #7a82a0;
+  box-shadow: inset 0 0 0 2px var(--dvijok-text-secondary);
+  color: var(--dvijok-text-secondary);
   font-size: 14px;
   font-weight: 600;
   line-height: 17px;
@@ -137,7 +139,7 @@ onMounted(() => scheduleFilter.resetToCurrent())
 }
 
 .schedule-legend__label {
-  color: #7a82a0;
+  color: var(--dvijok-text-secondary);
   font-size: 13px;
   font-weight: 400;
   line-height: 16px;

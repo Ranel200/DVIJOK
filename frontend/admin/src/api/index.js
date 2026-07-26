@@ -145,22 +145,138 @@ export const crmApi = {
   }
 }
 
+const mockServices = [
+  {
+    id: 1,
+    title: 'Замена масла',
+    description:
+      'Полная замена моторного масла с заменой масляного фильтра, проверка уровня технических жидкостей и осмотр двигателя',
+    master: { id: 2, name: 'Петров Иван Сергеевич', role: 'Мастер' },
+    price: 3500,
+    priceNote: 'от 2 500 ₽',
+    durationHours: 1,
+    ordersCount: 47,
+    status: 'active'
+  },
+  {
+    id: 2,
+    title: 'Диагностика ходовой части',
+    description:
+      'Проверка состояния подвески, амортизаторов, рулевых тяг и шаровых опор на предмет износа и люфтов на подъёмнике',
+    master: { id: 4, name: 'Кузнецова Мария Андреевна', role: 'Мастер' },
+    price: 2500,
+    priceNote: 'от 2 000 ₽',
+    durationHours: 2,
+    ordersCount: 31,
+    status: 'active'
+  },
+  {
+    id: 3,
+    title: 'Замена тормозных колодок',
+    description:
+      'Демонтаж старых и установка новых передних тормозных колодок, проверка состояния тормозных дисков и суппортов',
+    master: { id: 2, name: 'Петров Иван Сергеевич', role: 'Мастер' },
+    price: 4800,
+    priceNote: 'от 4 000 ₽',
+    durationHours: 2,
+    ordersCount: 22,
+    status: 'active'
+  },
+  {
+    id: 4,
+    title: 'Регулировка развал-схождения',
+    description:
+      'Регулировка углов установки колёс на стенде, проверка схождения и развала по техническим нормам завода-изготовителя',
+    master: { id: 4, name: 'Кузнецова Мария Андреевна', role: 'Мастер' },
+    price: 3200,
+    priceNote: 'от 2 800 ₽',
+    durationHours: 1,
+    ordersCount: 18,
+    status: 'hidden'
+  },
+  {
+    id: 5,
+    title: 'Ремонт выхлопной системы',
+    description:
+      'Сварка и восстановление повреждённого участка выхлопной трубы, замена резонатора и прокладок соединений',
+    master: { id: 2, name: 'Петров Иван Сергеевич', role: 'Мастер' },
+    price: 7500,
+    priceNote: 'от 5 000 ₽',
+    durationHours: 4,
+    ordersCount: 9,
+    status: 'active'
+  },
+  {
+    id: 6,
+    title: 'Замена свечей зажигания',
+    description:
+      'Демонтаж и установка новых свечей зажигания, проверка состояния высоковольтных проводов и катушек зажигания',
+    master: { id: 5, name: 'Смирнов Дмитрий Олегович', role: 'Администратор' },
+    price: 1800,
+    priceNote: 'от 1 500 ₽',
+    durationHours: 1,
+    ordersCount: 14,
+    status: 'hidden'
+  },
+  {
+    id: 7,
+    title: 'Покраска бампера',
+    description:
+      'Подготовка поверхности, нанесение грунта и лакокрасочного покрытия в цвет кузова, финальная полировка и сушка',
+    master: { id: 4, name: 'Кузнецова Мария Андреевна', role: 'Мастер' },
+    price: 15000,
+    priceNote: 'от 12 000 ₽',
+    durationHours: 8,
+    ordersCount: 5,
+    status: 'active'
+  },
+  {
+    id: 8,
+    title: 'Шиномонтаж и балансировка',
+    description:
+      'Снятие и установка колёс, монтаж шин, балансировка на станке, проверка давления и состояния вентилей',
+    master: { id: 2, name: 'Петров Иван Сергеевич', role: 'Мастер' },
+    price: 2200,
+    priceNote: 'от 1 800 ₽',
+    durationHours: 1,
+    ordersCount: 38,
+    status: 'active'
+  }
+]
+
+function buildServicesSummary(services) {
+  const totalServices = services.length
+  const priceSum = services.reduce((sum, service) => sum + service.price, 0)
+  const averageCheck = totalServices ? Math.round(priceSum / totalServices) : 0
+  const popular = services.reduce((best, service) => {
+    if (!best || service.ordersCount > best.ordersCount) return service
+    return best
+  }, null)
+  const revenuePerMonth = services.reduce(
+    (sum, service) => sum + service.price * service.ordersCount,
+    0
+  )
+  const activeMasters = new Set(
+    services.filter(service => service.status === 'active').map(service => service.master.id)
+  ).size
+
+  return {
+    totalServices,
+    averageCheck,
+    popularService: popular ? { name: popular.title, ordersPerMonth: popular.ordersCount } : null,
+    revenuePerMonth,
+    activeMasters
+  }
+}
+
 export const servicesApi = {
   async list(params) {
-    if (USE_MOCK) return mockOk([])
+    if (USE_MOCK) return mockOk(mockServices.map(service => ({ ...service })))
     return http.get('/services', { params })
   },
 
   async summary() {
-    if (USE_MOCK) {
-      return mockOk({
-        totalServices: 24,
-        averageCheck: 1500,
-        popularService: { name: 'Замена масла', ordersPerMonth: 47 },
-        revenuePerMonth: 287500,
-        activeMasters: 8
-      })
-    }
+    if (USE_MOCK) return mockOk(buildServicesSummary(mockServices))
     return http.get('/services/summary')
   }
 }

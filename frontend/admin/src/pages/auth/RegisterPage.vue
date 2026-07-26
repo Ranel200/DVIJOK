@@ -264,7 +264,7 @@ async function onSubmit() {
 
 .register__error {
   margin: 0 0 10px;
-  color: var(--dvijok-danger, #e53935);
+  color: var(--dvijok-danger);
   font-size: 13px;
   font-weight: 500;
   line-height: 16px;

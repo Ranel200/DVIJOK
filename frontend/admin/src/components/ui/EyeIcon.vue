@@ -6,6 +6,7 @@
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
     class="eye-icon"
+    :style="color ? { color } : undefined"
     aria-hidden="true"
   >
     <path :d="closed ? closedPath : openPath" fill="currentColor" />
@@ -21,6 +22,10 @@ defineProps({
   size: {
     type: [Number, String],
     default: 16
+  },
+  color: {
+    type: String,
+    default: ''
   }
 })
 

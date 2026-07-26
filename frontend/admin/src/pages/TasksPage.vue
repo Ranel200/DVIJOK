@@ -27,76 +27,51 @@
         </div>
       </template>
     </AdminHeader>
-    <div class="tasks">
-      <div class="tasks__head">
-        <table class="tasks__table tasks__table--head">
-          <colgroup>
-            <col class="tasks__col--check" />
-            <col class="tasks__col--task" />
-            <col class="tasks__col--employee" />
-            <col class="tasks__col--status" />
-          </colgroup>
-          <thead>
-            <tr>
-              <th class="tasks__th tasks__th--check"></th>
-              <th class="tasks__th tasks__th--task">Задача</th>
-              <th class="tasks__th tasks__th--employee">Сотрудник</th>
-              <th class="tasks__th tasks__th--status">Статус</th>
-            </tr>
-          </thead>
-        </table>
-      </div>
-      <div class="tasks__list">
-        <table class="tasks__table tasks__table--body">
-          <colgroup>
-            <col class="tasks__col--check" />
-            <col class="tasks__col--task" />
-            <col class="tasks__col--employee" />
-            <col class="tasks__col--status" />
-          </colgroup>
-          <tbody>
-            <tr
-              v-for="task in filteredTasks"
-              :key="task.id"
-              class="tasks__row"
-            >
-              <td class="tasks__cell tasks__cell--check">
-                <BaseCheckbox v-model="task._selected" />
-              </td>
-              <td class="tasks__cell tasks__cell--task">
-                <div class="tasks__title">{{ task.title }}</div>
-                <div class="tasks__desc">{{ task.description }}</div>
-                <div class="tasks__deadline">
-                  Срок выполнения: {{ formatDeadline(task.deadline) }}
-                </div>
-              </td>
-              <td class="tasks__cell tasks__cell--employee">
-                <span class="tasks__emp">{{ formatEmployee(task.employee) }}</span>
-              </td>
-              <td class="tasks__cell tasks__cell--status">
-                <span :class="`tasks__pill tasks__pill--${task.status}`">
-                  {{ statusLabel(task.status) }}
-                </span>
-              </td>
-            </tr>
-            <tr v-if="!filteredTasks.length">
-              <td colspan="4" class="tasks__empty">Нет задач по выбранным фильтрам</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="tasks__footer">
+    <AdminTable
+      :columns="columns"
+      :loading="loading"
+      :empty="!filteredTasks.length"
+      empty-text="Нет задач по выбранным фильтрам"
+    >
+      <template #head>
+        <th class="admin-table__th admin-table__th--check"></th>
+        <th class="admin-table__th tasks__th--task">Задача</th>
+        <th class="admin-table__th tasks__th--employee">Сотрудник</th>
+        <th class="admin-table__th tasks__th--status">Статус</th>
+      </template>
+
+      <tr v-for="task in filteredTasks" :key="task.id" class="admin-table__row">
+        <td class="admin-table__cell admin-table__cell--check">
+          <BaseCheckbox v-model="task._selected" />
+        </td>
+        <td class="admin-table__cell tasks__cell--task">
+          <div class="admin-table__title">{{ task.title }}</div>
+          <div class="admin-table__desc">{{ task.description }}</div>
+          <div class="tasks__deadline">Срок выполнения: {{ formatDeadline(task.deadline) }}</div>
+        </td>
+        <td class="admin-table__cell tasks__cell--employee">
+          <span class="admin-table__text">{{ formatEmployee(task.employee) }}</span>
+        </td>
+        <td class="admin-table__cell tasks__cell--status">
+          <span :class="`tasks__pill tasks__pill--${task.status}`">
+            {{ statusLabel(task.status) }}
+          </span>
+        </td>
+      </tr>
+
+      <template #footer>
         <BaseButton color="red" size="lg" :disable="!hasSelected" @click="onDeleteSelected">
           Удалить выбранные
         </BaseButton>
-      </div>
-    </div>
+      </template>
+    </AdminTable>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import AdminHeader from '@/components/layout/AdminHeader.vue'
+import AdminTable from '@/components/ui/AdminTable.vue'
 import SummaryCards from '@/components/ui/SummaryCards.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
 import BaseChoice from '@/components/ui/BaseChoice.vue'
@@ -106,6 +81,13 @@ import { tasksApi } from '@/api/index.js'
 import { pluralize } from '@/utils/pluralize.js'
 
 const action = { label: '+ Новая задача' }
+
+const columns = [
+  { key: 'check', width: '63px' },
+  { key: 'task', width: '45%' },
+  { key: 'employee' },
+  { key: 'status', width: '139px' }
+]
 
 const summary = ref(null)
 const loading = ref(true)
@@ -124,8 +106,8 @@ const statusOptions = [
   {
     label: 'Новая задача',
     value: 'new',
-    color: '#093095',
-    bg: '#B3C8FF'
+    color: 'var(--dvijok-blue-primary)',
+    bg: 'var(--dvijok-choice-active)'
   },
   {
     label: 'Горящая задача',
@@ -136,14 +118,14 @@ const statusOptions = [
   {
     label: 'Сгоревшая задача',
     value: 'burned',
-    color: '#B60000',
+    color: 'var(--dvijok-danger-strong)',
     bg: '#F0D5D5'
   },
   {
     label: 'Выполнено',
     value: 'done',
-    color: '#157848',
-    bg: '#D5F0E4'
+    color: 'var(--dvijok-success)',
+    bg: 'var(--dvijok-success-bg)'
   }
 ]
 
@@ -155,7 +137,16 @@ const filteredTasks = computed(() => {
   })
 })
 
-const hasSelected = computed(() => tasks.value.some(task => task._selected))
+const hasSelected = computed(() => filteredTasks.value.some(task => task._selected))
+
+watch(filteredTasks, visible => {
+  const visibleIds = new Set(visible.map(task => task.id))
+  for (const task of tasks.value) {
+    if (task._selected && !visibleIds.has(task.id)) {
+      task._selected = false
+    }
+  }
+})
 
 const cards = computed(() => {
   const s = summary.value
@@ -232,84 +223,11 @@ onMounted(async () => {
   overflow: hidden;
 }
 
-.tasks {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  padding: 0 20px 20px;
-}
-
-.tasks__list {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  background-color: var(--dvijok-white);
-  border: 1px solid var(--dvijok-text-secondary);
-  border-radius: 10px;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.tasks__list::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-  display: none;
-}
-
-.tasks__head {
-  margin-bottom: 12px;
-  flex-shrink: 0;
-}
-
-.tasks__table {
-  width: 100%;
-  table-layout: fixed;
-  border-collapse: collapse;
-}
-
-.tasks__col--check {
-  width: 63px;
-}
-
-.tasks__col--task {
-  width: 45%;
-}
-
-.tasks__col--employee {
-  width: auto;
-}
-
-.tasks__col--status {
-  width: 139px;
-}
-
-.tasks__row {
-  border-bottom: 1px solid var(--dvijok-text-secondary);
-}
-
-.tasks__row:last-child {
-  border-bottom: none;
-}
-
-.tasks__th,
-.tasks__cell {
-  padding: 9px 0;
-  text-align: left;
-  vertical-align: middle;
-  box-sizing: border-box;
-}
-
 .tasks__th--task,
 .tasks__cell--task,
 .tasks__th--employee,
 .tasks__cell--employee {
   padding-right: 40px;
-}
-
-.tasks__th--check,
-.tasks__cell--check {
-  padding-left: 19px;
 }
 
 .tasks__th--status,
@@ -318,52 +236,12 @@ onMounted(async () => {
   text-align: right;
 }
 
-.tasks__th {
-  font-weight: 700;
-  font-size: 12px;
-  line-height: 19px;
-  color: var(--dvijok-text-secondary);
-  text-transform: uppercase;
-}
-
-.tasks__title {
-  font-weight: 700;
-  font-size: 12px;
-  line-height: 15px;
-  color: var(--dvijok-link-hover);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.tasks__desc {
-  margin-top: 4px;
-  font-weight: 400;
-  font-size: 10px;
-  line-height: 12px;
-  color: var(--dvijok-text-secondary);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .tasks__deadline {
   margin-top: 12px;
   font-weight: 600;
   font-size: 10px;
   line-height: 12px;
   color: var(--dvijok-text-secondary);
-}
-
-.tasks__emp {
-  font-weight: 400;
-  font-size: 12px;
-  line-height: 15px;
-  color: var(--dvijok-link-hover);
 }
 
 .tasks__pill {
@@ -377,8 +255,8 @@ onMounted(async () => {
 }
 
 .tasks__pill--new {
-  background-color: #b3c8ff;
-  color: #093095;
+  background-color: var(--dvijok-choice-active);
+  color: var(--dvijok-blue-primary);
 }
 
 .tasks__pill--hot {
@@ -388,27 +266,12 @@ onMounted(async () => {
 
 .tasks__pill--burned {
   background-color: #f0d5d5;
-  color: #b60000;
+  color: var(--dvijok-danger-strong);
 }
 
 .tasks__pill--done {
-  background-color: #d5f0e4;
-  color: #157848;
-}
-
-.tasks__empty {
-  padding: 20px 19px;
-  text-align: center;
-  font-size: 12px;
-  line-height: 15px;
-  color: var(--dvijok-text-secondary);
-}
-
-.tasks__footer {
-  margin-top: 40px;
-  display: flex;
-  justify-content: flex-start;
-  flex-shrink: 0;
+  background-color: var(--dvijok-success-bg);
+  color: var(--dvijok-success);
 }
 
 .tasks-filters {
