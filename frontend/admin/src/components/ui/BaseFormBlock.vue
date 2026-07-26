@@ -1,5 +1,13 @@
 <template>
-  <section class="base-form-block">
+  <section
+    :class="[
+      'base-form-block',
+      {
+        'base-form-block--horizontal': layout === 'horizontal',
+        'base-form-block--stack': stackFields
+      }
+    ]"
+  >
     <h2 v-if="title" class="base-form-block__title">{{ title }}</h2>
     <div class="base-form-block__fields">
       <slot />
@@ -12,6 +20,15 @@ defineProps({
   title: {
     type: String,
     default: ''
+  },
+  layout: {
+    type: String,
+    default: 'vertical',
+    validator: value => ['vertical', 'horizontal'].includes(value)
+  },
+  stackFields: {
+    type: Boolean,
+    default: false
   }
 })
 </script>
@@ -23,9 +40,13 @@ defineProps({
   gap: 15px;
 }
 
+.base-form-block--horizontal {
+  gap: 20px;
+}
+
 .base-form-block__title {
   margin: 0;
-  color: var(--dvijok-bg-dark);
+  color: var(--dvijok-form-block-title, var(--dvijok-bg-dark));
   font-size: 14px;
   font-weight: 700;
   line-height: 17px;
@@ -37,5 +58,19 @@ defineProps({
   display: flex;
   flex-direction: column;
   gap: 15px;
+}
+
+.base-form-block--horizontal .base-form-block__fields {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 15px;
+  row-gap: 10px;
+  align-items: center;
+}
+
+.base-form-block--horizontal.base-form-block--stack .base-form-block__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 </style>

@@ -156,19 +156,46 @@
         </div>
       </Transition>
     </Teleport>
+
+    <ServiceFormModal
+      v-model="formOpen"
+      :service="editingService"
+      :employees="employees"
+      :saving="formSaving"
+      @save="onSaveService"
+    />
+
+    <BaseModal v-model="deleteConfirmOpen">
+      <div class="services-confirm">
+        <h2 class="services-confirm__title">{{ deleteConfirmTitle }}</h2>
+        <div class="services-confirm__actions">
+          <BaseButton color="green" size="lg" @click="closeDeleteConfirm">Отмена</BaseButton>
+          <BaseButton color="red" size="lg" @click="confirmDelete">Удалить</BaseButton>
+        </div>
+      </div>
+    </BaseModal>
+
+    <BaseModal v-model="resultOpen">
+      <div class="services-result">
+        <h2 class="services-result__title">{{ resultMessage }}</h2>
+        <BaseButton color="blue1" size="lg" @click="resultOpen = false">Ок</BaseButton>
+      </div>
+    </BaseModal>
   </div>
 </template>
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import AdminHeader from '@/components/layout/AdminHeader.vue'
+import ServiceFormModal from '@/components/services/ServiceFormModal.vue'
 import AdminTable from '@/components/ui/AdminTable.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseChoice from '@/components/ui/BaseChoice.vue'
 import BaseCheckbox from '@/components/ui/BaseCheckbox.vue'
+import BaseModal from '@/components/ui/BaseModal.vue'
 import EyeIcon from '@/components/ui/EyeIcon.vue'
 import SummaryCards from '@/components/ui/SummaryCards.vue'
-import { servicesApi } from '@/api/index.js'
+import { servicesApi, tasksApi } from '@/api/index.js'
 import { pluralize } from '@/utils/pluralize.js'
 
 const action = { label: '+ Добавить услугу' }
@@ -189,10 +216,30 @@ const loading = ref(true)
 const search = ref('')
 const choice = ref('all')
 const services = ref([])
+const employees = ref([])
 const menuServiceId = ref(null)
 const menuStyle = ref({})
 const menuAbove = ref(false)
 const menuEl = ref(null)
+
+const formOpen = ref(false)
+const formSaving = ref(false)
+const editingService = ref(null)
+
+const deleteConfirmOpen = ref(false)
+const deleteMode = ref('single')
+const pendingDeleteId = ref(null)
+const pendingDeleteTitle = ref('')
+
+const resultOpen = ref(false)
+const resultMessage = ref('')
+
+const deleteConfirmTitle = computed(() => {
+  if (deleteMode.value === 'selected') {
+    return 'Удалить выбранные услуги?'
+  }
+  return `Удалить услугу "${pendingDeleteTitle.value}"?`
+})
 
 const choices = [
   { label: 'Категория', value: 'category' },
@@ -306,14 +353,47 @@ function ordersBarWidth(count) {
   return `${Math.round((count / maxOrders.value) * 100)}%`
 }
 
+function resolveMaster(masterId) {
+  if (!masterId || masterId === 'all') {
+    return { id: 'all', name: 'Все сотрудники', role: '' }
+  }
+  const employee = employees.value.find(item => item.id === masterId)
+  return employee
+    ? { id: employee.id, name: employee.name, role: employee.role }
+    : { id: masterId, name: String(masterId), role: '' }
+}
+
+function buildPriceNote(priceType, price) {
+  if (priceType === 'negotiable') return 'договорная'
+  if (priceType === 'range') return `от ${formatNumber(price)} ₽`
+  return 'фиксированная'
+}
+
+function toDurationHours(duration, unit) {
+  const value = Number(duration) || 0
+  if (unit === 'minutes') return Math.round((value / 60) * 100) / 100
+  return value
+}
+
 function onAction() {
-  // TODO: открыть форму добавления услуги
+  editingService.value = null
+  formOpen.value = true
 }
 
 function onDeleteSelected() {
   if (!hasSelected.value) return
-  services.value = services.value.filter(service => !service._selected)
+  deleteMode.value = 'selected'
+  pendingDeleteId.value = null
+  pendingDeleteTitle.value = ''
+  deleteConfirmOpen.value = true
   closeMenu()
+}
+
+function closeDeleteConfirm() {
+  deleteConfirmOpen.value = false
+  deleteMode.value = 'single'
+  pendingDeleteId.value = null
+  pendingDeleteTitle.value = ''
 }
 
 function closeMenu() {
@@ -338,7 +418,6 @@ function positionMenu(anchorRect) {
 
   top = Math.min(Math.max(top, pad), Math.max(pad, maxTop))
 
-  // Меню выравнивается по правому краю кнопки (translateX(-100%))
   let left = anchorRect.right
   left = Math.min(Math.max(left, pad + menuRect.width), window.innerWidth - pad)
 
@@ -356,7 +435,6 @@ async function toggleMenu(service, event) {
   }
   const rect = event.currentTarget.getBoundingClientRect()
   menuAbove.value = false
-  // Сначала меряем скрытым, чтобы не мигал неверный top
   menuStyle.value = {
     top: `${rect.bottom + 4}px`,
     left: `${rect.right}px`,
@@ -368,8 +446,11 @@ async function toggleMenu(service, event) {
 }
 
 function onEditService() {
+  const service = menuService.value
+  if (!service) return
+  editingService.value = { ...service }
+  formOpen.value = true
   closeMenu()
-  // TODO: открыть форму редактирования услуги
 }
 
 function onDuplicateService() {
@@ -398,8 +479,83 @@ function onToggleVisibility() {
 function onDeleteService() {
   const service = menuService.value
   if (!service) return
-  services.value = services.value.filter(item => item.id !== service.id)
+  deleteMode.value = 'single'
+  pendingDeleteId.value = service.id
+  pendingDeleteTitle.value = service.title
+  deleteConfirmOpen.value = true
   closeMenu()
+}
+
+function confirmDelete() {
+  if (deleteMode.value === 'selected') {
+    services.value = services.value.filter(service => !service._selected)
+    closeDeleteConfirm()
+    resultMessage.value = 'Выбранные услуги удалены!'
+    resultOpen.value = true
+    return
+  }
+
+  const id = pendingDeleteId.value
+  const title = pendingDeleteTitle.value
+  if (id == null) return
+  services.value = services.value.filter(item => item.id !== id)
+  closeDeleteConfirm()
+  resultMessage.value = `Услуга "${title}" удалена!`
+  resultOpen.value = true
+}
+
+async function onSaveService(draft) {
+  formSaving.value = true
+  try {
+    const master = resolveMaster(draft.masters[0])
+    const durationHours = toDurationHours(draft.duration, draft.durationUnit)
+    const priceNote = buildPriceNote(draft.priceType, draft.price)
+
+    if (editingService.value?.id) {
+      const target = services.value.find(item => item.id === editingService.value.id)
+      if (target) {
+        Object.assign(target, {
+          title: draft.title,
+          description: draft.description,
+          category: draft.category,
+          priceType: draft.priceType,
+          price: draft.price,
+          priceNote,
+          durationHours,
+          status: draft.status,
+          master,
+          masters: draft.masters.map(resolveMaster),
+          notes: draft.notes
+        })
+      }
+      resultMessage.value = `Услуга "${draft.title}" обновлена!`
+    } else {
+      const nextId = services.value.reduce((max, item) => Math.max(max, item.id), 0) + 1
+      services.value.unshift({
+        id: nextId,
+        title: draft.title,
+        description: draft.description,
+        category: draft.category,
+        priceType: draft.priceType,
+        price: draft.price,
+        priceNote,
+        durationHours,
+        ordersCount: 0,
+        status: draft.status,
+        master,
+        masters: draft.masters.map(resolveMaster),
+        notes: draft.notes,
+        _selected: false
+      })
+      resultMessage.value = `Услуга "${draft.title}" добавлена!`
+    }
+
+    formOpen.value = false
+    editingService.value = null
+    resultOpen.value = true
+  } finally {
+    formSaving.value = false
+  }
 }
 
 function onDocumentClick() {
@@ -419,12 +575,14 @@ onMounted(async () => {
   document.addEventListener('scroll', onDocumentScroll, true)
   document.addEventListener('keydown', onDocumentKeydown)
   try {
-    const [summaryData, servicesData] = await Promise.all([
+    const [summaryData, servicesData, employeesData] = await Promise.all([
       servicesApi.summary(),
-      servicesApi.list()
+      servicesApi.list(),
+      tasksApi.employees()
     ])
     summary.value = summaryData
     services.value = servicesData.map(service => ({ ...service, _selected: false }))
+    employees.value = employeesData
   } finally {
     loading.value = false
   }
@@ -667,5 +825,29 @@ onBeforeUnmount(() => {
   &::placeholder {
     color: var(--dvijok-bg-dark);
   }
+}
+
+.services-confirm,
+.services-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+}
+
+.services-confirm__title,
+.services-result__title {
+  margin: 0;
+  color: var(--dvijok-bg-dark);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 29px;
+  text-align: center;
+}
+
+.services-confirm__actions {
+  display: flex;
+  align-items: center;
+  gap: 90px;
 }
 </style>

@@ -14,7 +14,7 @@
 
         <div class="crm-filter">
           <span class="crm-filter__text">В работе</span>
-          <img src="/admin/icons/close-14.svg" alt="" class="crm-filter__icon" />
+          <CloseIcon :size="14" class="crm-filter__icon" />
         </div>
 
         <label class="crm-filter crm-filter--search">
@@ -64,6 +64,7 @@ import CrmDealsList from '@/components/crm/CrmDealsList.vue'
 import CrmKanbanBoard from '@/components/crm/CrmKanbanBoard.vue'
 import ArrowIcon from '@/components/ui/ArrowIcon.vue'
 import BaseChoice from '@/components/ui/BaseChoice.vue'
+import CloseIcon from '@/components/ui/CloseIcon.vue'
 import { crmApi } from '@/api/index.js'
 import { CRM_STATUS_LIST, filterCrmDeals } from '@/constants/crm.js'
 

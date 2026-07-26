@@ -1,5 +1,14 @@
 <template>
-  <div :class="['base-field', { 'base-field--block': block }]">
+  <div
+    :class="[
+      'base-field',
+      {
+        'base-field--block': block,
+        'base-field--horizontal': layout === 'horizontal',
+        'base-field--textarea': type === 'textarea'
+      }
+    ]"
+  >
     <label v-if="label" :for="fieldId" class="base-field__label">
       {{ label }}
     </label>
@@ -19,6 +28,7 @@
         :rules="rules"
         :mask="mask"
         :fill-mask="fillMask"
+        :autogrow="type === 'textarea' ? autogrow : false"
         @update:model-value="onUpdate"
       >
         <template v-if="$slots.prepend" #prepend>
@@ -58,6 +68,11 @@ defineProps({
     type: String,
     default: ''
   },
+  layout: {
+    type: String,
+    default: 'vertical',
+    validator: value => ['vertical', 'horizontal'].includes(value)
+  },
   disable: {
     type: Boolean,
     default: false
@@ -93,6 +108,10 @@ defineProps({
   fillMask: {
     type: [Boolean, String],
     default: false
+  },
+  autogrow: {
+    type: Boolean,
+    default: true
   }
 })
 
@@ -117,11 +136,33 @@ function onUpdate(value) {
   width: 100%;
 }
 
+.base-field--horizontal {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+}
+
+.base-field--horizontal.base-field--textarea {
+  align-items: start;
+}
+
 .base-field__label {
-  color: var(--dvijok-bg-dark);
+  color: var(--dvijok-form-label, var(--dvijok-text-secondary));
   font-size: 14px;
   line-height: 16px;
   text-align: left;
+  white-space: nowrap;
+}
+
+.base-field--horizontal .base-field__label {
+  grid-column: 1;
+}
+
+.base-field--horizontal .base-field__control {
+  grid-column: 2;
 }
 
 .base-field__control {
@@ -129,6 +170,7 @@ function onUpdate(value) {
   flex-direction: column;
   gap: 5px;
   width: 100%;
+  min-width: 0;
 }
 
 .base-field__input {

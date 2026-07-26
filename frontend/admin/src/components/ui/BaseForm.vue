@@ -1,21 +1,31 @@
 <template>
-  <div class="base-form">
+  <div :class="['base-form', { 'base-form--horizontal': layout === 'horizontal' }]">
     <div class="base-form__body" :style="bodyStyle">
       <div ref="scrollRef" class="base-form__scroll" :style="scrollStyle" @scroll="updateThumb">
         <BaseFormBlock
           v-for="(block, index) in blocks"
           :key="block.id ?? index"
           :title="block.title"
+          :layout="layout"
         >
           <div
             v-for="row in rowsOf(block.fields)"
             :key="row.id"
-            :class="['base-form__row', { 'base-form__row--inline': row.inline }]"
+            :class="[
+              'base-form__row',
+              {
+                'base-form__row--inline': row.inline,
+                'base-form__row--horizontal': layout === 'horizontal'
+              }
+            ]"
           >
             <div
               v-for="field in row.fields"
               :key="field.key"
-              class="base-form__field"
+              :class="[
+                'base-form__field',
+                { 'base-form__field--horizontal': layout === 'horizontal' }
+              ]"
               :data-field-key="field.key"
             >
               <BaseField
@@ -23,7 +33,8 @@
                 :model-value="modelValue[field.key]"
                 :label="field.label"
                 :placeholder="field.placeholder"
-                :type="field.type === 'password' && !visible[field.key] ? 'password' : 'text'"
+                :type="fieldType(field)"
+                :layout="layout"
                 :error="Boolean(errors[field.key])"
                 :error-message="errors[field.key]"
                 :disable="isDisabled(field)"
@@ -44,7 +55,13 @@
                 </template>
               </BaseField>
 
-              <div v-else-if="field.type === 'choice'" class="base-form__choice">
+              <div
+                v-else-if="field.type === 'choice'"
+                :class="[
+                  'base-form__choice',
+                  { 'base-form__choice--horizontal': layout === 'horizontal' }
+                ]"
+              >
                 <span v-if="field.label" class="base-form__label">{{ field.label }}</span>
                 <BaseChoice
                   :model-value="modelValue[field.key]"
@@ -52,6 +69,25 @@
                   :shape="field.shape"
                   :block="field.block !== false"
                   :disable="isDisabled(field)"
+                  @update:model-value="updateField(field, $event)"
+                />
+              </div>
+
+              <div
+                v-else-if="field.type === 'select'"
+                :class="[
+                  'base-form__select',
+                  { 'base-form__select--horizontal': layout === 'horizontal' }
+                ]"
+              >
+                <span v-if="field.label" class="base-form__label">{{ field.label }}</span>
+                <BaseSelect
+                  :model-value="modelValue[field.key]"
+                  :options="field.options"
+                  :placeholder="field.placeholder"
+                  :hide-chevron="field.hideChevron"
+                  :align="field.align"
+                  :block="field.block !== false"
                   @update:model-value="updateField(field, $event)"
                 />
               </div>
@@ -91,6 +127,7 @@ import BaseCheckbox from '@/components/ui/BaseCheckbox.vue'
 import BaseChoice from '@/components/ui/BaseChoice.vue'
 import BaseField from '@/components/ui/BaseField.vue'
 import BaseFormBlock from '@/components/ui/BaseFormBlock.vue'
+import BaseSelect from '@/components/ui/BaseSelect.vue'
 import EyeIcon from '@/components/ui/EyeIcon.vue'
 
 const props = defineProps({
@@ -109,6 +146,11 @@ const props = defineProps({
   disable: {
     type: Boolean,
     default: false
+  },
+  layout: {
+    type: String,
+    default: 'vertical',
+    validator: value => ['vertical', 'horizontal'].includes(value)
   },
   maxHeight: {
     type: [String, Number],
@@ -149,7 +191,23 @@ const allowScroll = computed(
 )
 
 function isText(field) {
-  return !field.type || field.type === 'text' || field.type === 'password'
+  return (
+    !field.type ||
+    field.type === 'text' ||
+    field.type === 'password' ||
+    field.type === 'textarea' ||
+    field.type === 'number'
+  )
+}
+
+function fieldType(field) {
+  if (field.type === 'password') {
+    return visible[field.key] ? 'text' : 'password'
+  }
+  if (field.type === 'textarea' || field.type === 'number') {
+    return field.type
+  }
+  return 'text'
 }
 
 function isDisabled(field) {
@@ -263,6 +321,11 @@ defineExpose({ focusField })
   overflow: hidden;
 }
 
+.base-form--horizontal {
+  --dvijok-form-block-title: var(--dvijok-white);
+  --dvijok-form-label: var(--dvijok-text-secondary);
+}
+
 .base-form__body {
   flex: 1;
   min-height: 0;
@@ -285,6 +348,10 @@ defineExpose({ focusField })
   &::-webkit-scrollbar {
     display: none;
   }
+}
+
+.base-form--horizontal .base-form__scroll {
+  gap: 30px;
 }
 
 .base-form__scrollbar {
@@ -329,11 +396,42 @@ defineExpose({ focusField })
   scroll-margin-bottom: 24px;
 }
 
-.base-form__choice {
+.base-form__row--horizontal {
+  display: contents;
+}
+
+.base-form__field--horizontal {
+  display: contents;
+}
+
+.base-form__choice,
+.base-form__select {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 10px;
+}
+
+.base-form__choice--horizontal,
+.base-form__select--horizontal {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+}
+
+.base-form__choice--horizontal .base-form__label,
+.base-form__select--horizontal .base-form__label {
+  grid-column: 1;
+}
+
+.base-form__choice--horizontal :deep(.base-choice),
+.base-form__select--horizontal :deep(.base-select) {
+  grid-column: 2;
+  min-width: 0;
+  width: 100%;
 }
 
 .base-form__empty {
@@ -342,10 +440,11 @@ defineExpose({ focusField })
 }
 
 .base-form__label {
-  color: var(--dvijok-bg-dark);
+  color: var(--dvijok-form-label, var(--dvijok-text-secondary));
   font-size: 14px;
   line-height: 16px;
   text-align: left;
+  white-space: nowrap;
 }
 
 .base-form__consent {

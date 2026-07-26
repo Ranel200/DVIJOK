@@ -14,6 +14,7 @@
     :dense="dense"
     :mask="mask"
     :fill-mask="fillMask"
+    :autogrow="autogrow"
     :outlined="false"
     :borderless="true"
     no-error-icon
@@ -86,6 +87,10 @@ defineProps({
   fillMask: {
     type: [Boolean, String],
     default: false
+  },
+  autogrow: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -141,6 +146,13 @@ function onUpdate(value) {
 
 .base-input--block {
   width: 100%;
+}
+
+.base-input {
+  :deep(textarea.q-field__native) {
+    min-height: 72px;
+    resize: vertical;
+  }
 }
 
 .base-input.q-field--focused {

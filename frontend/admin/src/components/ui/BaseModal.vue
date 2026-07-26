@@ -2,6 +2,7 @@
   <q-dialog
     v-model="modelValueProxy"
     class="base-modal"
+    :class="{ 'base-modal--panel': isPanel }"
     transition-show="fade"
     transition-hide="fade"
     no-shake
@@ -9,38 +10,69 @@
     @show="onShow"
     @hide="onHide"
   >
-    <div class="base-modal__shell" :class="{ 'base-modal__shell--short': size === 'short' }">
+    <div
+      class="base-modal__shell"
+      :class="{
+        'base-modal__shell--short': size === 'short',
+        'base-modal__shell--panel': isPanel
+      }"
+    >
       <div
         class="base-modal__card"
         :class="{
-          'base-modal__card--fit': fit && size !== 'short',
-          'base-modal__card--short': size === 'short'
+          'base-modal__card--fit': fit && !isPanel && size !== 'short',
+          'base-modal__card--short': size === 'short',
+          'base-modal__card--panel': isPanel
         }"
         :style="cardStyle"
         role="dialog"
         aria-modal="true"
       >
-        <button
-          v-if="!hideClose"
-          type="button"
-          class="base-modal__close"
-          aria-label="Закрыть"
-          @click="close"
-        >
-          <img src="/admin/icons/close-22.svg" alt="" width="22" height="22" />
-        </button>
-        <div
-          class="base-modal__content"
-          :class="{
-            'base-modal__content--fit': fit && size !== 'short',
-            'base-modal__content--short': size === 'short'
-          }"
-        >
-          <slot />
-        </div>
+        <template v-if="isPanel">
+          <div class="base-modal__panel-head">
+            <h2 v-if="title" class="base-modal__panel-title">{{ title }}</h2>
+            <button
+              v-if="!hideClose"
+              type="button"
+              class="base-modal__close base-modal__close--panel"
+              aria-label="Закрыть"
+              @click="close"
+            >
+              <CloseIcon :size="22" color="var(--dvijok-white)" />
+            </button>
+          </div>
+          <div class="base-modal__panel-divider" aria-hidden="true" />
+          <div class="base-modal__content base-modal__content--panel">
+            <slot />
+          </div>
+          <div v-if="$slots.actions" class="base-modal__panel-actions">
+            <slot name="actions" />
+          </div>
+        </template>
+
+        <template v-else>
+          <button
+            v-if="!hideClose"
+            type="button"
+            class="base-modal__close"
+            aria-label="Закрыть"
+            @click="close"
+          >
+            <CloseIcon :size="22" />
+          </button>
+          <div
+            class="base-modal__content"
+            :class="{
+              'base-modal__content--fit': fit && size !== 'short',
+              'base-modal__content--short': size === 'short'
+            }"
+          >
+            <slot />
+          </div>
+        </template>
       </div>
 
-      <div v-if="$slots.actions" class="base-modal__actions">
+      <div v-if="!isPanel && $slots.actions" class="base-modal__actions">
         <slot name="actions" />
       </div>
     </div>
@@ -49,6 +81,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import CloseIcon from '@/components/ui/CloseIcon.vue'
 
 const props = defineProps({
   modelValue: {
@@ -67,10 +100,14 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  title: {
+    type: String,
+    default: ''
+  },
   size: {
     type: String,
     default: 'default',
-    validator: value => ['default', 'short'].includes(value)
+    validator: value => ['default', 'short', 'panel'].includes(value)
   },
   padding: {
     type: String,
@@ -80,12 +117,17 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'close', 'show'])
 
+const isPanel = computed(() => props.size === 'panel')
+
 const modelValueProxy = computed({
   get: () => props.modelValue,
   set: value => emit('update:modelValue', value)
 })
 
 const cardStyle = computed(() => {
+  if (isPanel.value) {
+    return { padding: props.padding || '20px' }
+  }
   const padding = props.padding || (props.size === 'short' ? '25px 15px' : '20px')
   return { padding }
 })
@@ -119,6 +161,11 @@ function onHide() {
   --q-transition-duration: 40ms;
 }
 
+.base-modal--panel .q-dialog__inner {
+  padding: 40px;
+  height: 100%;
+}
+
 .base-modal .base-modal__card,
 .base-modal .base-modal__content,
 .base-modal .base-modal__shell {
@@ -147,6 +194,13 @@ function onHide() {
 .base-modal__shell--short {
   width: 480px;
   height: 100%;
+}
+
+.base-modal__shell--panel {
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  gap: 0;
 }
 
 .base-modal__card {
@@ -183,6 +237,50 @@ function onHide() {
   overflow: visible;
 }
 
+.base-modal__card--panel {
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 20px;
+  background: var(--dvijok-modal-panel);
+  overflow: hidden;
+}
+
+.base-modal__panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.base-modal__panel-title {
+  margin: 0;
+  color: var(--dvijok-white);
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 24px;
+}
+
+.base-modal__panel-divider {
+  flex-shrink: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--dvijok-blue-primary);
+}
+
+.base-modal__panel-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 20px;
+  flex-shrink: 0;
+  width: 100%;
+}
+
 .base-modal__close {
   position: absolute;
   top: 20px;
@@ -206,6 +304,11 @@ function onHide() {
     outline-offset: 2px;
     border-radius: 4px;
   }
+}
+
+.base-modal__close--panel {
+  position: static;
+  flex-shrink: 0;
 }
 
 .base-modal__content {
@@ -232,6 +335,15 @@ function onHide() {
   align-items: stretch;
   justify-content: flex-start;
   overflow: visible;
+}
+
+.base-modal__content--panel {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+  align-items: stretch;
+  justify-content: flex-start;
+  overflow: hidden;
 }
 
 .base-modal__actions {

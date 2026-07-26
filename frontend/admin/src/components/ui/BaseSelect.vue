@@ -1,7 +1,15 @@
 <template>
   <div
     ref="rootRef"
-    :class="['base-select', { 'base-select--open': listVisible, 'base-select--block': block }]"
+    :class="[
+      'base-select',
+      {
+        'base-select--open': listVisible,
+        'base-select--block': block,
+        'base-select--center': align === 'center',
+        'base-select--no-chevron': hideChevron
+      }
+    ]"
   >
     <button
       ref="triggerRef"
@@ -11,29 +19,31 @@
       @click="toggle"
     >
       <span class="base-select__value">{{ currentLabel }}</span>
-      <ChevronIcon :direction="open ? 'up' : 'down'" />
+      <ChevronIcon v-if="!hideChevron" :direction="open ? 'up' : 'down'" />
     </button>
 
-    <Transition name="base-select-list" @after-leave="listVisible = false">
-      <ul v-if="open" class="base-select__list">
-        <li
-          v-for="option in options"
-          :key="option.value"
-          :class="[
-            'base-select__option',
-            { 'base-select__option--active': isActive(option.value) }
-          ]"
-          @click="select(option.value)"
-        >
-          {{ option.label }}
-        </li>
-      </ul>
-    </Transition>
+    <Teleport to="body">
+      <Transition name="base-select-list" @after-leave="listVisible = false">
+        <ul v-if="open" ref="listRef" class="base-select__list" :style="listStyle" @click.stop>
+          <li
+            v-for="option in options"
+            :key="option.value"
+            :class="[
+              'base-select__option',
+              { 'base-select__option--active': isActive(option.value) }
+            ]"
+            @click="select(option.value)"
+          >
+            {{ option.label }}
+          </li>
+        </ul>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import ChevronIcon from '@/components/ui/ChevronIcon.vue'
 
 const props = defineProps({
@@ -52,14 +62,26 @@ const props = defineProps({
   block: {
     type: Boolean,
     default: false
+  },
+  hideChevron: {
+    type: Boolean,
+    default: false
+  },
+  align: {
+    type: String,
+    default: 'left',
+    validator: value => ['left', 'center'].includes(value)
   }
 })
 
 const emit = defineEmits(['update:modelValue'])
 
 const rootRef = ref(null)
+const triggerRef = ref(null)
+const listRef = ref(null)
 const open = ref(false)
 const listVisible = ref(false)
+const listStyle = ref({})
 
 const currentLabel = computed(() => {
   const active = props.options.find(o => o.value === props.modelValue)
@@ -82,19 +104,48 @@ function select(value) {
   open.value = false
 }
 
-function onDocumentClick(e) {
-  if (!open.value || !rootRef.value) return
-  if (!rootRef.value.contains(e.target)) {
-    open.value = false
+function updateListPosition() {
+  const trigger = triggerRef.value
+  if (!trigger || !open.value) return
+
+  const rect = trigger.getBoundingClientRect()
+  listStyle.value = {
+    position: 'fixed',
+    top: `${rect.bottom - 1}px`,
+    left: `${rect.left}px`,
+    width: `${rect.width}px`,
+    zIndex: 7000
   }
 }
 
+function onDocumentClick(e) {
+  if (!open.value) return
+  const root = rootRef.value
+  const list = listRef.value
+  if (root?.contains(e.target) || list?.contains(e.target)) return
+  open.value = false
+}
+
+function onReposition() {
+  if (open.value) updateListPosition()
+}
+
+watch(open, async value => {
+  if (!value) return
+  await nextTick()
+  updateListPosition()
+})
+
 onMounted(() => {
   document.addEventListener('click', onDocumentClick)
+  window.addEventListener('resize', onReposition)
+  window.addEventListener('scroll', onReposition, true)
 })
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', onDocumentClick)
+  window.removeEventListener('resize', onReposition)
+  window.removeEventListener('scroll', onReposition, true)
 })
 </script>
 
@@ -106,6 +157,7 @@ onBeforeUnmount(() => {
 
 .base-select--block {
   display: block;
+  width: 100%;
 }
 
 .base-select__trigger {
@@ -129,18 +181,29 @@ onBeforeUnmount(() => {
     border-bottom-right-radius 0.18s ease;
 }
 
+.base-select--center .base-select__trigger {
+  justify-content: center;
+  text-align: center;
+}
+
+.base-select--no-chevron .base-select__value {
+  width: 100%;
+}
+
 .base-select--open .base-select__trigger {
   border-bottom-color: transparent;
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
 }
 
+.base-select__value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .base-select__list {
-  position: absolute;
-  top: calc(100% - 1px);
-  left: 0;
-  right: 0;
-  z-index: 10;
   list-style: none;
   margin: 0;
   padding: 10px 0 0;
@@ -151,6 +214,7 @@ onBeforeUnmount(() => {
   border-top: none;
   border-radius: 0 0 8px 8px;
   background-color: var(--dvijok-white);
+  box-sizing: border-box;
 }
 
 .base-select__option {
