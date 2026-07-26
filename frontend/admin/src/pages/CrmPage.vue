@@ -7,12 +7,12 @@
       @action-click="onAction"
     >
       <template #title-trailing>
-        <div v-show="activeTab === 'kanban'" class="crm-filter">
+        <div class="crm-filter">
           <span class="crm-filter__text">Все заказы</span>
           <ArrowIcon direction="down" :size="14" class="crm-filter__arrow" />
         </div>
 
-        <div v-show="activeTab === 'kanban'" class="crm-filter">
+        <div class="crm-filter">
           <span class="crm-filter__text">В работе</span>
           <img src="/admin/icons/close-14.svg" alt="" class="crm-filter__icon" />
         </div>

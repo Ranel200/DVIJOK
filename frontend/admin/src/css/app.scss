@@ -1,6 +1,22 @@
 // app global css
 @use 'colors.scss';
 
+html {
+  zoom: 1;
+
+  @media (min-width: 2200px) {
+    zoom: 1.25;
+  }
+
+  @media (min-width: 2560px) {
+    zoom: 1.35;
+  }
+
+  @media (min-width: 3000px) {
+    zoom: 1.5;
+  }
+}
+
 body {
   font-family:
     'Inter',
