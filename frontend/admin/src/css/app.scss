@@ -17,6 +17,13 @@ html {
   }
 }
 
+@media (min-width: 2200px) {
+  .sortable-fallback {
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+}
+
 body {
   font-family:
     'Inter',
