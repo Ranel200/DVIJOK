@@ -178,7 +178,7 @@ const menuItems = [
 ]
 
 const scheduleFilter = useScheduleFilterStore()
-const { currentDate } = storeToRefs(scheduleFilter)
+const { monthDate } = storeToRefs(scheduleFilter)
 
 const panelRef = ref(null)
 const employees = ref([])
@@ -191,8 +191,8 @@ const deleting = ref(false)
 const today = new Date()
 
 const monthMeta = computed(() => ({
-  year: currentDate.value.getFullYear(),
-  month: currentDate.value.getMonth()
+  year: monthDate.value.getFullYear(),
+  month: monthDate.value.getMonth()
 }))
 
 const isCurrentMonth = computed(
@@ -293,6 +293,8 @@ watch(
     if (value) await scrollToToday()
   }
 )
+
+defineExpose({ reload: loadEmployees })
 </script>
 
 <style scoped lang="scss">
@@ -632,14 +634,14 @@ watch(
 
 .schedule-staff__shift--inactive {
   background-color: var(--dvijok-white);
-  border-color: var(--dvijok-weekend-muted);
+  border-color: var(--dvijok-text-secondary);
 }
 
 .schedule-staff__shift-dash {
   display: block;
   width: 15px;
   height: 1px;
-  background-color: var(--dvijok-weekend-muted);
+  background-color: var(--dvijok-text-secondary);
 }
 
 .schedule-staff__footer {

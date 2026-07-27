@@ -215,6 +215,7 @@ onBeforeUnmount(() => {
   border-radius: 0 0 8px 8px;
   background-color: var(--dvijok-white);
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .base-select__option {

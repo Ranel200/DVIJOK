@@ -3,6 +3,7 @@
 
 import { http, USE_MOCK } from '@dvijok/shared/api/http.js'
 import { mockOk, mockReject } from '@dvijok/shared/api/mock.js'
+import { startOfWeek } from '@/utils/formatDateRu.js'
 
 const mockUsers = [
   {
@@ -321,10 +322,160 @@ function buildStaffMonthDays(staff, year, month) {
   }
 }
 
+const MOCK_BOOKINGS = [
+  {
+    brand: 'TOYOTA',
+    plate: 'А 123 ВС 116',
+    clientName: 'Иванов Пётр',
+    serviceName: 'Замена масла'
+  },
+  { brand: 'BMW', plate: 'К 456 МН 116', clientName: 'Сидоров Олег', serviceName: 'Диагностика' },
+  {
+    brand: 'KIA',
+    plate: 'Е 789 ОР 116',
+    clientName: 'Кузнецова Анна',
+    serviceName: 'Шиномонтаж'
+  },
+  {
+    brand: 'HYUNDAI',
+    plate: 'М 012 СТ 116',
+    clientName: 'Петрова Мария',
+    serviceName: 'ТО-2'
+  },
+  {
+    brand: 'LADA',
+    plate: 'Х 000 ХХ 116',
+    clientName: 'Новиков Павел',
+    serviceName: 'Ремонт ходовой'
+  },
+  {
+    brand: 'AUDI',
+    plate: 'В 321 УК 116',
+    clientName: 'Морозов Игорь',
+    serviceName: 'Покраска'
+  }
+]
+
+function formatHourLabel(hour) {
+  return `${String(hour).padStart(2, '0')}:00`
+}
+
+function buildCalendarWeek(weekStartIso) {
+  const start = new Date(`${weekStartIso}T00:00:00`)
+  const masters = mockEmployees.filter(item => item.role === 'Мастер').slice(0, 5)
+
+  let minHour = 24
+  let maxHour = 0
+  for (const staff of masters) {
+    minHour = Math.min(minHour, Math.floor(parseTimeToHours(staff.start)))
+    maxHour = Math.max(maxHour, Math.ceil(parseTimeToHours(staff.end)))
+  }
+  if (minHour >= maxHour) {
+    minHour = 9
+    maxHour = 18
+  }
+
+  const times = []
+  for (let hour = minHour; hour < maxHour; hour++) {
+    times.push(formatHourLabel(hour))
+  }
+
+  const weekDates = Array.from({ length: 7 }, (_, offset) => {
+    const date = new Date(start)
+    date.setDate(start.getDate() + offset)
+    return {
+      offset,
+      weekday: date.getDay(),
+      dateKey: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+    }
+  })
+
+  const daySlots = weekDates.map(() => Object.fromEntries(times.map(time => [time, []])))
+
+  for (const time of times) {
+    const hour = parseTimeToHours(time)
+    // 1–3 сотрудника на слот, не все сразу
+    const count = 1 + (hour % 3)
+    const shift = hour % masters.length
+    const selected = Array.from(
+      { length: count },
+      (_, i) => masters[(shift + i * 2) % masters.length]
+    )
+
+    for (const staff of selected) {
+      const blocksByDay = weekDates.map(({ offset, weekday, dateKey }) => {
+        const worksDay = staff.workDays.includes(weekday)
+        const inHours = hour >= parseTimeToHours(staff.start) && hour < parseTimeToHours(staff.end)
+
+        if (!worksDay || !inHours) {
+          return {
+            id: `${staff.id}-${dateKey}-${time}-lock`,
+            employeeId: staff.id,
+            employeeName: staff.name,
+            color: staff.avatarBg,
+            status: 'unavailable'
+          }
+        }
+
+        const seed = staff.id * 31 + offset * 17 + hour * 13
+        const kind = seed % 4
+        if (kind === 0) {
+          return {
+            id: `${staff.id}-${dateKey}-${time}-free`,
+            employeeId: staff.id,
+            employeeName: staff.name,
+            color: staff.avatarBg,
+            status: 'available'
+          }
+        }
+
+        const booking = MOCK_BOOKINGS[seed % MOCK_BOOKINGS.length]
+        return {
+          id: `${staff.id}-${dateKey}-${time}-busy`,
+          employeeId: staff.id,
+          employeeName: staff.name,
+          color: staff.avatarBg,
+          status: 'busy',
+          brand: booking.brand,
+          plate: booking.plate,
+          clientName: booking.clientName,
+          serviceName: booking.serviceName
+        }
+      })
+
+      // ряд только если есть хотя бы один доступный/занятый день
+      if (blocksByDay.every(block => block.status === 'unavailable')) continue
+
+      blocksByDay.forEach((block, dayIndex) => {
+        daySlots[dayIndex][time].push(block)
+      })
+    }
+  }
+
+  return {
+    times,
+    days: weekDates.map((day, index) => ({
+      date: day.dateKey,
+      slots: daySlots[index]
+    }))
+  }
+}
+
 export const scheduleApi = {
   async list(params) {
     if (USE_MOCK) return mockOk([])
     return http.get('/schedule', { params })
+  },
+
+  async calendar(params = {}) {
+    if (USE_MOCK) {
+      const monday = startOfWeek(new Date())
+      const weekStart =
+        params.weekStart ||
+        `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`
+      return mockOk(buildCalendarWeek(weekStart))
+    }
+    return http.get('/schedule/calendar', { params })
   },
 
   async employees(params = {}) {
@@ -345,6 +496,25 @@ export const scheduleApi = {
       return mockOk(null)
     }
     return http.delete(`/schedule/employees/${id}`)
+  },
+
+  async saveSettings(payload) {
+    if (USE_MOCK) {
+      const targets =
+        payload.employeeId === 'all'
+          ? mockEmployees
+          : mockEmployees.filter(item => item.id === payload.employeeId)
+      for (const staff of targets) {
+        staff.workDays = [...(payload.workDays || [])]
+        staff.start = payload.start || staff.start
+        staff.end = payload.end || staff.end
+        staff.breaks = Array.isArray(payload.breaks)
+          ? payload.breaks.map(item => ({ start: item.start, end: item.end }))
+          : []
+      }
+      return mockOk(null)
+    }
+    return http.put('/schedule/settings', payload)
   }
 }
 

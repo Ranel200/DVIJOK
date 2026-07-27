@@ -14,15 +14,20 @@
             size="lg"
             :icon-spacing="10"
             class="schedule-nav__btn schedule-nav__btn--prev"
-            @click="scheduleFilter.prevMonth()"
+            @click="onPrev"
           >
             <template #prepend>
               <ArrowIcon direction="left" />
             </template>
-            Пред. Месяц
+            {{ isCalendar ? 'Пред. Неделя' : 'Пред. Месяц' }}
           </BaseButton>
 
-          <div class="schedule-nav__month-field">{{ scheduleFilter.monthLabel }}</div>
+          <div
+            class="schedule-nav__period-field"
+            :class="{ 'schedule-nav__period-field--week': isCalendar }"
+          >
+            {{ periodLabel }}
+          </div>
 
           <BaseButton
             color="blue1"
@@ -30,9 +35,9 @@
             size="lg"
             :icon-spacing="10"
             class="schedule-nav__btn schedule-nav__btn--next"
-            @click="scheduleFilter.nextMonth()"
+            @click="onNext"
           >
-            След. Месяц
+            {{ isCalendar ? 'След. Неделя' : 'След. Месяц' }}
             <template #append>
               <ArrowIcon direction="right" />
             </template>
@@ -52,17 +57,42 @@
     </AdminHeader>
 
     <div class="schedule">
-      <ScheduleStaffTable v-show="activeTab === 'staff'" :visible="activeTab === 'staff'" />
+      <ScheduleCalendarTable
+        ref="calendarTableRef"
+        v-show="activeTab === 'calendar'"
+      />
+      <ScheduleStaffTable
+        ref="staffTableRef"
+        v-show="activeTab === 'staff'"
+        :visible="activeTab === 'staff'"
+      />
     </div>
+
+    <ScheduleSettingsModal
+      v-model="settingsOpen"
+      :employees="settingsEmployees"
+      @saved="onSettingsSaved"
+    />
+
+    <BaseModal v-model="savedOpen">
+      <div class="schedule-saved">
+        <h2 class="schedule-saved__title">График сохранен!</h2>
+        <BaseButton color="blue1" size="lg" @click="savedOpen = false">Ок</BaseButton>
+      </div>
+    </BaseModal>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import AdminHeader from '@/components/layout/AdminHeader.vue'
+import ScheduleCalendarTable from '@/components/schedule/ScheduleCalendarTable.vue'
+import ScheduleSettingsModal from '@/components/schedule/ScheduleSettingsModal.vue'
 import ScheduleStaffTable from '@/components/schedule/ScheduleStaffTable.vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
 import ArrowIcon from '@/components/ui/ArrowIcon.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import BaseModal from '@/components/ui/BaseModal.vue'
+import { scheduleApi } from '@/api/index.js'
 import { useScheduleFilterStore } from '@/stores/scheduleFilter.js'
 
 const scheduleFilter = useScheduleFilterStore()
@@ -73,10 +103,16 @@ const tabs = [
 ]
 const activeTab = ref('calendar')
 
+const isCalendar = computed(() => activeTab.value === 'calendar')
+
 const CALENDAR_ACTION = { label: '+ Новый заказ' }
 const STAFF_ACTION = { label: 'Настройки графика' }
 
-const action = computed(() => (activeTab.value === 'staff' ? STAFF_ACTION : CALENDAR_ACTION))
+const action = computed(() => (isCalendar.value ? CALENDAR_ACTION : STAFF_ACTION))
+
+const periodLabel = computed(() =>
+  isCalendar.value ? scheduleFilter.weekLabel : scheduleFilter.monthLabel
+)
 
 const CALENDAR_LEGEND = [
   { label: 'Сегодня', bg: 'var(--dvijok-choice-active)', border: 'var(--dvijok-today)' }
@@ -87,13 +123,51 @@ const STAFF_LEGEND = [
   {
     label: 'Выходной день',
     bg: 'var(--dvijok-white)',
-    border: 'var(--dvijok-weekend-muted)'
+    border: 'var(--dvijok-text-secondary)'
   }
 ]
 
-const legendItems = computed(() => (activeTab.value === 'staff' ? STAFF_LEGEND : CALENDAR_LEGEND))
+const legendItems = computed(() => (isCalendar.value ? CALENDAR_LEGEND : STAFF_LEGEND))
 
-function onAction() {}
+const settingsOpen = ref(false)
+const savedOpen = ref(false)
+const settingsEmployees = ref([])
+const staffTableRef = ref(null)
+const calendarTableRef = ref(null)
+
+watch(settingsOpen, async open => {
+  if (!open) return
+  const data = await scheduleApi.employees({
+    year: scheduleFilter.monthDate.getFullYear(),
+    month: scheduleFilter.monthDate.getMonth()
+  })
+  settingsEmployees.value = data.map(item => ({
+    id: item.id,
+    name: item.name,
+    role: item.role
+  }))
+})
+
+function onPrev() {
+  if (isCalendar.value) scheduleFilter.prevWeek()
+  else scheduleFilter.prevMonth()
+}
+
+function onNext() {
+  if (isCalendar.value) scheduleFilter.nextWeek()
+  else scheduleFilter.nextMonth()
+}
+
+function onAction() {
+  if (!isCalendar.value) {
+    settingsOpen.value = true
+  }
+}
+
+async function onSettingsSaved() {
+  await Promise.all([staffTableRef.value?.reload?.(), calendarTableRef.value?.reload?.()])
+  savedOpen.value = true
+}
 
 onMounted(() => scheduleFilter.resetToCurrent())
 </script>
@@ -117,7 +191,7 @@ onMounted(() => scheduleFilter.resetToCurrent())
 }
 
 .schedule-nav__btn,
-.schedule-nav__month-field {
+.schedule-nav__period-field {
   flex-shrink: 0;
 }
 
@@ -125,7 +199,7 @@ onMounted(() => scheduleFilter.resetToCurrent())
   margin-right: auto;
 }
 
-.schedule-nav__month-field {
+.schedule-nav__period-field {
   display: flex;
   align-items: center;
   padding: 15px 15px;
@@ -140,6 +214,13 @@ onMounted(() => scheduleFilter.resetToCurrent())
   line-height: 17px;
   text-align: left;
   justify-content: flex-start;
+  box-sizing: border-box;
+}
+
+.schedule-nav__period-field--week {
+  width: auto;
+  min-width: 196px;
+  white-space: nowrap;
 }
 
 .schedule-legend {
@@ -172,5 +253,21 @@ onMounted(() => scheduleFilter.resetToCurrent())
   flex-direction: column;
   flex: 1;
   min-height: 0;
+}
+
+.schedule-saved {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+}
+
+.schedule-saved__title {
+  margin: 0;
+  color: var(--dvijok-bg-dark);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 29px;
+  text-align: center;
 }
 </style>

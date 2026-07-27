@@ -51,3 +51,35 @@ export function formatDateTime(iso) {
   const minutes = String(d.getMinutes()).padStart(2, '0')
   return `${date}, ${hours}:${minutes}`
 }
+
+export function startOfWeek(date) {
+  const d = new Date(date)
+  d.setHours(0, 0, 0, 0)
+  const day = d.getDay()
+  const diff = day === 0 ? -6 : 1 - day
+  d.setDate(d.getDate() + diff)
+  return d
+}
+
+export function formatWeekRange(date) {
+  const start = startOfWeek(date)
+  const end = new Date(start)
+  end.setDate(end.getDate() + 6)
+
+  const sameMonth = start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()
+  if (sameMonth) {
+    return `${start.getDate()} — ${end.getDate()} ${MONTHS_GENITIVE[start.getMonth()]} ${start.getFullYear()}`
+  }
+
+  if (start.getFullYear() === end.getFullYear()) {
+    return `${start.getDate()} ${MONTHS_GENITIVE[start.getMonth()]} — ${end.getDate()} ${MONTHS_GENITIVE[end.getMonth()]} ${start.getFullYear()}`
+  }
+
+  return `${start.getDate()} ${MONTHS_GENITIVE[start.getMonth()]} ${start.getFullYear()} — ${end.getDate()} ${MONTHS_GENITIVE[end.getMonth()]} ${end.getFullYear()}`
+}
+
+export function formatWeekdayDay(date) {
+  const WEEKDAY_SHORT = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб']
+  const d = date instanceof Date ? date : new Date(date)
+  return `${WEEKDAY_SHORT[d.getDay()]}, ${d.getDate()} ${MONTHS_GENITIVE[d.getMonth()]}`
+}

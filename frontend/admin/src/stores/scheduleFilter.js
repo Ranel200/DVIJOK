@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { formatWeekRange, startOfWeek } from '@/utils/formatDateRu.js'
 
 const MONTH_LABELS = [
   'Январь',
@@ -17,27 +18,57 @@ const MONTH_LABELS = [
 ]
 
 export const useScheduleFilterStore = defineStore('scheduleFilter', () => {
-  const currentDate = ref(new Date())
+  const monthDate = ref(new Date())
+  const weekDate = ref(new Date())
 
   const monthLabel = computed(
-    () => `${MONTH_LABELS[currentDate.value.getMonth()]} ${currentDate.value.getFullYear()}`
+    () => `${MONTH_LABELS[monthDate.value.getMonth()]} ${monthDate.value.getFullYear()}`
   )
 
+  const weekLabel = computed(() => formatWeekRange(weekDate.value))
+
+  const weekStart = computed(() => startOfWeek(weekDate.value))
+
   function prevMonth() {
-    const d = new Date(currentDate.value)
+    const d = new Date(monthDate.value)
     d.setMonth(d.getMonth() - 1)
-    currentDate.value = d
+    monthDate.value = d
   }
 
   function nextMonth() {
-    const d = new Date(currentDate.value)
+    const d = new Date(monthDate.value)
     d.setMonth(d.getMonth() + 1)
-    currentDate.value = d
+    monthDate.value = d
+  }
+
+  function prevWeek() {
+    const d = new Date(weekDate.value)
+    d.setDate(d.getDate() - 7)
+    weekDate.value = d
+  }
+
+  function nextWeek() {
+    const d = new Date(weekDate.value)
+    d.setDate(d.getDate() + 7)
+    weekDate.value = d
   }
 
   function resetToCurrent() {
-    currentDate.value = new Date()
+    const now = new Date()
+    monthDate.value = now
+    weekDate.value = new Date(now)
   }
 
-  return { currentDate, monthLabel, prevMonth, nextMonth, resetToCurrent }
+  return {
+    monthDate,
+    weekDate,
+    monthLabel,
+    weekLabel,
+    weekStart,
+    prevMonth,
+    nextMonth,
+    prevWeek,
+    nextWeek,
+    resetToCurrent
+  }
 })
