@@ -131,10 +131,220 @@ export const authApi = {
   }
 }
 
+const mockEmployees = [
+  {
+    id: 1,
+    name: 'Михайлов Артем Сергеевич',
+    role: 'Владелец',
+    avatarBg: '#5C6BC0',
+    workDays: [1, 2, 3, 4, 5],
+    start: '09:00',
+    end: '18:00'
+  },
+  {
+    id: 2,
+    name: 'Петров Иван Сергеевич',
+    role: 'Мастер',
+    avatarBg: '#43A047',
+    workDays: [1, 2, 3, 4, 5],
+    start: '09:00',
+    end: '18:00'
+  },
+  {
+    id: 3,
+    name: 'Сидоров Алексей Николаевич',
+    role: 'Менеджер',
+    avatarBg: '#FB8C00',
+    workDays: [1, 2, 3, 4, 5, 6],
+    start: '10:00',
+    end: '19:00'
+  },
+  {
+    id: 4,
+    name: 'Кузнецова Мария Андреевна',
+    role: 'Мастер',
+    avatarBg: '#EC407A',
+    workDays: [2, 3, 4, 5, 6],
+    start: '11:00',
+    end: '20:00'
+  },
+  {
+    id: 5,
+    name: 'Смирнов Дмитрий Олегович',
+    role: 'Администратор',
+    avatarBg: '#039BE5',
+    workDays: [1, 2, 3, 4, 5],
+    start: '08:00',
+    end: '17:00'
+  },
+  {
+    id: 6,
+    name: 'Кузнецов Вячеслав Сергеевич',
+    role: 'Мастер',
+    avatarBg: '#5C6BC0',
+    workDays: [1, 2, 3, 4, 5],
+    start: '10:00',
+    end: '20:00'
+  },
+  {
+    id: 7,
+    name: 'Васильева Анна Игоревна',
+    role: 'Мастер',
+    avatarBg: '#8E24AA',
+    workDays: [1, 2, 3, 4, 5],
+    start: '10:00',
+    end: '19:00'
+  },
+  {
+    id: 8,
+    name: 'Новиков Павел Викторович',
+    role: 'Мастер',
+    avatarBg: '#00897B',
+    workDays: [1, 3, 5],
+    start: '12:00',
+    end: '21:00'
+  },
+  {
+    id: 9,
+    name: 'Морозова Елена Сергеевна',
+    role: 'Менеджер',
+    avatarBg: '#F4511E',
+    workDays: [1, 2, 3, 4, 5],
+    start: '09:00',
+    end: '18:00'
+  },
+  {
+    id: 10,
+    name: 'Волков Андрей Петрович',
+    role: 'Мастер',
+    avatarBg: '#3949AB',
+    workDays: [2, 3, 4, 5, 6],
+    start: '10:00',
+    end: '20:00'
+  },
+  {
+    id: 11,
+    name: 'Соколова Ирина Алексеевна',
+    role: 'Администратор',
+    avatarBg: '#7B1FA2',
+    workDays: [1, 2, 3, 4, 5, 6],
+    start: '08:00',
+    end: '16:00'
+  },
+  {
+    id: 12,
+    name: 'Лебедев Никита Романович',
+    role: 'Мастер',
+    avatarBg: '#2E7D32',
+    workDays: [1, 2, 4, 5],
+    start: '11:00',
+    end: '20:00'
+  },
+  {
+    id: 13,
+    name: 'Козлова Татьяна Владимировна',
+    role: 'Мастер',
+    avatarBg: '#C62828',
+    workDays: [1, 2, 3, 4, 5],
+    start: '09:00',
+    end: '17:00'
+  },
+  {
+    id: 14,
+    name: 'Орлов Максим Денисович',
+    role: 'Менеджер',
+    avatarBg: '#0277BD',
+    workDays: [1, 2, 3, 4, 5],
+    start: '10:00',
+    end: '19:00'
+  },
+  {
+    id: 15,
+    name: 'Павлова Ольга Николаевна',
+    role: 'Мастер',
+    avatarBg: '#6A1B9A',
+    workDays: [3, 4, 5, 6, 0],
+    start: '12:00',
+    end: '21:00'
+  },
+  {
+    id: 16,
+    name: 'Григорьев Сергей Иванович',
+    role: 'Мастер',
+    avatarBg: '#00695C',
+    workDays: [1, 2, 3, 4, 5],
+    start: '08:00',
+    end: '17:00'
+  }
+]
+
+function mockEmployeeBrief(id) {
+  const employee = mockEmployees.find(item => item.id === id)
+  if (!employee) return null
+  return { id: employee.id, name: employee.name, role: employee.role }
+}
+
+function parseTimeToHours(value) {
+  const [h, m] = String(value || '0:0')
+    .split(':')
+    .map(Number)
+  return (h || 0) + (m || 0) / 60
+}
+
+function buildStaffMonthDays(staff, year, month) {
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const days = []
+  let totalDays = 0
+  let totalHours = 0
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const weekday = new Date(year, month, day).getDay()
+    const active = staff.workDays.includes(weekday)
+    if (active) {
+      const hours = parseTimeToHours(staff.end) - parseTimeToHours(staff.start)
+      totalDays += 1
+      totalHours += hours
+      days.push({ day, active: true, start: staff.start, end: staff.end })
+    } else {
+      days.push({ day, active: false, start: null, end: null })
+    }
+  }
+
+  return {
+    id: staff.id,
+    name: staff.name,
+    role: staff.role,
+    avatarBg: staff.avatarBg,
+    totalDays,
+    totalHours: Math.round(totalHours),
+    days
+  }
+}
+
 export const scheduleApi = {
   async list(params) {
     if (USE_MOCK) return mockOk([])
     return http.get('/schedule', { params })
+  },
+
+  async employees(params = {}) {
+    if (USE_MOCK) {
+      const now = new Date()
+      const year = params.year ?? now.getFullYear()
+      const month = params.month ?? now.getMonth()
+      return mockOk(mockEmployees.map(staff => buildStaffMonthDays(staff, year, month)))
+    }
+    return http.get('/schedule/employees', { params })
+  },
+
+  async removeEmployee(id) {
+    if (USE_MOCK) {
+      const index = mockEmployees.findIndex(item => item.id === id)
+      if (index === -1) return mockReject(404, { message: 'Сотрудник не найден' })
+      mockEmployees.splice(index, 1)
+      return mockOk(null)
+    }
+    return http.delete(`/schedule/employees/${id}`)
   }
 }
 
@@ -592,7 +802,7 @@ const mockServices = [
     title: 'Замена масла',
     description:
       'Полная замена моторного масла с заменой масляного фильтра, проверка уровня технических жидкостей и осмотр двигателя',
-    master: { id: 2, name: 'Петров Иван Сергеевич', role: 'Мастер' },
+    master: mockEmployeeBrief(2),
     price: 3500,
     priceNote: 'от 2 500 ₽',
     durationHours: 1,
@@ -604,7 +814,7 @@ const mockServices = [
     title: 'Диагностика ходовой части',
     description:
       'Проверка состояния подвески, амортизаторов, рулевых тяг и шаровых опор на предмет износа и люфтов на подъёмнике',
-    master: { id: 4, name: 'Кузнецова Мария Андреевна', role: 'Мастер' },
+    master: mockEmployeeBrief(4),
     price: 2500,
     priceNote: 'от 2 000 ₽',
     durationHours: 2,
@@ -616,7 +826,7 @@ const mockServices = [
     title: 'Замена тормозных колодок',
     description:
       'Демонтаж старых и установка новых передних тормозных колодок, проверка состояния тормозных дисков и суппортов',
-    master: { id: 2, name: 'Петров Иван Сергеевич', role: 'Мастер' },
+    master: mockEmployeeBrief(2),
     price: 4800,
     priceNote: 'от 4 000 ₽',
     durationHours: 2,
@@ -628,7 +838,7 @@ const mockServices = [
     title: 'Регулировка развал-схождения',
     description:
       'Регулировка углов установки колёс на стенде, проверка схождения и развала по техническим нормам завода-изготовителя',
-    master: { id: 4, name: 'Кузнецова Мария Андреевна', role: 'Мастер' },
+    master: mockEmployeeBrief(4),
     price: 3200,
     priceNote: 'от 2 800 ₽',
     durationHours: 1,
@@ -640,7 +850,7 @@ const mockServices = [
     title: 'Ремонт выхлопной системы',
     description:
       'Сварка и восстановление повреждённого участка выхлопной трубы, замена резонатора и прокладок соединений',
-    master: { id: 2, name: 'Петров Иван Сергеевич', role: 'Мастер' },
+    master: mockEmployeeBrief(2),
     price: 7500,
     priceNote: 'от 5 000 ₽',
     durationHours: 4,
@@ -652,7 +862,7 @@ const mockServices = [
     title: 'Замена свечей зажигания',
     description:
       'Демонтаж и установка новых свечей зажигания, проверка состояния высоковольтных проводов и катушек зажигания',
-    master: { id: 5, name: 'Смирнов Дмитрий Олегович', role: 'Администратор' },
+    master: mockEmployeeBrief(5),
     price: 1800,
     priceNote: 'от 1 500 ₽',
     durationHours: 1,
@@ -664,7 +874,7 @@ const mockServices = [
     title: 'Покраска бампера',
     description:
       'Подготовка поверхности, нанесение грунта и лакокрасочного покрытия в цвет кузова, финальная полировка и сушка',
-    master: { id: 4, name: 'Кузнецова Мария Андреевна', role: 'Мастер' },
+    master: mockEmployeeBrief(4),
     price: 15000,
     priceNote: 'от 12 000 ₽',
     durationHours: 8,
@@ -676,7 +886,7 @@ const mockServices = [
     title: 'Шиномонтаж и балансировка',
     description:
       'Снятие и установка колёс, монтаж шин, балансировка на станке, проверка давления и состояния вентилей',
-    master: { id: 2, name: 'Петров Иван Сергеевич', role: 'Мастер' },
+    master: mockEmployeeBrief(2),
     price: 2200,
     priceNote: 'от 1 800 ₽',
     durationHours: 1,
@@ -736,13 +946,7 @@ export const tasksApi = {
 
   async employees() {
     if (USE_MOCK) {
-      return mockOk([
-        { id: 1, name: 'Михайлов Артем Сергеевич', role: 'Владелец' },
-        { id: 2, name: 'Петров Иван Сергеевич', role: 'Мастер' },
-        { id: 3, name: 'Сидоров Алексей Николаевич', role: 'Менеджер' },
-        { id: 4, name: 'Кузнецова Мария Андреевна', role: 'Мастер' },
-        { id: 5, name: 'Смирнов Дмитрий Олегович', role: 'Администратор' }
-      ])
+      return mockOk(mockEmployees.map(({ id, name, role }) => ({ id, name, role })))
     }
     return http.get('/tasks/employees')
   },
@@ -757,7 +961,7 @@ export const tasksApi = {
             'Полная замена моторного масла с заменой масляного фильтра, проверка уровня технических жидкостей и осмотр двигателя на предмет утечек',
           status: 'new',
           deadline: '2026-07-26',
-          employee: { id: 2, name: 'Петров Иван Сергеевич', role: 'Мастер' }
+          employee: mockEmployeeBrief(2)
         },
         {
           id: 2,
@@ -766,7 +970,7 @@ export const tasksApi = {
             'Проверка состояния подвески, амортизаторов, рулевых тяг и шаровых опор на предмет износа и люфтов на подъёмнике',
           status: 'hot',
           deadline: '2026-07-27',
-          employee: { id: 4, name: 'Кузнецова Мария Андреевна', role: 'Мастер' }
+          employee: mockEmployeeBrief(4)
         },
         {
           id: 3,
@@ -775,7 +979,7 @@ export const tasksApi = {
             'Демонтаж старых и установка новых передних тормозных колодок, проверка состояния тормозных дисков и суппортов',
           status: 'burned',
           deadline: '2026-07-20',
-          employee: { id: 2, name: 'Петров Иван Сергеевич', role: 'Мастер' }
+          employee: mockEmployeeBrief(2)
         },
         {
           id: 4,
@@ -784,7 +988,7 @@ export const tasksApi = {
             'Регулировка углов установки колёс на стенде, проверка схождения и развала по техническим нормам завода-изготовителя',
           status: 'done',
           deadline: '2026-07-22',
-          employee: { id: 4, name: 'Кузнецова Мария Андреевна', role: 'Мастер' }
+          employee: mockEmployeeBrief(4)
         },
         {
           id: 5,
@@ -793,7 +997,7 @@ export const tasksApi = {
             'Сварка и восстановление повреждённого участка выхлопной трубы, замена резонатора и прокладок соединений',
           status: 'new',
           deadline: '2026-07-29',
-          employee: { id: 3, name: 'Сидоров Алексей Николаевич', role: 'Менеджер' }
+          employee: mockEmployeeBrief(3)
         },
         {
           id: 6,
@@ -802,7 +1006,7 @@ export const tasksApi = {
             'Демонтаж и установка новых свечей зажигания, проверка состояния высоковольтных проводов и катушек зажигания',
           status: 'hot',
           deadline: '2026-07-28',
-          employee: { id: 5, name: 'Смирнов Дмитрий Олегович', role: 'Администратор' }
+          employee: mockEmployeeBrief(5)
         },
         {
           id: 7,
@@ -811,7 +1015,7 @@ export const tasksApi = {
             'Подготовка поверхности, нанесение грунта и лакокрасочного покрытия в цвет кузова, финальная полировка и сушка',
           status: 'done',
           deadline: '2026-07-21',
-          employee: { id: 2, name: 'Петров Иван Сергеевич', role: 'Мастер' }
+          employee: mockEmployeeBrief(2)
         }
       ])
     }

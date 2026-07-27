@@ -1,61 +1,66 @@
 <template>
-  <AdminHeader
-    :tabs="tabs"
-    v-model:active-tab="activeTab"
-    :action="action"
-    @action-click="onAction"
-  >
-    <template #below>
-      <div class="schedule-nav">
-        <BaseButton
-          color="blue1"
-          scheme="outlinedWhite-solid-light"
-          size="lg"
-          :icon-spacing="10"
-          class="schedule-nav__btn schedule-nav__btn--prev"
-          @click="scheduleFilter.prevMonth()"
-        >
-          <template #prepend>
-            <ArrowIcon direction="left" />
-          </template>
-          Пред. Месяц
-        </BaseButton>
+  <div class="schedule-page">
+    <AdminHeader
+      :tabs="tabs"
+      v-model:active-tab="activeTab"
+      :action="action"
+      @action-click="onAction"
+    >
+      <template #below>
+        <div class="schedule-nav">
+          <BaseButton
+            color="blue1"
+            scheme="outlinedWhite-solid-light"
+            size="lg"
+            :icon-spacing="10"
+            class="schedule-nav__btn schedule-nav__btn--prev"
+            @click="scheduleFilter.prevMonth()"
+          >
+            <template #prepend>
+              <ArrowIcon direction="left" />
+            </template>
+            Пред. Месяц
+          </BaseButton>
 
-        <div class="schedule-nav__month-field">{{ scheduleFilter.monthLabel }}</div>
+          <div class="schedule-nav__month-field">{{ scheduleFilter.monthLabel }}</div>
 
-        <BaseButton
-          color="blue1"
-          scheme="outlinedWhite-solid-light"
-          size="lg"
-          :icon-spacing="10"
-          class="schedule-nav__btn schedule-nav__btn--next"
-          @click="scheduleFilter.nextMonth()"
-        >
-          След. Месяц
-          <template #append>
-            <ArrowIcon direction="right" />
-          </template>
-        </BaseButton>
+          <BaseButton
+            color="blue1"
+            scheme="outlinedWhite-solid-light"
+            size="lg"
+            :icon-spacing="10"
+            class="schedule-nav__btn schedule-nav__btn--next"
+            @click="scheduleFilter.nextMonth()"
+          >
+            След. Месяц
+            <template #append>
+              <ArrowIcon direction="right" />
+            </template>
+          </BaseButton>
 
-        <div class="schedule-legend">
-          <div v-for="item in legendItems" :key="item.label" class="schedule-legend__item">
-            <span class="schedule-legend__label">{{ item.label }}</span>
-            <span
-              class="schedule-legend__square"
-              :style="{ background: item.bg, borderColor: item.border }"
-            />
+          <div class="schedule-legend">
+            <div v-for="item in legendItems" :key="item.label" class="schedule-legend__item">
+              <span class="schedule-legend__label">{{ item.label }}</span>
+              <span
+                class="schedule-legend__square"
+                :style="{ background: item.bg, borderColor: item.border }"
+              />
+            </div>
           </div>
         </div>
-      </div>
-    </template>
-  </AdminHeader>
+      </template>
+    </AdminHeader>
 
-  <div class="schedule"></div>
+    <div class="schedule">
+      <ScheduleStaffTable v-show="activeTab === 'staff'" :visible="activeTab === 'staff'" />
+    </div>
+  </div>
 </template>
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import AdminHeader from '@/components/layout/AdminHeader.vue'
+import ScheduleStaffTable from '@/components/schedule/ScheduleStaffTable.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import ArrowIcon from '@/components/ui/ArrowIcon.vue'
 import { useScheduleFilterStore } from '@/stores/scheduleFilter.js'
@@ -73,23 +78,35 @@ const STAFF_ACTION = { label: 'Настройки графика' }
 
 const action = computed(() => (activeTab.value === 'staff' ? STAFF_ACTION : CALENDAR_ACTION))
 
-const CALENDAR_LEGEND = [{ label: 'Сегодня', bg: 'var(--dvijok-choice-active)', border: '#183D9C' }]
+const CALENDAR_LEGEND = [
+  { label: 'Сегодня', bg: 'var(--dvijok-choice-active)', border: 'var(--dvijok-today)' }
+]
 const STAFF_LEGEND = [
-  { label: 'Сегодня', bg: 'var(--dvijok-choice-active)', border: '#183D9C' },
-  { label: 'Рабочий день', bg: '#E8F5E9', border: '#2E7D32' },
-  { label: 'Выходной день', bg: 'var(--dvijok-white)', border: 'var(--dvijok-text-secondary)' }
+  { label: 'Сегодня', bg: 'var(--dvijok-choice-active)', border: 'var(--dvijok-today)' },
+  { label: 'Рабочий день', bg: 'var(--dvijok-workday-bg)', border: 'var(--dvijok-workday)' },
+  {
+    label: 'Выходной день',
+    bg: 'var(--dvijok-white)',
+    border: 'var(--dvijok-weekend-muted)'
+  }
 ]
 
 const legendItems = computed(() => (activeTab.value === 'staff' ? STAFF_LEGEND : CALENDAR_LEGEND))
 
-function onAction() {
-  // TODO: обработчик действия активного таба
-}
+function onAction() {}
 
 onMounted(() => scheduleFilter.resetToCurrent())
 </script>
 
 <style scoped lang="scss">
+.schedule-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .schedule-nav {
   display: flex;
   flex-wrap: wrap;
@@ -148,5 +165,12 @@ onMounted(() => scheduleFilter.resetToCurrent())
   height: 25px;
   border-radius: 5px;
   border: 1px solid;
+}
+
+.schedule {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 </style>
