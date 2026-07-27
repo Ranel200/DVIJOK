@@ -4,7 +4,11 @@
       'base-btn',
       `base-btn--${color}`,
       `base-btn--${size}`,
-      { 'base-btn--block': block, 'base-btn--text': text }
+      {
+        'base-btn--block': block,
+        'base-btn--text': text,
+        'base-btn--text-plain': text && !underline
+      }
     ]"
     :style="stateVars"
     unelevated
@@ -88,6 +92,10 @@ const props = defineProps({
   text: {
     type: Boolean,
     default: false
+  },
+  underline: {
+    type: Boolean,
+    default: true
   },
   iconSpacing: {
     type: [Number, String],
@@ -247,6 +255,15 @@ const stateVars = computed(() => {
   line-height: 17px;
   color: var(--dvijok-link);
   text-decoration: underline;
+}
+
+.base-btn.base-btn--text.base-btn--text-plain,
+.base-btn.base-btn--text.base-btn--text-plain:hover,
+.base-btn.base-btn--text.base-btn--text-plain:active,
+.base-btn.base-btn--text.base-btn--text-plain:focus,
+.base-btn.base-btn--text.base-btn--text-plain:not(:disabled):not(.q-btn--disabled):hover,
+.base-btn.base-btn--text.base-btn--text-plain:not(:disabled):not(.q-btn--disabled):active {
+  text-decoration: none;
 }
 
 .base-btn--text :deep(.q-btn__content) {

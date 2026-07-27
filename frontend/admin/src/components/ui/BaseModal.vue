@@ -14,7 +14,8 @@
       class="base-modal__shell"
       :class="{
         'base-modal__shell--short': size === 'short',
-        'base-modal__shell--panel': isPanel
+        'base-modal__shell--panel': isPanel,
+        'base-modal__shell--compact': compact
       }"
     >
       <div
@@ -22,7 +23,8 @@
         :class="{
           'base-modal__card--fit': fit && !isPanel && size !== 'short',
           'base-modal__card--short': size === 'short',
-          'base-modal__card--panel': isPanel
+          'base-modal__card--panel': isPanel,
+          'base-modal__card--compact': compact
         }"
         :style="cardStyle"
         role="dialog"
@@ -30,7 +32,13 @@
       >
         <template v-if="isPanel">
           <div class="base-modal__panel-head">
-            <h2 v-if="title" class="base-modal__panel-title">{{ title }}</h2>
+            <h2
+              v-if="title"
+              class="base-modal__panel-title"
+              :class="{ 'base-modal__panel-title--upper': titleUppercase }"
+            >
+              {{ title }}
+            </h2>
             <button
               v-if="!hideClose"
               type="button"
@@ -40,6 +48,9 @@
             >
               <CloseIcon :size="22" color="var(--dvijok-white)" />
             </button>
+          </div>
+          <div v-if="$slots.before" class="base-modal__panel-before">
+            <slot name="before" />
           </div>
           <div class="base-modal__panel-divider" aria-hidden="true" />
           <div class="base-modal__content base-modal__content--panel">
@@ -112,6 +123,14 @@ const props = defineProps({
   padding: {
     type: String,
     default: ''
+  },
+  titleUppercase: {
+    type: Boolean,
+    default: false
+  },
+  compact: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -196,6 +215,11 @@ function onHide() {
   height: 100%;
 }
 
+.base-modal__shell--compact {
+  width: auto;
+  gap: 0;
+}
+
 .base-modal__shell--panel {
   width: 100%;
   height: 100%;
@@ -265,11 +289,30 @@ function onHide() {
   line-height: 24px;
 }
 
+.base-modal__panel-title--upper {
+  text-transform: uppercase;
+}
+
+.base-modal__panel-before {
+  flex-shrink: 0;
+  width: 100%;
+}
+
 .base-modal__panel-divider {
   flex-shrink: 0;
   width: 100%;
   height: 2px;
   background: var(--dvijok-blue-primary);
+}
+
+.base-modal__card--compact {
+  height: auto;
+  min-height: 0;
+  border-radius: 10px;
+  align-items: stretch;
+  justify-content: flex-start;
+  flex-direction: column;
+  overflow: visible;
 }
 
 .base-modal__panel-actions {

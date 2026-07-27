@@ -161,10 +161,16 @@ function onUpdate(value) {
   }
 }
 
-.base-input.q-field--disabled,
-.base-input.q-field--readonly {
+.base-input.q-field--disabled {
   :deep(.q-field__control) {
     opacity: 0.6;
+  }
+}
+
+.base-input.q-field--readonly {
+  :deep(.q-field__control),
+  :deep(.q-field__native) {
+    cursor: default;
   }
 }
 </style>

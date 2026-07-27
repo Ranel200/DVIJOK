@@ -3,6 +3,7 @@
 
 import { http, USE_MOCK } from '@dvijok/shared/api/http.js'
 import { mockOk, mockReject } from '@dvijok/shared/api/mock.js'
+import { STAFF_ROLE_LABELS, mapLegacyRole } from '@/constants/staff.js'
 import { startOfWeek } from '@/utils/formatDateRu.js'
 
 const mockUsers = [
@@ -285,6 +286,65 @@ function mockEmployeeBrief(id) {
   return { id: employee.id, name: employee.name, role: employee.role }
 }
 
+function emptyStaffAccess() {
+  return {
+    schedule: false,
+    crm: false,
+    services: false,
+    tasks: false,
+    qr: false,
+    settings: false
+  }
+}
+
+function emptyStaffDocuments() {
+  return { passport: null, inn: null, medicalBook: null }
+}
+
+function toEmployeeDetail(staff) {
+  return {
+    id: staff.id,
+    name: staff.name,
+    role: staff.role,
+    roleKey: staff.roleKey || mapLegacyRole(staff.role),
+    phone: staff.phone || '',
+    email: staff.email || '',
+    duties: staff.duties || '',
+    rate: staff.rate ?? null,
+    color: staff.color || staff.avatarBg || '',
+    avatarBg: staff.avatarBg,
+    documents: {
+      ...emptyStaffDocuments(),
+      ...staff.documents
+    },
+    access: {
+      ...emptyStaffAccess(),
+      ...staff.access
+    }
+  }
+}
+
+function applyEmployeePayload(staff, payload) {
+  const roleKey = payload.role || staff.roleKey || mapLegacyRole(staff.role)
+  staff.name = payload.name || staff.name
+  staff.roleKey = roleKey
+  staff.role = STAFF_ROLE_LABELS[roleKey] || staff.role
+  staff.phone = payload.phone || ''
+  staff.email = payload.email || ''
+  staff.duties = payload.duties || ''
+  staff.rate = payload.rate ?? null
+  staff.color = payload.color || staff.color || staff.avatarBg
+  staff.avatarBg = payload.color || staff.avatarBg
+  staff.documents = {
+    ...emptyStaffDocuments(),
+    ...(payload.documents || staff.documents)
+  }
+  staff.access = {
+    ...emptyStaffAccess(),
+    ...(payload.access || staff.access)
+  }
+}
+
 function parseTimeToHours(value) {
   const [h, m] = String(value || '0:0')
     .split(':')
@@ -496,6 +556,75 @@ export const scheduleApi = {
       return mockOk(null)
     }
     return http.delete(`/schedule/employees/${id}`)
+  },
+
+  async getEmployee(id) {
+    if (USE_MOCK) {
+      const employee = mockEmployees.find(item => item.id === id)
+      if (!employee) return mockReject(404, { message: 'Сотрудник не найден' })
+      if (!employee.documents) {
+        employee.documents = {
+          passport: { name: 'passport.pdf', fileName: 'passport.pdf' },
+          inn: { name: 'inn.pdf', fileName: 'inn.pdf' },
+          medicalBook: null
+        }
+      }
+      if (!employee.access) {
+        employee.access = {
+          schedule: true,
+          crm: true,
+          services: true,
+          tasks: true,
+          qr: false,
+          settings: false
+        }
+      }
+      return mockOk(toEmployeeDetail(employee))
+    }
+    return http.get(`/schedule/employees/${id}`)
+  },
+
+  async createEmployee(payload) {
+    if (USE_MOCK) {
+      const nextId = mockEmployees.reduce((max, item) => Math.max(max, item.id), 0) + 1
+      const roleKey = payload.role || 'senior_admin'
+      const employee = {
+        id: nextId,
+        name: payload.name || '',
+        roleKey,
+        role: STAFF_ROLE_LABELS[roleKey] || 'Сотрудник',
+        avatarBg: payload.color || '#5C6BC0',
+        color: payload.color || '#5C6BC0',
+        phone: payload.phone || '',
+        email: payload.email || '',
+        duties: payload.duties || '',
+        rate: payload.rate ?? null,
+        documents: {
+          ...emptyStaffDocuments(),
+          ...payload.documents
+        },
+        access: {
+          ...emptyStaffAccess(),
+          ...payload.access
+        },
+        workDays: [1, 2, 3, 4, 5],
+        start: '09:00',
+        end: '18:00'
+      }
+      mockEmployees.push(employee)
+      return mockOk(toEmployeeDetail(employee))
+    }
+    return http.post('/schedule/employees', payload)
+  },
+
+  async updateEmployee(id, payload) {
+    if (USE_MOCK) {
+      const employee = mockEmployees.find(item => item.id === id)
+      if (!employee) return mockReject(404, { message: 'Сотрудник не найден' })
+      applyEmployeePayload(employee, payload)
+      return mockOk(toEmployeeDetail(employee))
+    }
+    return http.put(`/schedule/employees/${id}`, payload)
   },
 
   async saveSettings(payload) {

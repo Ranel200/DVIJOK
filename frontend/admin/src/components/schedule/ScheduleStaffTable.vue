@@ -111,6 +111,16 @@
       <BaseButton color="blue1" size="lg" @click="onAddEmployee">+ Добавить сотрудника</BaseButton>
     </div>
 
+    <ScheduleStaffModal
+      v-model="formOpen"
+      :mode="formMode"
+      :employee="editingEmployee"
+      :saving="formSaving"
+      @save="onSaveEmployee"
+      @edit="onEditFromView"
+      @delete="onDeleteFromView"
+    />
+
     <BaseModal v-model="deleteConfirmOpen">
       <div class="schedule-staff__confirm">
         <h2 class="schedule-staff__confirm-title">
@@ -124,12 +134,20 @@
         </div>
       </div>
     </BaseModal>
+
+    <BaseModal v-model="resultOpen">
+      <div class="schedule-staff__confirm">
+        <h2 class="schedule-staff__confirm-title">{{ resultMessage }}</h2>
+        <BaseButton color="blue1" size="lg" @click="resultOpen = false">Ок</BaseButton>
+      </div>
+    </BaseModal>
   </div>
 </template>
 
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
+import ScheduleStaffModal from '@/components/schedule/ScheduleStaffModal.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import DotsMenu from '@/components/ui/DotsMenu.vue'
@@ -187,6 +205,12 @@ const deleteConfirmOpen = ref(false)
 const pendingDeleteId = ref(null)
 const pendingDeleteName = ref('')
 const deleting = ref(false)
+const formOpen = ref(false)
+const formMode = ref('create')
+const formSaving = ref(false)
+const editingEmployee = ref(null)
+const resultOpen = ref(false)
+const resultMessage = ref('')
 
 const today = new Date()
 
@@ -238,6 +262,14 @@ function onMenuOpen(employeeId, open) {
 }
 
 function onMenuSelect(key, employee) {
+  if (key === 'open') {
+    openEmployeeForm(employee.id, 'view')
+    return
+  }
+  if (key === 'edit') {
+    openEmployeeForm(employee.id, 'edit')
+    return
+  }
   if (key === 'delete') {
     pendingDeleteId.value = employee.id
     pendingDeleteName.value = formatStaffName(employee.name)
@@ -253,18 +285,67 @@ function closeDeleteConfirm() {
 
 async function confirmDelete() {
   const id = pendingDeleteId.value
+  const name = pendingDeleteName.value
   if (id == null) return
   deleting.value = true
   try {
     await scheduleApi.removeEmployee(id)
     employees.value = employees.value.filter(item => item.id !== id)
     closeDeleteConfirm()
+    resultMessage.value = `Сотрудник ${name} удален!`
+    resultOpen.value = true
   } finally {
     deleting.value = false
   }
 }
 
-function onAddEmployee() {}
+function onAddEmployee() {
+  editingEmployee.value = null
+  formMode.value = 'create'
+  formOpen.value = true
+}
+
+async function openEmployeeForm(id, mode) {
+  const detail = await scheduleApi.getEmployee(id)
+  editingEmployee.value = detail
+  formMode.value = mode
+  formOpen.value = true
+}
+
+function onEditFromView() {
+  formMode.value = 'edit'
+}
+
+function onDeleteFromView() {
+  if (!editingEmployee.value?.id) return
+  pendingDeleteId.value = editingEmployee.value.id
+  pendingDeleteName.value = formatStaffName(editingEmployee.value.name)
+  formOpen.value = false
+  deleteConfirmOpen.value = true
+}
+
+async function onSaveEmployee(draft) {
+  formSaving.value = true
+  try {
+    const isEdit = formMode.value === 'edit'
+    if (isEdit) {
+      await scheduleApi.updateEmployee(editingEmployee.value.id, draft)
+    } else {
+      await scheduleApi.createEmployee(draft)
+    }
+    await loadEmployees()
+    formOpen.value = false
+    editingEmployee.value = null
+    formMode.value = 'create'
+    const shortName = formatStaffName(draft.name)
+    resultMessage.value = isEdit
+      ? `Сотрудник ${shortName} сохранен!`
+      : `Сотрудник ${shortName} добавлен!`
+    resultOpen.value = true
+  } finally {
+    formSaving.value = false
+  }
+}
 
 async function scrollToToday() {
   if (!isCurrentMonth.value) return

@@ -57,10 +57,7 @@
     </AdminHeader>
 
     <div class="schedule">
-      <ScheduleCalendarTable
-        ref="calendarTableRef"
-        v-show="activeTab === 'calendar'"
-      />
+      <ScheduleCalendarTable ref="calendarTableRef" v-show="activeTab === 'calendar'" />
       <ScheduleStaffTable
         ref="staffTableRef"
         v-show="activeTab === 'staff'"

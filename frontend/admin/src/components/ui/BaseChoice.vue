@@ -3,6 +3,7 @@
     :class="[
       'base-choice',
       `base-choice--${shape}`,
+      `base-choice--${variant}`,
       { 'base-choice--block': block, 'base-choice--disabled': disable }
     ]"
     :style="{ gap }"
@@ -13,7 +14,8 @@
       type="button"
       :class="['base-choice__option', { 'base-choice__option--active': isActive(option.value) }]"
       :aria-pressed="isActive(option.value)"
-      :disabled="disable"
+      :aria-disabled="disable || undefined"
+      :tabindex="disable ? -1 : undefined"
       :style="optionStyle(option, isActive(option.value))"
       @click="select(option.value)"
     >
@@ -36,6 +38,11 @@ const props = defineProps({
     type: String,
     default: 'rounded',
     validator: value => ['pill', 'rounded'].includes(value)
+  },
+  variant: {
+    type: String,
+    default: 'default',
+    validator: value => ['default', 'glass'].includes(value)
   },
   multiple: {
     type: Boolean,
@@ -146,14 +153,101 @@ function select(value) {
   color: var(--dvijok-blue-primary);
 }
 
-.base-choice__option:hover:not(.base-choice__option--active):not(:disabled) {
+.base-choice__option:hover:not(.base-choice__option--active) {
   border-color: var(--dvijok-bg-dark);
   color: var(--dvijok-bg-dark);
 }
 
-.base-choice--disabled .base-choice__option,
-.base-choice__option:disabled {
-  cursor: default;
+.base-choice--disabled .base-choice__option:hover:not(.base-choice__option--active) {
+  border-color: var(--dvijok-text-secondary);
+  color: var(--dvijok-text-secondary);
+}
+
+.base-choice--glass .base-choice__option {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background-color: transparent;
+  background-image: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.14) 0%,
+    rgba(255, 255, 255, 0.05) 35%,
+    rgba(255, 255, 255, 0.02) 65%,
+    rgba(255, 255, 255, 0.08) 100%
+  );
+  border-color: transparent;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  color: var(--dvijok-white);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.base-choice--glass .base-choice__option::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.45) 0%,
+    rgba(255, 255, 255, 0) 22%,
+    rgba(255, 255, 255, 0) 78%,
+    rgba(255, 255, 255, 0.35) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
   pointer-events: none;
+}
+
+.base-choice--glass .base-choice__option--active {
+  background-color: var(--dvijok-white);
+  background-image: none;
+  border-color: transparent;
+  box-shadow: none;
+  color: #14255e;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.base-choice--glass .base-choice__option--active::before {
+  display: none;
+}
+
+.base-choice--glass .base-choice__option:hover:not(.base-choice__option--active) {
+  border-color: transparent;
+  color: var(--dvijok-white);
+  background-image: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.18) 0%,
+    rgba(255, 255, 255, 0.07) 35%,
+    rgba(255, 255, 255, 0.03) 65%,
+    rgba(255, 255, 255, 0.1) 100%
+  );
+}
+
+.base-choice--disabled.base-choice--glass
+  .base-choice__option:hover:not(.base-choice__option--active) {
+  background-image: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.14) 0%,
+    rgba(255, 255, 255, 0.05) 35%,
+    rgba(255, 255, 255, 0.02) 65%,
+    rgba(255, 255, 255, 0.08) 100%
+  );
+}
+
+.base-choice--disabled {
+  pointer-events: none;
+}
+
+.base-choice--disabled .base-choice__option {
+  cursor: default;
 }
 </style>

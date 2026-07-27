@@ -2,19 +2,23 @@
   <button
     type="button"
     class="base-switcher"
-    :class="{ 'base-switcher--active': modelValue }"
+    :class="{
+      'base-switcher--active': modelValue,
+      'base-switcher--disabled': disable
+    }"
     role="switch"
     :aria-checked="modelValue"
+    :aria-disabled="disable || undefined"
     :aria-label="ariaLabel"
-    :disabled="disable"
+    :tabindex="disable ? -1 : undefined"
     @click="toggle"
   >
     <span class="base-switcher__track" aria-hidden="true">
       <span class="base-switcher__knob" />
     </span>
     <span class="base-switcher__label" aria-hidden="true">
-      <span class="base-switcher__label-text">Вкл</span>
-      <span class="base-switcher__label-text">Выкл</span>
+      <span class="base-switcher__label-text">{{ onLabel }}</span>
+      <span class="base-switcher__label-text">{{ offLabel }}</span>
     </span>
   </button>
 </template>
@@ -32,6 +36,14 @@ const props = defineProps({
   ariaLabel: {
     type: String,
     default: 'Переключатель'
+  },
+  onLabel: {
+    type: String,
+    default: 'Вкл'
+  },
+  offLabel: {
+    type: String,
+    default: 'Выкл'
   }
 })
 
@@ -59,7 +71,7 @@ function toggle() {
   display: flex;
   align-items: center;
   box-sizing: border-box;
-  width: 40px;
+  width: 52px;
   padding: 3px 4px;
   border-radius: 50px;
   background: var(--dvijok-text-secondary);
@@ -111,12 +123,11 @@ function toggle() {
 
 .base-switcher--active .base-switcher__knob {
   background: var(--dvijok-success-bg);
-  transform: translateX(16px);
+  transform: translateX(28px);
 }
 
-.base-switcher:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
+.base-switcher--disabled {
+  cursor: default;
   pointer-events: none;
 }
 </style>
