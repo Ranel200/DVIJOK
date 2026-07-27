@@ -175,12 +175,7 @@
       </div>
     </BaseModal>
 
-    <BaseModal v-model="resultOpen">
-      <div class="services-result">
-        <h2 class="services-result__title">{{ resultMessage }}</h2>
-        <BaseButton color="blue1" size="lg" @click="resultOpen = false">Ок</BaseButton>
-      </div>
-    </BaseModal>
+    <SuccessModal v-model="resultOpen" :message="resultMessage" />
   </div>
 </template>
 
@@ -194,6 +189,7 @@ import BaseChoice from '@/components/ui/BaseChoice.vue'
 import BaseCheckbox from '@/components/ui/BaseCheckbox.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import EyeIcon from '@/components/ui/EyeIcon.vue'
+import SuccessModal from '@/components/ui/SuccessModal.vue'
 import SummaryCards from '@/components/ui/SummaryCards.vue'
 import { servicesApi, tasksApi } from '@/api/index.js'
 import { pluralize } from '@/utils/pluralize.js'
@@ -828,15 +824,7 @@ onBeforeUnmount(() => {
 }
 
 .services-confirm,
-.services-result {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 30px;
-}
-
-.services-confirm__title,
-.services-result__title {
+.services-confirm__title {
   margin: 0;
   color: var(--dvijok-bg-dark);
   font-size: 24px;

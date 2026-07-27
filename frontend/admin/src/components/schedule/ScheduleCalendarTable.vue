@@ -147,7 +147,7 @@ const timeRows = computed(() =>
               found || {
                 id: `${employeeId}-${day.date}-${time}-empty`,
                 employeeId,
-                color: '#7A82A0',
+                color: 'var(--dvijok-text-secondary)',
                 status: 'unavailable'
               }
             )

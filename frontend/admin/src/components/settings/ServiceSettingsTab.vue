@@ -192,12 +192,7 @@
       </template>
     </BaseModal>
 
-    <BaseModal v-model="savedOpen">
-      <div class="service-saved">
-        <h2 class="service-saved__title">Изменения сохранены!</h2>
-        <BaseButton color="blue1" size="lg" @click="savedOpen = false">Ок</BaseButton>
-      </div>
-    </BaseModal>
+    <SuccessModal v-model="savedOpen" message="Изменения сохранены!" />
   </div>
 </template>
 
@@ -208,6 +203,7 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseForm from '@/components/ui/BaseForm.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import Radio from '@/components/ui/Radio.vue'
+import SuccessModal from '@/components/ui/SuccessModal.vue'
 import { settingsApi } from '@/api/index.js'
 import { formatRuDate } from '@/utils/formatDateRu.js'
 import { pluralize } from '@/utils/pluralize.js'
@@ -548,22 +544,6 @@ defineExpose({ openEdit })
   align-items: center;
   justify-content: space-between;
   width: 100%;
-}
-
-.service-saved {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 30px;
-}
-
-.service-saved__title {
-  margin: 0;
-  color: var(--dvijok-bg-dark);
-  font-size: 24px;
-  font-weight: 600;
-  line-height: 29px;
-  text-align: center;
 }
 
 .subscription__status-row {

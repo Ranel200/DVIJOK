@@ -135,12 +135,7 @@
       </div>
     </BaseModal>
 
-    <BaseModal v-model="resultOpen">
-      <div class="schedule-staff__confirm">
-        <h2 class="schedule-staff__confirm-title">{{ resultMessage }}</h2>
-        <BaseButton color="blue1" size="lg" @click="resultOpen = false">Ок</BaseButton>
-      </div>
-    </BaseModal>
+    <SuccessModal v-model="resultOpen" :message="resultMessage" />
   </div>
 </template>
 
@@ -151,6 +146,7 @@ import ScheduleStaffModal from '@/components/schedule/ScheduleStaffModal.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import DotsMenu from '@/components/ui/DotsMenu.vue'
+import SuccessModal from '@/components/ui/SuccessModal.vue'
 import { scheduleApi } from '@/api/index.js'
 import { useScheduleFilterStore } from '@/stores/scheduleFilter.js'
 import { getInitials, formatStaffName } from '@/utils/name.js'

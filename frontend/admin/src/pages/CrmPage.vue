@@ -54,6 +54,10 @@
       :loading="listLoading"
       @delete="onDeleteDeal"
     />
+
+    <OrderModal v-model="orderOpen" :order-number="0" :saving="orderSaving" @save="onSaveOrder" />
+
+    <SuccessModal v-model="savedOpen" :message="savedMessage" />
   </div>
 </template>
 
@@ -62,11 +66,13 @@ import { computed, onMounted, ref } from 'vue'
 import AdminHeader from '@/components/layout/AdminHeader.vue'
 import CrmDealsList from '@/components/crm/CrmDealsList.vue'
 import CrmKanbanBoard from '@/components/crm/CrmKanbanBoard.vue'
+import OrderModal from '@/components/crm/OrderModal.vue'
 import ArrowIcon from '@/components/ui/ArrowIcon.vue'
 import BaseChoice from '@/components/ui/BaseChoice.vue'
 import CloseIcon from '@/components/ui/CloseIcon.vue'
+import SuccessModal from '@/components/ui/SuccessModal.vue'
 import { crmApi } from '@/api/index.js'
-import { CRM_STATUS_LIST, filterCrmDeals } from '@/constants/crm.js'
+import { CRM_STATUS_LIST, filterCrmDeals, formatCrmOrderNumber } from '@/constants/crm.js'
 
 const tabs = [
   { label: 'Канбан', value: 'kanban' },
@@ -84,6 +90,11 @@ const loading = ref(true)
 const deals = ref([])
 const listLoading = ref(true)
 const statusFilter = ref([])
+
+const orderOpen = ref(false)
+const orderSaving = ref(false)
+const savedOpen = ref(false)
+const savedMessage = ref('')
 
 const statusOptions = CRM_STATUS_LIST.map(({ value, label, color, bg }) => ({
   value,
@@ -104,9 +115,11 @@ function onDeleteDeal(dealId) {
   deals.value = deals.value.filter(item => item.id !== dealId)
 }
 
-function onAction() {}
+function onAction() {
+  orderOpen.value = true
+}
 
-onMounted(async () => {
+async function reloadCrm() {
   const [columnsResult, dealsResult] = await Promise.allSettled([
     crmApi.listColumns(),
     crmApi.listDeals()
@@ -115,7 +128,6 @@ onMounted(async () => {
   if (columnsResult.status === 'fulfilled') {
     columns.value = Array.isArray(columnsResult.value) ? columnsResult.value : []
   }
-  loading.value = false
 
   if (dealsResult.status === 'fulfilled') {
     deals.value = (Array.isArray(dealsResult.value) ? dealsResult.value : []).map(deal => ({
@@ -123,6 +135,24 @@ onMounted(async () => {
       _selected: false
     }))
   }
+}
+
+async function onSaveOrder(draft) {
+  orderSaving.value = true
+  try {
+    const created = await crmApi.createOrder(draft)
+    orderOpen.value = false
+    await reloadCrm()
+    savedMessage.value = `Заказ ${formatCrmOrderNumber(created.number)} создан!`
+    savedOpen.value = true
+  } finally {
+    orderSaving.value = false
+  }
+}
+
+onMounted(async () => {
+  await reloadCrm()
+  loading.value = false
   listLoading.value = false
 })
 </script>

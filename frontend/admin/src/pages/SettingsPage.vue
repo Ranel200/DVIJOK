@@ -35,12 +35,13 @@
       </div>
     </BaseModal>
 
-    <BaseModal v-model="logoutDoneOpen" persistent @close="finishLogout">
-      <div class="logout-modal">
-        <h2 class="logout-modal__title">Вы вышли</h2>
-        <BaseButton color="blue1" size="lg" @click="finishLogout">Ок</BaseButton>
-      </div>
-    </BaseModal>
+    <SuccessModal
+      v-model="logoutDoneOpen"
+      message="Вы вышли"
+      persistent
+      @confirm="finishLogout"
+      @close="finishLogout"
+    />
   </div>
 </template>
 
@@ -52,6 +53,7 @@ import SecuritySettingsTab from '@/components/settings/SecuritySettingsTab.vue'
 import ServiceSettingsTab from '@/components/settings/ServiceSettingsTab.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
+import SuccessModal from '@/components/ui/SuccessModal.vue'
 import { settingsApi } from '@/api/index.js'
 import { useAuthStore } from '@/stores/auth.js'
 import { detectClientSession } from '@/utils/sessionInfo.js'

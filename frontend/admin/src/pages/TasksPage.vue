@@ -117,12 +117,7 @@
       </div>
     </BaseModal>
 
-    <BaseModal v-model="savedOpen">
-      <div class="task-saved">
-        <h2 class="task-saved__title">Задача "{{ savedTitle }}" добавлена!</h2>
-        <BaseButton color="blue1" size="lg" @click="savedOpen = false">Ок</BaseButton>
-      </div>
-    </BaseModal>
+    <SuccessModal v-model="savedOpen" :message="savedMessage" />
   </div>
 </template>
 
@@ -137,6 +132,7 @@ import BaseCheckbox from '@/components/ui/BaseCheckbox.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseField from '@/components/ui/BaseField.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
+import SuccessModal from '@/components/ui/SuccessModal.vue'
 import { tasksApi } from '@/api/index.js'
 import { pluralize } from '@/utils/pluralize.js'
 
@@ -161,6 +157,7 @@ const createOpen = ref(false)
 const savedOpen = ref(false)
 const saving = ref(false)
 const savedTitle = ref('')
+const savedMessage = computed(() => `Задача "${savedTitle.value}" добавлена!`)
 
 const draft = reactive({
   title: '',
@@ -477,21 +474,5 @@ onMounted(async () => {
   justify-content: space-between;
   width: 100%;
   margin-top: auto;
-}
-
-.task-saved {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 30px;
-}
-
-.task-saved__title {
-  margin: 0;
-  color: var(--dvijok-bg-dark);
-  font-size: 24px;
-  font-weight: 600;
-  line-height: 29px;
-  text-align: center;
 }
 </style>

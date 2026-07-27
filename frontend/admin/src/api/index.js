@@ -933,6 +933,74 @@ export const crmApi = {
   async listDeals() {
     if (USE_MOCK) return mockOk(mockCrmDeals.map(deal => ({ ...deal })))
     return http.get('/crm/deals')
+  },
+
+  async createOrder(payload) {
+    if (USE_MOCK) {
+      const nextNumber =
+        Math.max(
+          0,
+          ...mockCrmDeals.map(item => item.number),
+          ...mockCrmColumns.flatMap(column => column.items.map(item => item.number))
+        ) + 1
+
+      const serviceTitles = (payload.lines || [])
+        .map(line => mockServices.find(service => service.id === line.serviceId)?.title)
+        .filter(Boolean)
+
+      const masterNames = (payload.lines || [])
+        .map(line => mockEmployees.find(employee => employee.id === line.masterId)?.name)
+        .filter(Boolean)
+
+      const amount = (payload.lines || []).reduce((sum, line) => {
+        const price = Number(line.price) || 0
+        const discount = Number(line.discount) || 0
+        return sum + Math.max(0, price - discount)
+      }, 0)
+
+      const carBrand = [payload.brand, payload.model].filter(Boolean).join(' ').trim()
+      const nowLabel = new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })
+      const id = `o${Date.now()}`
+      const status = payload.status || 'new'
+
+      const deal = {
+        id,
+        number: nextNumber,
+        status,
+        clientName: payload.clientName || '',
+        carBrand: carBrand || '',
+        carYear: payload.year ? Number(payload.year) || null : null,
+        amount,
+        services: serviceTitles,
+        master: masterNames[0] || '',
+        createdAt: nowLabel,
+        updatedAt: nowLabel
+      }
+
+      mockCrmDeals.unshift(deal)
+
+      const column =
+        mockCrmColumns.find(item => item.id === status) ||
+        mockCrmColumns.find(item => item.id === 'new')
+      if (column) {
+        column.items.unshift({
+          id,
+          number: nextNumber,
+          amount,
+          clientName: payload.clientName || '',
+          phone: payload.phone || '',
+          carBrand: carBrand || '',
+          plate: payload.plate || '',
+          services: serviceTitles,
+          masters: masterNames.join(', '),
+          createdAt: nowLabel,
+          updatedAt: nowLabel
+        })
+      }
+
+      return mockOk(deal)
+    }
+    return http.post('/crm/orders', payload)
   }
 }
 

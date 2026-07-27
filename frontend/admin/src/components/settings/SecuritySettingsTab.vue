@@ -292,12 +292,7 @@
       </template>
     </BaseModal>
 
-    <BaseModal v-model="passwordSavedOpen">
-      <div class="password-saved">
-        <h2 class="password-saved__title">Пароль сохранен!</h2>
-        <BaseButton color="blue1" size="lg" @click="passwordSavedOpen = false">Ок</BaseButton>
-      </div>
-    </BaseModal>
+    <SuccessModal v-model="passwordSavedOpen" message="Пароль сохранен!" />
   </div>
 </template>
 
@@ -310,6 +305,7 @@ import BaseModal from '@/components/ui/BaseModal.vue'
 import BaseSwitcher from '@/components/ui/BaseSwitcher.vue'
 import EyeIcon from '@/components/ui/EyeIcon.vue'
 import Radio from '@/components/ui/Radio.vue'
+import SuccessModal from '@/components/ui/SuccessModal.vue'
 import { settingsApi } from '@/api/index.js'
 import { formatDateTime, formatRuDateShort } from '@/utils/formatDateRu.js'
 
@@ -549,22 +545,6 @@ function terminateAllSessions() {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-}
-
-.password-saved {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 30px;
-}
-
-.password-saved__title {
-  margin: 0;
-  color: var(--dvijok-bg-dark);
-  font-size: 24px;
-  font-weight: 600;
-  line-height: 29px;
-  text-align: center;
 }
 
 .account__name {

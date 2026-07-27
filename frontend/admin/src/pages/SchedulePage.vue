@@ -71,12 +71,9 @@
       @saved="onSettingsSaved"
     />
 
-    <BaseModal v-model="savedOpen">
-      <div class="schedule-saved">
-        <h2 class="schedule-saved__title">График сохранен!</h2>
-        <BaseButton color="blue1" size="lg" @click="savedOpen = false">Ок</BaseButton>
-      </div>
-    </BaseModal>
+    <OrderModal v-model="orderOpen" :order-number="0" :saving="orderSaving" @save="onSaveOrder" />
+
+    <SuccessModal v-model="savedOpen" :message="savedMessage" />
   </div>
 </template>
 
@@ -84,12 +81,14 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import AdminHeader from '@/components/layout/AdminHeader.vue'
 import ScheduleCalendarTable from '@/components/schedule/ScheduleCalendarTable.vue'
+import OrderModal from '@/components/crm/OrderModal.vue'
 import ScheduleSettingsModal from '@/components/schedule/ScheduleSettingsModal.vue'
 import ScheduleStaffTable from '@/components/schedule/ScheduleStaffTable.vue'
 import ArrowIcon from '@/components/ui/ArrowIcon.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
-import BaseModal from '@/components/ui/BaseModal.vue'
-import { scheduleApi } from '@/api/index.js'
+import SuccessModal from '@/components/ui/SuccessModal.vue'
+import { crmApi, scheduleApi } from '@/api/index.js'
+import { formatCrmOrderNumber } from '@/constants/crm.js'
 import { useScheduleFilterStore } from '@/stores/scheduleFilter.js'
 
 const scheduleFilter = useScheduleFilterStore()
@@ -127,7 +126,10 @@ const STAFF_LEGEND = [
 const legendItems = computed(() => (isCalendar.value ? CALENDAR_LEGEND : STAFF_LEGEND))
 
 const settingsOpen = ref(false)
+const orderOpen = ref(false)
+const orderSaving = ref(false)
 const savedOpen = ref(false)
+const savedMessage = ref('График сохранен!')
 const settingsEmployees = ref([])
 const staffTableRef = ref(null)
 const calendarTableRef = ref(null)
@@ -156,13 +158,28 @@ function onNext() {
 }
 
 function onAction() {
-  if (!isCalendar.value) {
-    settingsOpen.value = true
+  if (isCalendar.value) {
+    orderOpen.value = true
+    return
+  }
+  settingsOpen.value = true
+}
+
+async function onSaveOrder(draft) {
+  orderSaving.value = true
+  try {
+    const created = await crmApi.createOrder(draft)
+    orderOpen.value = false
+    savedMessage.value = `Заказ ${formatCrmOrderNumber(created.number)} создан!`
+    savedOpen.value = true
+  } finally {
+    orderSaving.value = false
   }
 }
 
 async function onSettingsSaved() {
   await Promise.all([staffTableRef.value?.reload?.(), calendarTableRef.value?.reload?.()])
+  savedMessage.value = 'График сохранен!'
   savedOpen.value = true
 }
 
@@ -250,21 +267,5 @@ onMounted(() => scheduleFilter.resetToCurrent())
   flex-direction: column;
   flex: 1;
   min-height: 0;
-}
-
-.schedule-saved {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 30px;
-}
-
-.schedule-saved__title {
-  margin: 0;
-  color: var(--dvijok-bg-dark);
-  font-size: 24px;
-  font-weight: 600;
-  line-height: 29px;
-  text-align: center;
 }
 </style>

@@ -77,7 +77,7 @@ function onSave() {
 
 .staff-color-picker__title {
   margin: 0;
-  color: #7a82a0;
+  color: var(--dvijok-text-secondary);
   font-weight: 600;
   font-size: 12px;
   line-height: 15px;
@@ -121,7 +121,7 @@ function onSave() {
 }
 
 .staff-color-picker__name {
-  color: #7a82a0;
+  color: var(--dvijok-text-secondary);
   font-weight: 400;
   font-size: 10px;
   line-height: 12px;

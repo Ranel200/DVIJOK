@@ -350,7 +350,7 @@ function onSave() {
 <style scoped lang="scss">
 .staff-form {
   --dvijok-form-block-title: var(--dvijok-white);
-  --dvijok-form-label: #7a82a0;
+  --dvijok-form-label: var(--dvijok-text-secondary);
 
   display: flex;
   flex-direction: row;
@@ -394,7 +394,7 @@ function onSave() {
   font-weight: 600;
   font-size: 12px;
   line-height: 15px;
-  color: #7a82a0;
+  color: var(--dvijok-text-secondary);
 }
 
 .staff-form__h-field {
@@ -528,7 +528,7 @@ function onSave() {
 .staff-form__docs-hint {
   margin: 0;
   padding: 10px 10px 10px 0;
-  color: #7a82a0;
+  color: var(--dvijok-text-secondary);
   font-weight: 400;
   font-size: 12px;
   line-height: 15px;

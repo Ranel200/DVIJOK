@@ -16,6 +16,15 @@ export const CRM_STATUS_LIST = Object.entries(CRM_STATUS).map(([value, { label, 
   bg
 }))
 
+export const ORDER_SOURCE_OPTIONS = [
+  { value: 'call', label: 'Звонок' },
+  { value: 'website', label: 'Сайт' },
+  { value: 'avito', label: 'Avito' },
+  { value: 'referral', label: 'Рекомендация' },
+  { value: 'walk_in', label: 'Визит' },
+  { value: 'other', label: 'Другое' }
+]
+
 export function crmStatusOption(value) {
   return (
     CRM_STATUS[value] || {
