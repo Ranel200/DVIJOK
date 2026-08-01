@@ -1,132 +1,132 @@
 <template>
   <div :class="['base-form', { 'base-form--horizontal': layout === 'horizontal' }]">
-    <div class="base-form__body" :style="bodyStyle">
-      <div ref="scrollRef" class="base-form__scroll" :style="scrollStyle" @scroll="updateThumb">
-        <BaseFormBlock
-          v-for="(block, index) in blocks"
-          :key="block.id ?? index"
-          :title="block.title"
-          :layout="layout"
+    <BaseScrollbar
+      ref="scrollbarRef"
+      class="base-form__body"
+      content-class="base-form__scroll"
+      :content-style="scrollStyle"
+      :enabled="allowScroll"
+      :style="bodyStyle"
+    >
+      <BaseFormBlock
+        v-for="(block, index) in blocks"
+        :key="block.id ?? index"
+        :title="block.title"
+        :layout="layout"
+      >
+        <div
+          v-for="row in rowsOf(block.fields)"
+          :key="row.id"
+          :class="[
+            'base-form__row',
+            {
+              'base-form__row--inline': row.inline,
+              'base-form__row--horizontal': layout === 'horizontal'
+            }
+          ]"
         >
           <div
-            v-for="row in rowsOf(block.fields)"
-            :key="row.id"
+            v-for="field in row.fields"
+            :key="field.key"
             :class="[
-              'base-form__row',
-              {
-                'base-form__row--inline': row.inline,
-                'base-form__row--horizontal': layout === 'horizontal'
-              }
+              'base-form__field',
+              { 'base-form__field--horizontal': layout === 'horizontal' }
             ]"
+            :data-field-key="field.key"
           >
-            <div
-              v-for="field in row.fields"
-              :key="field.key"
-              :class="[
-                'base-form__field',
-                { 'base-form__field--horizontal': layout === 'horizontal' }
-              ]"
-              :data-field-key="field.key"
+            <BaseField
+              v-if="isText(field)"
+              :model-value="modelValue[field.key]"
+              :label="field.label"
+              :placeholder="field.placeholder"
+              :type="fieldType(field)"
+              :layout="layout"
+              :error="Boolean(errors[field.key])"
+              :error-message="errors[field.key]"
+              :disable="isDisabled(field)"
+              block
+              @update:model-value="updateField(field, $event)"
             >
-              <BaseField
-                v-if="isText(field)"
+              <template v-if="field.type === 'password'" #append>
+                <q-btn
+                  flat
+                  dense
+                  type="button"
+                  class="base-form__eye-btn"
+                  :aria-label="visible[field.key] ? 'Скрыть пароль' : 'Показать пароль'"
+                  @click="toggleVisible(field.key)"
+                >
+                  <EyeIcon :closed="visible[field.key]" />
+                </q-btn>
+              </template>
+            </BaseField>
+
+            <div
+              v-else-if="field.type === 'choice'"
+              :class="[
+                'base-form__choice',
+                { 'base-form__choice--horizontal': layout === 'horizontal' }
+              ]"
+            >
+              <span v-if="field.label" class="base-form__label">{{ field.label }}</span>
+              <BaseChoice
                 :model-value="modelValue[field.key]"
-                :label="field.label"
-                :placeholder="field.placeholder"
-                :type="fieldType(field)"
-                :layout="layout"
-                :error="Boolean(errors[field.key])"
-                :error-message="errors[field.key]"
+                :options="field.options"
+                :shape="field.shape"
+                :block="field.block !== false"
                 :disable="isDisabled(field)"
-                block
                 @update:model-value="updateField(field, $event)"
-              >
-                <template v-if="field.type === 'password'" #append>
-                  <q-btn
-                    flat
-                    dense
-                    type="button"
-                    class="base-form__eye-btn"
-                    :aria-label="visible[field.key] ? 'Скрыть пароль' : 'Показать пароль'"
-                    @click="toggleVisible(field.key)"
-                  >
-                    <EyeIcon :closed="visible[field.key]" />
-                  </q-btn>
-                </template>
-              </BaseField>
-
-              <div
-                v-else-if="field.type === 'choice'"
-                :class="[
-                  'base-form__choice',
-                  { 'base-form__choice--horizontal': layout === 'horizontal' }
-                ]"
-              >
-                <span v-if="field.label" class="base-form__label">{{ field.label }}</span>
-                <BaseChoice
-                  :model-value="modelValue[field.key]"
-                  :options="field.options"
-                  :shape="field.shape"
-                  :block="field.block !== false"
-                  :disable="isDisabled(field)"
-                  @update:model-value="updateField(field, $event)"
-                />
-              </div>
-
-              <div
-                v-else-if="field.type === 'select'"
-                :class="[
-                  'base-form__select',
-                  { 'base-form__select--horizontal': layout === 'horizontal' }
-                ]"
-              >
-                <span v-if="field.label" class="base-form__label">{{ field.label }}</span>
-                <BaseSelect
-                  :model-value="modelValue[field.key]"
-                  :options="field.options"
-                  :placeholder="field.placeholder"
-                  :hide-chevron="field.hideChevron"
-                  :align="field.align"
-                  :block="field.block !== false"
-                  @update:model-value="updateField(field, $event)"
-                />
-              </div>
-
-              <div v-else-if="field.type === 'consent'" class="base-form__consent">
-                <BaseCheckbox
-                  :model-value="modelValue[field.key]"
-                  :disable="isDisabled(field)"
-                  @update:model-value="updateField(field, $event)"
-                />
-                <p class="base-form__consent-text">
-                  Согласен с
-                  <button type="button" class="base-form__link">условиями использования</button>
-                  и
-                  <button type="button" class="base-form__link"
-                    >политикой конфиденциальности</button
-                  >
-                </p>
-              </div>
-
-              <div v-else-if="field.type === 'empty'" class="base-form__empty" aria-hidden="true" />
+              />
             </div>
-          </div>
-        </BaseFormBlock>
-      </div>
 
-      <div v-show="scrollable" class="base-form__scrollbar" aria-hidden="true">
-        <div ref="thumbRef" class="base-form__scrollbar-thumb" :style="thumbStyle" />
-      </div>
-    </div>
+            <div
+              v-else-if="field.type === 'select'"
+              :class="[
+                'base-form__select',
+                { 'base-form__select--horizontal': layout === 'horizontal' }
+              ]"
+            >
+              <span v-if="field.label" class="base-form__label">{{ field.label }}</span>
+              <BaseSelect
+                :model-value="modelValue[field.key]"
+                :options="field.options"
+                :placeholder="field.placeholder"
+                :hide-chevron="field.hideChevron"
+                :align="field.align"
+                :block="field.block !== false"
+                @update:model-value="updateField(field, $event)"
+              />
+            </div>
+
+            <div v-else-if="field.type === 'consent'" class="base-form__consent">
+              <BaseCheckbox
+                :model-value="modelValue[field.key]"
+                :disable="isDisabled(field)"
+                @update:model-value="updateField(field, $event)"
+              />
+              <p class="base-form__consent-text">
+                Согласен с
+                <button type="button" class="base-form__link">условиями использования</button>
+                и
+                <button type="button" class="base-form__link">политикой конфиденциальности</button>
+              </p>
+            </div>
+
+            <div v-else-if="field.type === 'empty'" class="base-form__empty" aria-hidden="true" />
+          </div>
+        </div>
+      </BaseFormBlock>
+    </BaseScrollbar>
   </div>
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, onUpdated, reactive, ref } from 'vue'
+import { computed, nextTick, onUpdated, reactive, ref } from 'vue'
 import BaseCheckbox from '@/components/ui/BaseCheckbox.vue'
 import BaseChoice from '@/components/ui/BaseChoice.vue'
 import BaseField from '@/components/ui/BaseField.vue'
 import BaseFormBlock from '@/components/ui/BaseFormBlock.vue'
+import BaseScrollbar from '@/components/ui/BaseScrollbar.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
 import EyeIcon from '@/components/ui/EyeIcon.vue'
 
@@ -161,15 +161,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue'])
 
 const visible = reactive({})
-
-const scrollRef = ref(null)
-const thumbRef = ref(null)
-const scrollable = ref(false)
-const thumbTop = ref(0)
-
-const thumbStyle = computed(() => ({
-  transform: `translateY(${thumbTop.value}px)`
-}))
+const scrollbarRef = ref(null)
 
 const bodyStyle = computed(() => {
   if (props.maxHeight === null || props.maxHeight === undefined || props.maxHeight === 'none') {
@@ -224,31 +216,7 @@ function updateField(field, value) {
   emit('update:modelValue', { ...props.modelValue, [field.key]: next })
 }
 
-function updateThumb() {
-  const el = scrollRef.value
-  if (!el || !allowScroll.value) {
-    scrollable.value = false
-    return
-  }
-  const trackHeight = el.clientHeight
-  const maxScroll = el.scrollHeight - trackHeight
-  scrollable.value = maxScroll > 1
-  if (!scrollable.value || !thumbRef.value) return
-  const thumbHeight = thumbRef.value.offsetHeight
-  const ratio = maxScroll > 0 ? el.scrollTop / maxScroll : 0
-  thumbTop.value = ratio * (trackHeight - thumbHeight)
-}
-
-onMounted(() => {
-  nextTick(updateThumb)
-  window.addEventListener('resize', updateThumb)
-})
-
-onUpdated(() => nextTick(updateThumb))
-
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', updateThumb)
-})
+onUpdated(() => nextTick(() => scrollbarRef.value?.update()))
 
 function rowsOf(fields) {
   const rows = []
@@ -286,7 +254,7 @@ function findScrollParent(el) {
 
 async function focusField(key, { offset = 24 } = {}) {
   await nextTick()
-  const root = scrollRef.value
+  const root = scrollbarRef.value?.getScrollEl?.()
   if (!root) return
   const fieldEl = root.querySelector(`[data-field-key="${key}"]`)
   if (!fieldEl) return
@@ -329,50 +297,17 @@ defineExpose({ focusField })
 .base-form__body {
   flex: 1;
   min-height: 0;
-  display: flex;
-  flex-direction: row;
-  gap: 10px;
   max-height: 500px;
-  overflow: hidden;
 }
 
-.base-form__scroll {
-  flex: 1;
-  min-height: 0;
+.base-form__body :deep(.base-form__scroll) {
   display: flex;
   flex-direction: column;
   gap: 40px;
-  overflow-y: auto;
-  scrollbar-width: none;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
 }
 
-.base-form--horizontal .base-form__scroll {
+.base-form--horizontal .base-form__body :deep(.base-form__scroll) {
   gap: 30px;
-}
-
-.base-form__scrollbar {
-  position: relative;
-  flex-shrink: 0;
-  width: 8px;
-  height: 100%;
-  border: 1px solid var(--dvijok-text-secondary);
-  border-radius: 5px;
-  box-sizing: border-box;
-}
-
-.base-form__scrollbar-thumb {
-  position: absolute;
-  top: 0;
-  left: -1px;
-  width: 8px;
-  height: 60px;
-  border-radius: 5px;
-  background-color: var(--dvijok-blue-primary);
-  box-sizing: border-box;
 }
 
 .base-form__row {

@@ -108,6 +108,7 @@ const subscription = ref({
 const security = ref({
   currentPassword: '',
   passwordChangedAt: '',
+  securityLevel: 'medium',
   emailConfirmEnabled: false,
   email: '',
   phoneConfirmEnabled: false,

@@ -72,6 +72,12 @@
           </button>
         </td>
       </tr>
+
+      <template #footer>
+        <BaseButton color="red" size="lg" :disable="!hasSelected" @click="onDeleteSelected">
+          Удалить выбранные
+        </BaseButton>
+      </template>
     </AdminTable>
 
     <Teleport to="body">
@@ -85,6 +91,12 @@
           :style="menuStyle"
           @click.stop
         >
+          <button type="button" class="crm-menu__item" role="menuitem" @click="onOpenDeal">
+            <div class="crm-menu__icon">
+              <img src="/admin/icons/schedule/open.svg" alt="" />
+            </div>
+            <span>Перейти</span>
+          </button>
           <button type="button" class="crm-menu__item" role="menuitem" @click="onEditDeal">
             <div class="crm-menu__icon">
               <img src="/admin/icons/services/edit.svg" alt="" />
@@ -111,6 +123,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import AdminTable from '@/components/ui/AdminTable.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseCheckbox from '@/components/ui/BaseCheckbox.vue'
 import {
   crmStatusOption,
@@ -138,7 +151,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['delete'])
+const emit = defineEmits(['delete', 'delete-selected', 'edit', 'open'])
 
 const menuDealId = ref(null)
 const menuStyle = ref({})
@@ -165,6 +178,13 @@ const filteredDeals = computed(() =>
     statusFilter: props.statusFilter
   })
 )
+
+const hasSelected = computed(() => filteredDeals.value.some(deal => deal._selected))
+
+function onDeleteSelected() {
+  if (!hasSelected.value) return
+  emit('delete-selected')
+}
 
 function pillStyle(status) {
   const { color, bg } = crmStatusOption(status)
@@ -227,7 +247,17 @@ async function toggleMenu(deal, event) {
   positionMenu(rect)
 }
 
+function onOpenDeal() {
+  const deal = menuDeal.value
+  if (!deal) return
+  emit('open', deal)
+  closeMenu()
+}
+
 function onEditDeal() {
+  const deal = menuDeal.value
+  if (!deal) return
+  emit('edit', deal)
   closeMenu()
 }
 

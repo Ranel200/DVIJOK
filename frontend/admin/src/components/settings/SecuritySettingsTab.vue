@@ -10,27 +10,37 @@
         <div class="account__name">{{ serviceName }}</div>
 
         <div class="account__password">
-          <BaseField
-            v-model="security.currentPassword"
-            :type="showPassword ? 'text' : 'password'"
-            label="Текущий пароль"
-            :hint="passwordChangedHint"
-            readonly
-            class="account__password-field"
-          >
-            <template #append>
-              <q-btn
-                flat
-                dense
-                type="button"
-                class="account__eye-btn"
-                :aria-label="showPassword ? 'Скрыть пароль' : 'Показать пароль'"
-                @click="showPassword = !showPassword"
-              >
-                <EyeIcon :closed="showPassword" />
-              </q-btn>
-            </template>
-          </BaseField>
+          <div class="account__security-level">
+            <span class="account__security-level-label">Текущий уровень безопасности</span>
+            <div class="account__security-level-control">
+              <div class="account__security-level-row">
+                <div
+                  class="account__security-progress"
+                  :style="{ backgroundColor: securityLevelMeta.bg }"
+                >
+                  <div
+                    class="account__security-progress-fill"
+                    :style="{
+                      width: securityLevelMeta.width,
+                      backgroundColor: securityLevelMeta.color
+                    }"
+                  />
+                </div>
+                <span
+                  class="account__security-pill"
+                  :style="{
+                    color: securityLevelMeta.color,
+                    backgroundColor: securityLevelMeta.bg
+                  }"
+                >
+                  {{ securityLevelMeta.label }}
+                </span>
+              </div>
+              <p v-if="passwordChangedHint" class="account__security-hint">
+                {{ passwordChangedHint }}
+              </p>
+            </div>
+          </div>
           <BaseButton text :icon-spacing="10" @click="openPasswordEdit">
             Изменить пароль
             <template #append>
@@ -142,7 +152,7 @@
       <section class="settings-card">
         <div class="settings-card__head">
           <h2 class="settings-card__title">Истории входов</h2>
-          <BaseButton text :icon-spacing="10">
+          <BaseButton text :icon-spacing="10" @click="loginHistoryOpen = true">
             Посмотреть все
             <template #append>
               <ArrowIcon direction="right" :size="14" />
@@ -292,16 +302,49 @@
       </template>
     </BaseModal>
 
+    <BaseModal v-model="loginHistoryOpen" fit @show="onLoginHistoryShow">
+      <div class="login-history-modal">
+        <h2 class="login-history-modal__title">Истории входов за последний год</h2>
+        <BaseScrollbar
+          ref="historyScrollbarRef"
+          class="login-history-modal__body"
+          content-class="login-history-modal__scroll"
+        >
+          <div v-for="entry in allLoginHistory" :key="entry.id" class="login-history__item">
+            <div class="login-history__left">
+              <div class="login-history__status-wrap">
+                <span
+                  class="login-history__status"
+                  :style="{ background: entry.success ? '#157848' : '#EF0A0A' }"
+                />
+              </div>
+              <div class="login-history__info">
+                <span class="session-item__title">
+                  {{ entry.deviceName }} — {{ entry.browser }}
+                </span>
+                <span class="session-item__meta">
+                  {{ entry.city }}, {{ entry.country }} · {{ entry.ip }} ·
+                  {{ entry.success ? 'Успешно' : 'Неудачная попытка' }}
+                </span>
+              </div>
+            </div>
+            <span class="login-history__time">{{ formatDateTime(entry.loggedAt) }}</span>
+          </div>
+        </BaseScrollbar>
+      </div>
+    </BaseModal>
+
     <SuccessModal v-model="passwordSavedOpen" message="Пароль сохранен!" />
   </div>
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, nextTick, reactive, ref } from 'vue'
 import ArrowIcon from '@/components/ui/ArrowIcon.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseField from '@/components/ui/BaseField.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
+import BaseScrollbar from '@/components/ui/BaseScrollbar.vue'
 import BaseSwitcher from '@/components/ui/BaseSwitcher.vue'
 import EyeIcon from '@/components/ui/EyeIcon.vue'
 import Radio from '@/components/ui/Radio.vue'
@@ -324,15 +367,43 @@ const props = defineProps({
   }
 })
 
+const SECURITY_LEVELS = {
+  veryReliable: {
+    label: 'Очень надёжно',
+    width: '95%',
+    color: '#157848',
+    bg: '#D5F0E4'
+  },
+  reliable: {
+    label: 'Надёжно',
+    width: '82%',
+    color: '#8AC820',
+    bg: '#E9FFC4'
+  },
+  medium: {
+    label: 'Не очень надёжно',
+    width: '50%',
+    color: '#F06D30',
+    bg: '#F0E4D5'
+  },
+  weak: {
+    label: 'Слабая защита',
+    width: '28%',
+    color: '#B60000',
+    bg: '#F0D5D5'
+  }
+}
+
 const security = defineModel('security', { type: Object, required: true })
 const emit = defineEmits(['logout', 'edit-service'])
 
-const showPassword = ref(false)
 const passwordEditOpen = ref(false)
 const passwordSavedOpen = ref(false)
 const passwordSaving = ref(false)
 const codeSending = ref(false)
 const codeSent = ref(false)
+const loginHistoryOpen = ref(false)
+const historyScrollbarRef = ref(null)
 const visible = reactive({ old: false, next: false, confirm: false })
 const passwordDraft = ref({
   oldPassword: '',
@@ -349,12 +420,21 @@ const passwordErrors = reactive({
 
 const sessions = computed(() => security.value.sessions || [])
 const otherSessions = computed(() => sessions.value.filter(session => !session.current))
-const loginHistory = computed(() => (security.value.loginHistory || []).slice(0, 3))
+const allLoginHistory = computed(() => security.value.loginHistory || [])
+const loginHistory = computed(() => allLoginHistory.value.slice(0, 3))
+
+const securityLevelMeta = computed(
+  () => SECURITY_LEVELS[security.value.securityLevel] || SECURITY_LEVELS.medium
+)
 
 const passwordChangedHint = computed(() => {
   const date = formatRuDateShort(security.value.passwordChangedAt)
   return date ? `Последн. изм. ${date}` : ''
 })
+
+function onLoginHistoryShow() {
+  nextTick(() => historyScrollbarRef.value?.update())
+}
 
 function clearPasswordErrors() {
   passwordErrors.oldPassword = ''
@@ -561,19 +641,70 @@ function terminateAllSessions() {
   gap: 10px;
 }
 
-.account__password-field {
-  width: 300px;
+.account__security-level {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
 }
 
-.account__eye-btn {
-  min-height: auto;
-  padding: 0;
-  pointer-events: auto;
-  cursor: pointer;
+.account__security-level-label {
+  color: var(--dvijok-form-label, var(--dvijok-text-secondary));
+  font-size: 14px;
+  line-height: 16px;
+  text-align: left;
+  white-space: nowrap;
+}
 
-  :deep(.q-btn__content) {
-    padding: 0;
-  }
+.account__security-level-control {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+}
+
+.account__security-level-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.account__security-progress {
+  width: 70%;
+  height: 6px;
+  border-radius: 50px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.account__security-progress-fill {
+  height: 100%;
+  border-radius: 50px;
+}
+
+.account__security-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 50px;
+  font-weight: 400;
+  font-size: 10px;
+  line-height: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.account__security-hint {
+  margin: 0;
+  color: var(--dvijok-text-secondary);
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 15px;
 }
 
 .confirm-method {
@@ -739,6 +870,34 @@ function terminateAllSessions() {
 }
 
 .login-history {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.login-history-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  min-height: 0;
+}
+
+.login-history-modal__title {
+  margin: 0;
+  padding-right: 36px;
+  color: var(--dvijok-bg-dark);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 19px;
+  text-transform: uppercase;
+}
+
+.login-history-modal__body {
+  max-height: 420px;
+}
+
+.login-history-modal__body :deep(.login-history-modal__scroll) {
   display: flex;
   flex-direction: column;
   gap: 5px;

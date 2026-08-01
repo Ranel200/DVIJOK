@@ -13,12 +13,36 @@
               placeholder="Поиск по названию услуги"
             />
           </label>
-          <div class="services-filter services-filter--choices">
-            <BaseChoice
-              v-model="choice"
-              shape="pill"
-              :options="choices"
-              class="services-filter__choice"
+          <div class="services-filters__right">
+            <BaseSelect
+              v-model="employee"
+              :options="employeeOptions"
+              placeholder="Все сотрудники"
+              class="services-filters__select"
+            />
+            <button
+              type="button"
+              class="services-filter-btn"
+              :aria-label="
+                priceSort === 'asc'
+                  ? 'Сортировка по цене: возрастание'
+                  : 'Сортировка по цене: снижение'
+              "
+              @click="togglePriceSort"
+            >
+              <span>Цена</span>
+              <img
+                src="/admin/icons/services/direction.svg"
+                alt=""
+                class="services-filter-btn__direction"
+                :class="{ 'services-filter-btn__direction--desc': priceSort === 'desc' }"
+              />
+            </button>
+            <BaseSelect
+              v-model="statusFilter"
+              variant="accent"
+              :options="statusFilterOptions"
+              class="services-filters__status"
             />
           </div>
         </div>
@@ -185,9 +209,9 @@ import AdminHeader from '@/components/layout/AdminHeader.vue'
 import ServiceFormModal from '@/components/services/ServiceFormModal.vue'
 import AdminTable from '@/components/ui/AdminTable.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
-import BaseChoice from '@/components/ui/BaseChoice.vue'
 import BaseCheckbox from '@/components/ui/BaseCheckbox.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
+import BaseSelect from '@/components/ui/BaseSelect.vue'
 import EyeIcon from '@/components/ui/EyeIcon.vue'
 import SuccessModal from '@/components/ui/SuccessModal.vue'
 import SummaryCards from '@/components/ui/SummaryCards.vue'
@@ -210,7 +234,9 @@ const columns = [
 const summary = ref(null)
 const loading = ref(true)
 const search = ref('')
-const choice = ref('all')
+const employee = ref('all')
+const priceSort = ref('asc')
+const statusFilter = ref('all')
 const services = ref([])
 const employees = ref([])
 const menuServiceId = ref(null)
@@ -237,11 +263,15 @@ const deleteConfirmTitle = computed(() => {
   return `Удалить услугу "${pendingDeleteTitle.value}"?`
 })
 
-const choices = [
-  { label: 'Категория', value: 'category' },
-  { label: 'Мастер', value: 'master' },
-  { label: 'Цена', value: 'price' },
-  { label: 'Все', value: 'all' }
+const employeeOptions = computed(() => [
+  { value: 'all', label: 'Все сотрудники' },
+  ...employees.value.map(e => ({ value: e.id, label: e.name }))
+])
+
+const statusFilterOptions = [
+  { label: 'Все услуги', value: 'all' },
+  { label: 'Активны', value: 'active' },
+  { label: 'Скрыты', value: 'hidden' }
 ]
 
 const statusLabels = {
@@ -284,9 +314,23 @@ const maxOrders = computed(() =>
 
 const filteredServices = computed(() => {
   const query = search.value.trim().toLowerCase()
-  if (!query) return services.value
-  return services.value.filter(service => service.title.toLowerCase().includes(query))
+  const list = services.value.filter(service => {
+    const titleOk = !query || service.title.toLowerCase().includes(query)
+    const employeeOk =
+      employee.value === 'all' ||
+      service.master?.id === employee.value ||
+      service.masters?.some(item => item.id === employee.value)
+    const statusOk = statusFilter.value === 'all' || service.status === statusFilter.value
+    return titleOk && employeeOk && statusOk
+  })
+
+  const direction = priceSort.value === 'asc' ? 1 : -1
+  return [...list].sort((a, b) => ((a.price || 0) - (b.price || 0)) * direction)
 })
+
+function togglePriceSort() {
+  priceSort.value = priceSort.value === 'asc' ? 'desc' : 'asc'
+}
 
 const menuService = computed(() =>
   services.value.find(service => service.id === menuServiceId.value)
@@ -773,8 +817,20 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
   width: 100%;
   margin-top: 16px;
+}
+
+.services-filters__right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.services-filters__select {
+  width: 180px;
 }
 
 .services-filter {
@@ -790,16 +846,6 @@ onBeforeUnmount(() => {
 .services-filter--search {
   padding: 6px 10px;
   width: 265px;
-}
-
-.services-filter--choices {
-  width: 45%;
-  padding: 0;
-  border: none;
-}
-
-.services-filter__choice {
-  width: 100%;
 }
 
 .services-filter__icon {
@@ -823,7 +869,48 @@ onBeforeUnmount(() => {
   }
 }
 
-.services-confirm,
+.services-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 110px;
+  padding: 9px;
+  box-sizing: border-box;
+  border: 1px solid var(--dvijok-text-secondary);
+  border-radius: 8px;
+  background-color: var(--dvijok-white);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 15px;
+  font-weight: 400;
+  color: var(--dvijok-text-secondary);
+  text-align: left;
+}
+
+.services-filter-btn__direction {
+  display: block;
+  width: 16px;
+  height: auto;
+  flex-shrink: 0;
+  transition: transform 0.18s ease;
+}
+
+.services-filter-btn__direction--desc {
+  transform: scaleY(-1);
+}
+
+.services-filters__status {
+  width: 130px;
+}
+
+.services-confirm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+}
+
 .services-confirm__title {
   margin: 0;
   color: var(--dvijok-bg-dark);

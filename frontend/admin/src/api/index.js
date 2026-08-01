@@ -320,7 +320,9 @@ function toEmployeeDetail(staff) {
     access: {
       ...emptyStaffAccess(),
       ...staff.access
-    }
+    },
+    login: staff.login || '',
+    password: staff.password || ''
   }
 }
 
@@ -343,6 +345,8 @@ function applyEmployeePayload(staff, payload) {
     ...emptyStaffAccess(),
     ...(payload.access || staff.access)
   }
+  if (payload.login !== undefined) staff.login = payload.login || ''
+  if (payload.password !== undefined) staff.password = payload.password || ''
 }
 
 function parseTimeToHours(value) {
@@ -607,6 +611,8 @@ export const scheduleApi = {
           ...emptyStaffAccess(),
           ...payload.access
         },
+        login: payload.login || '',
+        password: payload.password || '',
         workDays: [1, 2, 3, 4, 5],
         start: '09:00',
         end: '18:00'
@@ -954,8 +960,8 @@ export const crmApi = {
 
       const amount = (payload.lines || []).reduce((sum, line) => {
         const price = Number(line.price) || 0
-        const discount = Number(line.discount) || 0
-        return sum + Math.max(0, price - discount)
+        const discount = Math.min(100, Math.max(0, Number(line.discount) || 0))
+        return sum + Math.max(0, Math.round(price * (1 - discount / 100)))
       }, 0)
 
       const carBrand = [payload.brand, payload.model].filter(Boolean).join(' ').trim()
@@ -1034,7 +1040,7 @@ const mockCrmDeals = [
   {
     id: 'l3',
     number: 3,
-    status: 'in_progress',
+    status: 'primary',
     clientName: 'Соколов Олег',
     carBrand: 'Hyundai Solaris',
     carYear: 2020,
@@ -1047,28 +1053,28 @@ const mockCrmDeals = [
   {
     id: 'l4',
     number: 4,
-    status: 'in_progress',
-    clientName: 'Романов Павел',
-    carBrand: 'Lada Vesta',
-    carYear: 2022,
-    amount: 21300,
-    services: ['Замена ГРМ', 'Антифриз'],
-    master: 'Семёнов Артём',
-    createdAt: '5 июля',
-    updatedAt: '20 июля'
+    status: 'diagnostics',
+    clientName: 'Васильева Анна',
+    carBrand: 'Volkswagen Polo',
+    carYear: 2019,
+    amount: 5600,
+    services: ['Компьютерная диагностика', 'Проверка подвески'],
+    master: 'Морозов Сергей',
+    createdAt: '10 июля',
+    updatedAt: '16 июля'
   },
   {
     id: 'l5',
     number: 5,
-    status: 'in_progress',
-    clientName: 'Ковалёв Артём',
-    carBrand: 'Ford Focus',
+    status: 'diagnostics',
+    clientName: 'Лебедев Дмитрий',
+    carBrand: 'Skoda Octavia',
     carYear: 2018,
-    amount: 14200,
-    services: ['Покраска бампера'],
-    master: 'Зайцев Максим',
-    createdAt: '7 июля',
-    updatedAt: '18 июля'
+    amount: 7800,
+    services: ['Диагностика двигателя'],
+    master: 'Новиков Павел',
+    createdAt: '11 июля',
+    updatedAt: '17 июля'
   },
   {
     id: 'l6',
@@ -1086,7 +1092,20 @@ const mockCrmDeals = [
   {
     id: 'l7',
     number: 7,
-    status: 'approval',
+    status: 'in_progress',
+    clientName: 'Романов Павел',
+    carBrand: 'Lada Vesta',
+    carYear: 2022,
+    amount: 21300,
+    services: ['Замена ГРМ', 'Антифриз'],
+    master: 'Семёнов Артём',
+    createdAt: '5 июля',
+    updatedAt: '20 июля'
+  },
+  {
+    id: 'l8',
+    number: 8,
+    status: 'in_progress',
     clientName: 'Михайлова Елена',
     carBrand: 'Renault Duster',
     carYear: 2017,
@@ -1097,43 +1116,30 @@ const mockCrmDeals = [
     updatedAt: '19 июля'
   },
   {
-    id: 'l8',
-    number: 8,
-    status: 'done',
-    clientName: 'Белова Юлия',
-    carBrand: 'Mazda 6',
-    carYear: 2021,
-    amount: 30400,
-    services: ['Полное ТО', 'Замена колодок'],
-    master: 'Гусев Владислав',
-    createdAt: '28 июня',
-    updatedAt: '14 июля'
-  },
-  {
     id: 'l9',
     number: 9,
-    status: 'done',
-    clientName: 'Степанова Наталья',
-    carBrand: 'Audi A4',
-    carYear: 2020,
-    amount: 28900,
-    services: ['Замена сцепления', 'Диагностика АКПП'],
-    master: 'Тихонов Денис',
-    createdAt: '4 июля',
-    updatedAt: '20 июля'
+    status: 'in_progress',
+    clientName: 'Ковалёв Артём',
+    carBrand: 'Ford Focus',
+    carYear: 2018,
+    amount: 14200,
+    services: ['Покраска бампера'],
+    master: 'Зайцев Максим',
+    createdAt: '7 июля',
+    updatedAt: '18 июля'
   },
   {
     id: 'l10',
     number: 10,
-    status: 'new',
-    clientName: 'Дмитриев Виктор',
-    carBrand: 'Chevrolet Cruze',
-    carYear: 2016,
-    amount: 11500,
-    services: ['Замена масла', 'Фильтр салона', 'Свечи'],
-    master: 'Андреев Роман',
-    createdAt: '9 июля',
-    updatedAt: '16 июля'
+    status: 'waiting',
+    clientName: 'Трофимов Игорь',
+    carBrand: 'Nissan Qashqai',
+    carYear: 2019,
+    amount: 9800,
+    services: ['Ожидание запчасти'],
+    master: 'Соловьёв Юрий',
+    createdAt: '1 июля',
+    updatedAt: '15 июля'
   },
   {
     id: 'l11',
@@ -1152,14 +1158,44 @@ const mockCrmDeals = [
     id: 'l12',
     number: 12,
     status: 'done',
-    clientName: 'Жуков Кирилл',
-    carBrand: 'Honda Civic',
-    carYear: 2018,
-    amount: 19800,
-    services: ['Полировка', 'Керамика'],
-    master: 'Власов Игорь',
-    createdAt: '13 июля',
-    updatedAt: '17 июля'
+    clientName: 'Белова Юлия',
+    carBrand: 'Mazda 6',
+    carYear: 2021,
+    amount: 30400,
+    services: ['Полное ТО', 'Замена колодок'],
+    master: 'Гусев Владислав',
+    createdAt: '28 июня',
+    updatedAt: '14 июля',
+    documents: [
+      {
+        id: 'd1',
+        color: '#B3C8FF',
+        title: 'Заказ-наряд №012',
+        meta: 'Mazda 6 · Гусев В. · 30 400 ₽',
+        date: 'Сформирован: 14 июля 2026'
+      },
+      {
+        id: 'd2',
+        color: '#FFCCAE',
+        title: 'Акт выполненных работ',
+        meta: 'Полное ТО, Замена колодок · Гусев В.',
+        date: 'Подписан: 14 июля 2026'
+      },
+      {
+        id: 'd3',
+        color: '#D7BCFB',
+        title: 'Счет на оплату №012',
+        meta: 'Итого: 30 400 ₽ · Не оплачен',
+        date: 'Выставлен: 14 июля 2026'
+      },
+      {
+        id: 'd4',
+        color: '#CEFFA2',
+        title: 'Гарантийный талон №012',
+        meta: 'Полное ТО, Замена колодок',
+        date: 'Выдан: 14 июля 2026'
+      }
+    ]
   }
 ]
 
@@ -1439,6 +1475,7 @@ export const settingsApi = {
         security: {
           currentPassword: 'dvijok-demo',
           passwordChangedAt: '2026-04-17',
+          securityLevel: 'weak',
           emailConfirmEnabled: true,
           email: 'service@dvijok.ru',
           phoneConfirmEnabled: false,
@@ -1539,6 +1576,76 @@ export const settingsApi = {
               country: 'Казахстан',
               ip: '87.255.210.67',
               loggedAt: '2026-07-22T22:18:00'
+            },
+            {
+              id: 'h6',
+              success: true,
+              deviceName: 'ThinkPad X1',
+              browser: 'Firefox',
+              city: 'Новосибирск',
+              country: 'Россия',
+              ip: '178.44.112.9',
+              loggedAt: '2026-06-18T16:22:00'
+            },
+            {
+              id: 'h7',
+              success: true,
+              deviceName: 'MacBook Pro 14',
+              browser: 'Chrome',
+              city: 'Москва',
+              country: 'Россия',
+              ip: '185.12.45.78',
+              loggedAt: '2026-05-12T10:08:00'
+            },
+            {
+              id: 'h8',
+              success: false,
+              deviceName: 'Unknown Device',
+              browser: 'Opera',
+              city: 'Киев',
+              country: 'Украина',
+              ip: '176.37.54.201',
+              loggedAt: '2026-04-03T19:41:00'
+            },
+            {
+              id: 'h9',
+              success: true,
+              deviceName: 'iPad Pro',
+              browser: 'Safari',
+              city: 'Екатеринбург',
+              country: 'Россия',
+              ip: '5.189.132.44',
+              loggedAt: '2026-02-21T08:55:00'
+            },
+            {
+              id: 'h10',
+              success: true,
+              deviceName: 'Windows Desktop',
+              browser: 'Chrome',
+              city: 'Москва',
+              country: 'Россия',
+              ip: '185.12.45.78',
+              loggedAt: '2025-12-09T13:27:00'
+            },
+            {
+              id: 'h11',
+              success: false,
+              deviceName: 'Android Phone',
+              browser: 'Chrome',
+              city: 'Ташкент',
+              country: 'Узбекистан',
+              ip: '213.230.96.15',
+              loggedAt: '2025-10-14T23:11:00'
+            },
+            {
+              id: 'h12',
+              success: true,
+              deviceName: 'MacBook Pro 14',
+              browser: 'Safari',
+              city: 'Москва',
+              country: 'Россия',
+              ip: '185.12.45.78',
+              loggedAt: '2025-08-02T17:36:00'
             }
           ]
         }

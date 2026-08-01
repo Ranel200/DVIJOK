@@ -2,20 +2,15 @@
   <div class="crm">
     <div v-if="loading" class="crm__loading" aria-live="polite">Загрузка доски…</div>
     <template v-else>
-      <div
-        v-show="boardScrollable"
-        ref="scrollbarRef"
-        class="crm__scrollbar"
-        @pointerdown="onTrackPointerDown"
-      >
-        <div
-          ref="thumbRef"
-          class="crm__scrollbar-thumb"
-          :class="{ 'crm__scrollbar-thumb--dragging': thumbDragging }"
-          :style="thumbStyle"
-          @pointerdown="onThumbPointerDown"
-        />
-      </div>
+      <BaseScrollbar
+        ref="boardScrollbarRef"
+        track-only
+        orientation="horizontal"
+        :scroll-target="boardRef"
+        @update:scrollable="boardScrollable = $event"
+        @update:can-scroll-start="canScrollLeft = $event"
+        @update:can-scroll-end="canScrollRight = $event"
+      />
 
       <div
         ref="boardWrapRef"
@@ -35,7 +30,7 @@
           <ArrowIcon direction="left" :size="16" color="#0B3CBA69" class="crm__nav-arrow" />
         </button>
 
-        <div ref="boardRef" class="crm__board" @scroll="updateThumb">
+        <div ref="boardRef" class="crm__board">
           <div v-for="column in columns" :key="column.id" class="crm__column">
             <header class="crm__column-header" :style="{ background: column.gradient }">
               <div class="crm__column-title-row">
@@ -77,6 +72,7 @@
                       class="crm__card-edit"
                       aria-label="Редактировать"
                       @pointerdown.stop
+                      @click.stop="onEditCard(column, element)"
                     >
                       <img src="/admin/icons/services/edit.svg" alt="" />
                     </button>
@@ -176,6 +172,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { VueDraggable } from 'vue-draggable-plus'
 import ArrowIcon from '@/components/ui/ArrowIcon.vue'
+import BaseScrollbar from '@/components/ui/BaseScrollbar.vue'
 import { formatCrmMoney, formatCrmOrderNumber, matchesCrmSearch } from '@/constants/crm.js'
 
 const props = defineProps({
@@ -193,7 +190,16 @@ const props = defineProps({
   }
 })
 
+const emit = defineEmits(['edit'])
+
 const columnItemsModels = new Map()
+
+function onEditCard(column, element) {
+  emit('edit', {
+    ...element,
+    status: column.id
+  })
+}
 
 function matchesSearch(element) {
   return matchesCrmSearch(element, props.search)
@@ -235,11 +241,8 @@ function mergeFilteredIntoSource(source, nextFiltered) {
 
 const boardRef = ref(null)
 const boardWrapRef = ref(null)
-const scrollbarRef = ref(null)
-const thumbRef = ref(null)
+const boardScrollbarRef = ref(null)
 const boardScrollable = ref(false)
-const thumbLeft = ref(0)
-const thumbDragging = ref(false)
 const canScrollLeft = ref(false)
 const canScrollRight = ref(false)
 const navLeftVisible = ref(false)
@@ -253,12 +256,7 @@ let dragging = false
 let pointerX = 0
 let pointerY = 0
 let autoScrollRaf = 0
-let thumbDragOffset = 0
 let cachedColumnBodies = null
-
-const thumbStyle = computed(() => ({
-  transform: `translateX(${thumbLeft.value}px)`
-}))
 
 const columnStats = computed(() => {
   const stats = {}
@@ -300,17 +298,8 @@ function trackPointer(event) {
   pointerY = event.clientY
 }
 
-function syncThumbDuringDrag() {
-  const el = boardRef.value
-  const thumb = thumbRef.value
-  if (!el || !thumb) return
-  const trackWidth = el.clientWidth
-  const maxScroll = el.scrollWidth - trackWidth
-  if (maxScroll <= 1) return
-  const thumbWidth = thumb.offsetWidth
-  thumbLeft.value = (el.scrollLeft / maxScroll) * (trackWidth - thumbWidth)
-  canScrollLeft.value = el.scrollLeft > 1
-  canScrollRight.value = el.scrollLeft < maxScroll - 1
+function updateThumb() {
+  boardScrollbarRef.value?.update()
 }
 
 function tickAutoScroll() {
@@ -327,7 +316,7 @@ function tickAutoScroll() {
     }
     if (scrolledX !== 0) {
       board.scrollLeft += scrolledX
-      syncThumbDuringDrag()
+      updateThumb()
     }
   }
 
@@ -373,26 +362,6 @@ function onDragEnd() {
   nextTick(updateThumb)
 }
 
-async function updateThumb() {
-  const el = boardRef.value
-  if (!el) {
-    boardScrollable.value = false
-    return
-  }
-  const trackWidth = el.clientWidth
-  const maxScroll = el.scrollWidth - trackWidth
-  const wasScrollable = boardScrollable.value
-  boardScrollable.value = maxScroll > 1
-  if (!boardScrollable.value) return
-  if (!wasScrollable) await nextTick()
-  if (!thumbRef.value) return
-  const thumbWidth = thumbRef.value.offsetWidth
-  const ratio = maxScroll > 0 ? el.scrollLeft / maxScroll : 0
-  thumbLeft.value = ratio * (trackWidth - thumbWidth)
-  canScrollLeft.value = el.scrollLeft > 1
-  canScrollRight.value = el.scrollLeft < maxScroll - 1
-}
-
 function scrollByColumn(direction) {
   const board = boardRef.value
   if (!board) return
@@ -431,60 +400,6 @@ function updateNavVisibility(event) {
   navRightVisible.value = canScrollRight.value && rect.right - x < NAV_EDGE_PX
 }
 
-function setBoardScrollByThumbLeft(nextLeft) {
-  const board = boardRef.value
-  const thumb = thumbRef.value
-  if (!board || !thumb) return
-  const trackWidth = board.clientWidth
-  const thumbWidth = thumb.offsetWidth
-  const maxThumbLeft = Math.max(0, trackWidth - thumbWidth)
-  const clampedLeft = Math.min(maxThumbLeft, Math.max(0, nextLeft))
-  const maxScroll = board.scrollWidth - trackWidth
-  board.scrollLeft = maxThumbLeft > 0 ? (clampedLeft / maxThumbLeft) * maxScroll : 0
-}
-
-function onThumbPointerMove(event) {
-  if (!thumbDragging.value) return
-  const track = scrollbarRef.value
-  if (!track) return
-  const trackRect = track.getBoundingClientRect()
-  setBoardScrollByThumbLeft(event.clientX - trackRect.left - thumbDragOffset)
-}
-
-function onThumbPointerUp(event) {
-  if (!thumbDragging.value) return
-  thumbDragging.value = false
-  const thumb = thumbRef.value
-  if (thumb && event?.pointerId != null && thumb.hasPointerCapture?.(event.pointerId)) {
-    thumb.releasePointerCapture(event.pointerId)
-  }
-  window.removeEventListener('pointermove', onThumbPointerMove)
-  window.removeEventListener('pointerup', onThumbPointerUp)
-}
-
-function onThumbPointerDown(event) {
-  event.preventDefault()
-  event.stopPropagation()
-  const thumb = thumbRef.value
-  if (!thumb) return
-  thumbDragging.value = true
-  const thumbRect = thumb.getBoundingClientRect()
-  thumbDragOffset = event.clientX - thumbRect.left
-  thumb.setPointerCapture?.(event.pointerId)
-  window.addEventListener('pointermove', onThumbPointerMove)
-  window.addEventListener('pointerup', onThumbPointerUp)
-}
-
-function onTrackPointerDown(event) {
-  if (event.target !== scrollbarRef.value) return
-  const track = scrollbarRef.value
-  const thumb = thumbRef.value
-  if (!track || !thumb) return
-  const trackRect = track.getBoundingClientRect()
-  const thumbWidth = thumb.offsetWidth
-  setBoardScrollByThumbLeft(event.clientX - trackRect.left - thumbWidth / 2)
-}
-
 watch(
   () => props.columns,
   () => {
@@ -501,15 +416,12 @@ watch(
 )
 
 onMounted(() => {
-  window.addEventListener('resize', updateThumb)
   nextTick(updateThumb)
 })
 
 onBeforeUnmount(() => {
   onDragEnd()
-  onThumbPointerUp()
   cachedColumnBodies = null
-  window.removeEventListener('resize', updateThumb)
 })
 </script>
 
@@ -532,35 +444,6 @@ onBeforeUnmount(() => {
   color: var(--dvijok-text-secondary);
   font-size: 13px;
   line-height: 16px;
-}
-
-.crm__scrollbar {
-  position: relative;
-  flex-shrink: 0;
-  width: 100%;
-  height: 8px;
-  border: 1px solid var(--dvijok-text-secondary);
-  border-radius: 5px;
-  box-sizing: border-box;
-  cursor: pointer;
-  touch-action: none;
-}
-
-.crm__scrollbar-thumb {
-  position: absolute;
-  top: -1px;
-  left: 0;
-  width: 60px;
-  height: 8px;
-  border-radius: 5px;
-  background-color: var(--dvijok-blue-primary);
-  box-sizing: border-box;
-  cursor: grab;
-  touch-action: none;
-}
-
-.crm__scrollbar-thumb--dragging {
-  cursor: grabbing;
 }
 
 .crm__board-wrap {

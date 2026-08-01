@@ -32,13 +32,18 @@
       >
         <template v-if="isPanel">
           <div class="base-modal__panel-head">
-            <h2
-              v-if="title"
-              class="base-modal__panel-title"
-              :class="{ 'base-modal__panel-title--upper': titleUppercase }"
-            >
-              {{ title }}
-            </h2>
+            <div class="base-modal__panel-title-row">
+              <h2
+                v-if="title"
+                class="base-modal__panel-title"
+                :class="{ 'base-modal__panel-title--upper': titleUppercase }"
+              >
+                {{ title }}
+              </h2>
+              <div v-if="$slots['title-after']" class="base-modal__panel-title-after">
+                <slot name="title-after" />
+              </div>
+            </div>
             <button
               v-if="!hideClose"
               type="button"
@@ -281,6 +286,14 @@ function onHide() {
   width: 100%;
 }
 
+.base-modal__panel-title-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  min-width: 0;
+  flex: 1;
+}
+
 .base-modal__panel-title {
   margin: 0;
   color: var(--dvijok-white);
@@ -291,6 +304,10 @@ function onHide() {
 
 .base-modal__panel-title--upper {
   text-transform: uppercase;
+}
+
+.base-modal__panel-title-after {
+  flex-shrink: 0;
 }
 
 .base-modal__panel-before {

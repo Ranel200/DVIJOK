@@ -4,8 +4,12 @@ export const CRM_STATUS = {
     color: 'var(--dvijok-blue-primary)',
     bg: 'var(--dvijok-choice-active)'
   },
+  primary: { label: 'Первичная запись', color: '#02517F', bg: '#D1DAF3' },
+  diagnostics: { label: 'Диагностика', color: '#CA720C', bg: '#FFD79D' },
+  approval: { label: 'Согласование', color: '#9D1FDB', bg: '#EFCDFF' },
+  secondary: { label: 'Вторичная запись', color: '#09557E', bg: '#A8E5FF' },
   in_progress: { label: 'В работе', color: '#D45813', bg: '#FFCCAE' },
-  approval: { label: 'Согласование', color: '#430890', bg: '#D7BCFB' },
+  waiting: { label: 'Ожидание', color: '#430890', bg: '#D7BCFB' },
   done: { label: 'Готово', color: '#2F8527', bg: '#CEFFA2' }
 }
 

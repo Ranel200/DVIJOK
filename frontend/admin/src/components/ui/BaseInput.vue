@@ -1,11 +1,12 @@
 <template>
   <q-input
-    :class="['base-input', { 'base-input--block': block }]"
+    :class="['base-input', { 'base-input--block': block, 'base-input--readonly': readonly }]"
     :model-value="modelValue"
     :type="type"
     :placeholder="placeholder"
     :disable="disable"
     :readonly="readonly"
+    :input-attrs="nativeAttrs"
     :rules="rules"
     :error="error"
     :error-message="errorMessage"
@@ -20,6 +21,8 @@
     no-error-icon
     hide-bottom-space
     @update:model-value="onUpdate"
+    @focus="onFocus"
+    @mousedown="onMouseDown"
   >
     <template v-if="$slots.prepend" #prepend>
       <slot name="prepend" />
@@ -31,7 +34,9 @@
 </template>
 
 <script setup>
-defineProps({
+import { computed } from 'vue'
+
+const props = defineProps({
   modelValue: {
     type: [String, Number],
     default: ''
@@ -96,8 +101,22 @@ defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
+const nativeAttrs = computed(() =>
+  props.readonly || props.disable ? { tabindex: -1, readonly: true } : undefined
+)
+
 function onUpdate(value) {
   emit('update:modelValue', value)
+}
+
+function onFocus(event) {
+  if (!props.readonly) return
+  event?.target?.blur?.()
+}
+
+function onMouseDown(event) {
+  if (!props.readonly) return
+  event.preventDefault()
 }
 </script>
 
@@ -167,10 +186,23 @@ function onUpdate(value) {
   }
 }
 
-.base-input.q-field--readonly {
+.base-input.q-field--readonly,
+.base-input--readonly {
+  pointer-events: none;
+
   :deep(.q-field__control),
   :deep(.q-field__native) {
     cursor: default;
+    caret-color: transparent;
+    pointer-events: none;
+    user-select: none;
+  }
+}
+
+.base-input.q-field--readonly.q-field--focused,
+.base-input--readonly.q-field--focused {
+  :deep(.q-field__control) {
+    border-color: var(--dvijok-text-secondary);
   }
 }
 </style>

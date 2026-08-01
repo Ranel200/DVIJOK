@@ -154,6 +154,39 @@
             </div>
           </div>
         </BaseFormBlock>
+
+        <BaseFormBlock title="Логин и пароль" layout="horizontal">
+          <BaseField
+            v-model="draft.login"
+            layout="horizontal"
+            label="Логин"
+            placeholder="Логин"
+            :readonly="isView"
+            block
+          />
+          <BaseField
+            v-model="draft.password"
+            layout="horizontal"
+            :type="showPassword ? 'text' : 'password'"
+            label="Пароль"
+            placeholder="Пароль"
+            :readonly="isView"
+            block
+          >
+            <template #append>
+              <q-btn
+                flat
+                dense
+                type="button"
+                class="staff-form__eye-btn"
+                :aria-label="showPassword ? 'Скрыть пароль' : 'Показать пароль'"
+                @click="showPassword = !showPassword"
+              >
+                <EyeIcon :closed="showPassword" />
+              </q-btn>
+            </template>
+          </BaseField>
+        </BaseFormBlock>
       </div>
     </div>
 
@@ -185,6 +218,7 @@ import BaseField from '@/components/ui/BaseField.vue'
 import BaseFormBlock from '@/components/ui/BaseFormBlock.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import BaseSwitcher from '@/components/ui/BaseSwitcher.vue'
+import EyeIcon from '@/components/ui/EyeIcon.vue'
 import {
   STAFF_ACCESS_OPTIONS,
   STAFF_ROLE_LABELS,
@@ -225,6 +259,7 @@ const documentFields = [
 
 const draft = reactive(createEmptyDraft())
 const colorOpen = ref(false)
+const showPassword = ref(false)
 const fileInputRef = ref(null)
 const pendingDocKey = ref(null)
 
@@ -255,6 +290,7 @@ watch(
   () => [props.modelValue, props.employee, props.mode],
   ([open]) => {
     if (!open) return
+    showPassword.value = false
     Object.assign(draft, props.employee ? draftFromEmployee(props.employee) : createEmptyDraft())
   }
 )
@@ -277,7 +313,9 @@ function createEmptyDraft() {
     rate: '',
     color: '',
     documents: emptyDocuments(),
-    access: emptyAccess()
+    access: emptyAccess(),
+    login: '',
+    password: ''
   }
 }
 
@@ -303,7 +341,9 @@ function draftFromEmployee(employee) {
     rate: parseStaffRate(employee.rate),
     color: employee.color || employee.avatarBg || '',
     documents,
-    access
+    access,
+    login: employee.login || '',
+    password: employee.password || ''
   }
 }
 
@@ -342,7 +382,9 @@ function onSave() {
     rate: draft.rate === '' ? null : Number(draft.rate),
     color: draft.color || null,
     documents: { ...draft.documents },
-    access: { ...draft.access }
+    access: { ...draft.access },
+    login: draft.login.trim(),
+    password: draft.password
   })
 }
 </script>
@@ -557,5 +599,14 @@ function onSave() {
 
 .staff-form__access-label {
   white-space: nowrap;
+}
+
+.staff-form__eye-btn {
+  min-height: auto;
+  padding: 0;
+
+  :deep(.q-btn__content) {
+    padding: 0;
+  }
 }
 </style>

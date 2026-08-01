@@ -9,7 +9,7 @@
       }
     ]"
   >
-    <label v-if="label" :for="fieldId" class="base-field__label">
+    <label v-if="label" :for="readonly || disable ? undefined : fieldId" class="base-field__label">
       {{ label }}
     </label>
     <div class="base-field__control">

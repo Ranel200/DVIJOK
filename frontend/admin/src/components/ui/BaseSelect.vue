@@ -3,11 +3,13 @@
     ref="rootRef"
     :class="[
       'base-select',
+      `base-select--${variant}`,
       {
         'base-select--open': listVisible,
         'base-select--block': block,
         'base-select--center': align === 'center',
-        'base-select--no-chevron': hideChevron
+        'base-select--no-chevron': hideChevron,
+        'base-select--disabled': disable
       }
     ]"
   >
@@ -16,6 +18,8 @@
       type="button"
       class="base-select__trigger"
       :aria-expanded="open"
+      :aria-disabled="disable || undefined"
+      :tabindex="disable ? -1 : undefined"
       @click="toggle"
     >
       <span class="base-select__value">{{ currentLabel }}</span>
@@ -24,7 +28,13 @@
 
     <Teleport to="body">
       <Transition name="base-select-list" @after-leave="listVisible = false">
-        <ul v-if="open" ref="listRef" class="base-select__list" :style="listStyle" @click.stop>
+        <ul
+          v-if="open"
+          ref="listRef"
+          :class="['base-select__list', `base-select__list--${variant}`]"
+          :style="listStyle"
+          @click.stop
+        >
           <li
             v-for="option in options"
             :key="option.value"
@@ -71,6 +81,15 @@ const props = defineProps({
     type: String,
     default: 'left',
     validator: value => ['left', 'center'].includes(value)
+  },
+  variant: {
+    type: String,
+    default: 'default',
+    validator: value => ['default', 'accent'].includes(value)
+  },
+  disable: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -93,6 +112,7 @@ function isActive(value) {
 }
 
 function toggle() {
+  if (props.disable) return
   open.value = !open.value
   if (open.value) {
     listVisible.value = true
@@ -190,6 +210,11 @@ onBeforeUnmount(() => {
   width: 100%;
 }
 
+.base-select--disabled .base-select__trigger {
+  cursor: default;
+  pointer-events: none;
+}
+
 .base-select--open .base-select__trigger {
   border-bottom-color: transparent;
   border-bottom-left-radius: 0;
@@ -229,6 +254,26 @@ onBeforeUnmount(() => {
 
 .base-select__option--active {
   background-color: var(--dvijok-choice-active);
+}
+
+.base-select--accent .base-select__trigger {
+  border-color: var(--dvijok-text-primary);
+  background-color: var(--dvijok-choice-active);
+  color: var(--dvijok-text-primary);
+}
+
+.base-select--accent .base-select__trigger :deep(.chevron-icon) {
+  color: var(--dvijok-text-primary);
+}
+
+.base-select__list--accent {
+  border-color: var(--dvijok-text-primary);
+  background-color: var(--dvijok-choice-active);
+}
+
+.base-select__list--accent .base-select__option--active {
+  background-color: var(--dvijok-white);
+  color: var(--dvijok-text-primary);
 }
 
 .base-select-list-enter-active,
