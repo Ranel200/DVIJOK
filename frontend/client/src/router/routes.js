@@ -5,9 +5,15 @@ const routes = [
     children: [
       {
         path: '',
-        name: 'client-login',
-        component: () => import('@/pages/auth/LoginPage.vue'),
+        name: 'login',
+        component: () => import('@/pages/auth/AuthPage.vue'),
         meta: { title: 'Вход' }
+      },
+      {
+        path: 'register',
+        name: 'register',
+        component: () => import('@/pages/auth/AuthPage.vue'),
+        meta: { title: 'Регистрация' }
       }
     ]
   },
@@ -18,14 +24,13 @@ const routes = [
     children: [
       {
         path: '',
-        name: 'client-dashboard',
-        component: () => import('@/pages/DashboardPage.vue'),
+        name: 'home',
+        component: () => import('@/pages/HomePage.vue'),
         meta: { title: 'Кабинет', requiresAuth: true }
       }
     ]
   },
 
-  // Always leave this as last one
   {
     path: '/:catchAll(.*)*',
     name: 'not-found',

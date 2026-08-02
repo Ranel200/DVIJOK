@@ -9,6 +9,8 @@ import {
 import routes from './routes.js'
 import { useAuthStore } from '@/stores/auth.js'
 
+const AUTH_ROUTE_NAMES = new Set(['login', 'register'])
+
 export default defineRouter((/* { store, ssrContext } */) => {
   const createHistory = import.meta.env.QUASAR_SERVER
     ? createMemoryHistory
@@ -32,11 +34,11 @@ export default defineRouter((/* { store, ssrContext } */) => {
     const auth = useAuthStore()
 
     if (to.meta.requiresAuth && !auth.isAuthenticated) {
-      return { name: 'client-login' }
+      return { name: 'login' }
     }
 
-    if (to.name === 'client-login' && auth.isAuthenticated) {
-      return { name: 'client-dashboard' }
+    if (AUTH_ROUTE_NAMES.has(to.name) && auth.isAuthenticated) {
+      return { name: 'home' }
     }
 
     return true

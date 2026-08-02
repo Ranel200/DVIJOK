@@ -1,4 +1,5 @@
 // app global css
+@use '@dvijok/shared/css/colors.scss';
 
 body {
   font-family:
@@ -8,4 +9,9 @@ body {
     'Segoe UI',
     Roboto,
     sans-serif;
+}
+
+.q-page-container {
+  min-height: 100vh;
+  background-color: var(--dvijok-muted);
 }

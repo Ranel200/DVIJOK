@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     "./api/http.js": "./api/http.js",
-    "./api/mock.js": "./api/mock.js"
+    "./api/mock.js": "./api/mock.js",
+    "./css/colors.scss": "./css/colors.scss"
   },
   "scripts": {
     "lint": "oxfmt && oxlint --fix",
