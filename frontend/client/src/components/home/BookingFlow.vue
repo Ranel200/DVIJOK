@@ -157,7 +157,9 @@
 
       <div class="booking-modal-actions">
         <BaseButton color="blue2" size="sm" @click="confirmOpen = false">Вернуться</BaseButton>
-        <BaseButton color="green" size="sm" @click="onConfirmBooking">Подтвердить запись</BaseButton>
+        <BaseButton color="green" size="sm" @click="onConfirmBooking"
+          >Подтвердить запись</BaseButton
+        >
       </div>
     </BaseModal>
 

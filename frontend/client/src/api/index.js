@@ -170,3 +170,221 @@ export const bookingApi = {
     return http.post('/booking', payload)
   }
 }
+
+const mockCars = [
+  {
+    id: 'car-1',
+    brand: 'Toyota Camry',
+    year: 2019,
+    color: 'Белый',
+    plate: 'А 123 ВС 116',
+    vin: '12345678912345678',
+    nextAppointment: {
+      serviceName: 'ПАПИН ГАРАЖ',
+      datetime: '31 июля 13:00',
+      service: 'Диагностика',
+      master: 'Кузнецов Сергей',
+      car: 'Toyota Camry'
+    },
+    maintenance: [
+      { label: 'Крайний пробег', value: '66 000 км' },
+      { label: 'Масло', value: 'замена на 80 000' },
+      { label: 'ТО', value: 'рекомендовано на 100 000' }
+    ],
+    repair: {
+      orderNumber: '001',
+      carLabel: 'Toyota Camry',
+      statuses: [
+        {
+          id: 'booked',
+          title: 'Записан',
+          subtitle: '14 июля 2026 · 15:00',
+          color: '#093095',
+          state: 'done'
+        },
+        {
+          id: 'in_progress',
+          title: 'В работе',
+          subtitle: 'Работает мастер Кузнецов Д.',
+          color: '#D45813',
+          state: 'done'
+        },
+        {
+          id: 'needs_approval',
+          title: '! Нуждается в согласовании',
+          subtitle: 'Ожидает вашего ответа',
+          color: '#430890',
+          state: 'current',
+          action: 'Связаться с мастером'
+        },
+        {
+          id: 'not_ready',
+          title: 'Еще не готово',
+          subtitle: 'Ожидайте выполнения услуги',
+          color: '#157848',
+          state: 'inactive'
+        }
+      ]
+    }
+  },
+  {
+    id: 'car-2',
+    brand: 'Kia Rio',
+    year: 2021,
+    color: 'Серый',
+    plate: 'В 456 ОР 116',
+    vin: '98765432109876543',
+    nextAppointment: {
+      serviceName: 'МоторПро',
+      datetime: '5 августа 11:00',
+      service: 'Замена масла',
+      master: 'Иванов Алексей',
+      car: 'Kia Rio'
+    },
+    maintenance: [
+      { label: 'Крайний пробег', value: '42 500 км' },
+      { label: 'Масло', value: 'замена на 50 000' },
+      { label: 'ТО', value: 'рекомендовано на 60 000' }
+    ],
+    repair: {
+      orderNumber: '014',
+      carLabel: 'Kia Rio',
+      statuses: [
+        {
+          id: 'booked',
+          title: 'Записан',
+          subtitle: '2 июня 2026 · 11:00',
+          color: '#093095',
+          state: 'done'
+        },
+        {
+          id: 'in_progress',
+          title: 'В работе',
+          subtitle: 'Работает мастер Иванов А.',
+          color: '#D45813',
+          state: 'done'
+        },
+        {
+          id: 'needs_approval',
+          title: '! Нуждается в согласовании',
+          subtitle: 'Ожидает вашего ответа',
+          color: '#430890',
+          state: 'current',
+          action: 'Связаться с мастером'
+        },
+        {
+          id: 'not_ready',
+          title: 'Еще не готово',
+          subtitle: 'Ожидайте выполнения услуги',
+          color: '#157848',
+          state: 'inactive'
+        }
+      ]
+    }
+  }
+]
+
+const mockBots = [
+  { id: 'tg', label: '@BOT_tg', icon: '/client/icons/my-car/tg.png', href: '#' },
+  { id: 'vk', label: '@BOT_vk', icon: '/client/icons/my-car/vk.png', href: '#' },
+  { id: 'max', label: '@BOT_max', icon: '/client/icons/my-car/max.png', href: '#' }
+]
+
+export const carsApi = {
+  async list() {
+    if (USE_MOCK) {
+      return mockOk({
+        cars: mockCars,
+        bots: mockBots
+      })
+    }
+    return http.get('/cars')
+  }
+}
+
+const mockHistoryItems = [
+  {
+    id: 'hist-1',
+    title: 'Замена масла и фильтров',
+    status: 'new',
+    carBrand: 'Марка машины',
+    carPlate: 'Х 000 ХХ 116',
+    serviceName: 'Папин гараж',
+    serviceAddress: 'ул. Автозаводская, 14/1',
+    master: 'Кузнецов Д.',
+    datetime: '31.07.2026 13:00',
+    amount: 5500,
+    orderNumber: '008',
+    orderReady: false,
+    monthLabel: 'Июль 2026'
+  },
+  {
+    id: 'hist-2',
+    title: 'Диагностика подвески',
+    status: 'in_progress',
+    carBrand: 'Марка машины',
+    carPlate: 'Х 000 ХХ 116',
+    serviceName: 'Папин гараж',
+    serviceAddress: 'ул. Автозаводская, 14/1',
+    master: 'Кузнецов Д.',
+    datetime: '28.07.2026 11:00',
+    amount: 3200,
+    orderNumber: '009',
+    orderReady: false,
+    monthLabel: 'Июль 2026'
+  },
+  {
+    id: 'hist-3',
+    title: 'Ремонт тормозной системы',
+    status: 'approval',
+    carBrand: 'Марка машины',
+    carPlate: 'Х 000 ХХ 116',
+    serviceName: 'Папин гараж',
+    serviceAddress: 'ул. Автозаводская, 14/1',
+    master: 'Иванов А.',
+    datetime: '25.07.2026 15:00',
+    amount: 9800,
+    orderNumber: '010',
+    orderReady: false,
+    monthLabel: 'Июль 2026'
+  },
+  {
+    id: 'hist-4',
+    title: 'Техническое обслуживание',
+    status: 'completed',
+    carBrand: 'Марка машины',
+    carPlate: 'Х 000 ХХ 116',
+    serviceName: 'Папин гараж',
+    serviceAddress: 'ул. Автозаводская, 14/1',
+    master: 'Кузнецов Д.',
+    datetime: '09.07.2026 13:00',
+    amount: 7000,
+    orderNumber: '007',
+    orderReady: true,
+    monthLabel: 'Июль 2026'
+  },
+  {
+    id: 'hist-5',
+    title: 'Замена сцепления',
+    status: 'completed',
+    carBrand: 'Марка машины',
+    carPlate: 'Х 000 ХХ 116',
+    serviceName: 'У дяди Васи',
+    serviceAddress: 'ул. Ленина, 67',
+    master: 'Лобанов С.',
+    datetime: '12.05.2026 11:00',
+    amount: 15000,
+    orderNumber: '006',
+    orderReady: true,
+    monthLabel: 'Май 2026'
+  }
+]
+
+export const historyApi = {
+  async list(params = {}) {
+    if (USE_MOCK) {
+      return mockOk({ items: mockHistoryItems })
+    }
+    return http.get('/history', { params })
+  }
+}
