@@ -1,5 +1,15 @@
 <template>
-  <div class="app-block" :class="[`app-block--${variant}`, { 'app-block--fixed': fixedHeight }]">
+  <div
+    class="app-block"
+    :class="[
+      `app-block--${variant}`,
+      {
+        'app-block--fixed': fixedHeight,
+        'app-block--compact': compact,
+        'app-block--active': active
+      }
+    ]"
+  >
     <div v-if="title || subtitle" class="app-block__head">
       <h2 v-if="title" class="app-block__title">{{ title }}</h2>
       <p v-if="subtitle" class="app-block__subtitle">{{ subtitle }}</p>
@@ -27,6 +37,14 @@ defineProps({
   fixedHeight: {
     type: Boolean,
     default: false
+  },
+  compact: {
+    type: Boolean,
+    default: false
+  },
+  active: {
+    type: Boolean,
+    default: false
   }
 })
 </script>
@@ -38,6 +56,20 @@ defineProps({
   gap: 20px;
   border-radius: 10px;
   padding: 20px 30px;
+}
+
+.app-block--compact {
+  gap: 15px;
+  padding: 12px 10px;
+}
+
+.app-block--active {
+  padding: 19px 29px;
+  border: 1px solid var(--dvijok-blue-primary);
+}
+
+.app-block--compact.app-block--active {
+  padding: 11px 9px;
 }
 
 .app-block--white {
@@ -67,6 +99,10 @@ defineProps({
 
 .app-block--white .app-block__title {
   color: var(--dvijok-text-primary);
+}
+
+.app-block--white.app-block--active .app-block__title {
+  color: var(--dvijok-blue-primary);
 }
 
 .app-block--dark .app-block__title {

@@ -1,12 +1,10 @@
 <template>
   <q-page class="home">
-    <div class="home__toolbar">
-      <q-btn flat dense color="primary" label="Выйти" @click="onLogout" />
-    </div>
+    <ClientHeader :title="headerTitle" :subtitle="headerSubtitle" />
 
     <q-tab-panels v-model="tab" animated swipeable class="home__panels">
       <q-tab-panel name="book" class="home__panel">
-        <BookPanel />
+        <BookPanel @go-to-car="tab = 'car'" />
       </q-tab-panel>
 
       <q-tab-panel name="car" class="home__panel">
@@ -18,42 +16,46 @@
       </q-tab-panel>
     </q-tab-panels>
 
-    <q-tabs
-      v-model="tab"
-      dense
-      align="justify"
-      class="home__tabs"
-      active-color="primary"
-      indicator-color="primary"
-    >
-      <q-tab
-        v-for="item in clientTabs"
-        :key="item.name"
-        :name="item.name"
-        :label="item.label"
-        :aria-label="item.label"
-      />
-    </q-tabs>
+    <HomeTabs v-model="tab" />
   </q-page>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, ref } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@/stores/auth.js'
-import { clientTabs } from '@/constants/navigation.js'
 import BookPanel from '@/components/home/BookPanel.vue'
 import CarPanel from '@/components/home/CarPanel.vue'
 import HistoryPanel from '@/components/home/HistoryPanel.vue'
+import HomeTabs from '@/components/home/HomeTabs.vue'
+import ClientHeader from '@/components/layout/ClientHeader.vue'
 
-const router = useRouter()
 const authStore = useAuthStore()
-const tab = ref(clientTabs[0].name)
+const { user } = storeToRefs(authStore)
+const tab = ref('car')
 
-async function onLogout() {
-  await authStore.logout()
-  await router.push({ name: 'login' })
-}
+const greeting = computed(() => {
+  const hour = new Date().getHours()
+  if (hour >= 5 && hour < 12) return 'Доброе утро,'
+  if (hour >= 12 && hour < 18) return 'Добрый день,'
+  return 'Добрый вечер,'
+})
+
+const userDisplayName = computed(() => {
+  const name = user.value?.name?.trim()
+  return name ? `${name}!` : 'Клиент!'
+})
+
+const headerTitle = computed(() => {
+  if (tab.value === 'car') return userDisplayName.value
+  if (tab.value === 'history') return 'История обслуживания'
+  return 'Записаться'
+})
+
+const headerSubtitle = computed(() => {
+  if (tab.value === 'car') return greeting.value
+  return ''
+})
 </script>
 
 <style scoped lang="scss">
@@ -65,12 +67,6 @@ async function onLogout() {
   overflow: auto;
 }
 
-.home__toolbar {
-  display: flex;
-  justify-content: flex-end;
-  padding: 8px 12px 0;
-}
-
 .home__panels {
   flex: 1;
   background: transparent;
@@ -78,9 +74,5 @@ async function onLogout() {
 
 .home__panel {
   padding: 0;
-}
-
-.home__tabs {
-  flex-shrink: 0;
 }
 </style>
