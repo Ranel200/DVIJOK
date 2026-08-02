@@ -28,8 +28,8 @@ export default defineRouter((/* { store, ssrContext } */) => {
     history: createHistory(import.meta.env.QUASAR_VUE_ROUTER_BASE)
   })
 
-  // Mock-гард авторизации. Пока auth-стор по умолчанию авторизован,
-  // редиректов не происходит; логика готова к реальной блокировке.
+  // Гард авторизации: requiresAuth без сессии → login;
+  // заход на login/register при активной сессии → home.
   Router.beforeEach(to => {
     const auth = useAuthStore()
 

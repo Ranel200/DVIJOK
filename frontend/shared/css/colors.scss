@@ -3,7 +3,13 @@
   --dvijok-bg-dark: #051b54;
   --dvijok-blue-primary: #093095;
   --dvijok-blue-light: #3061e2;
+  --dvijok-blue-deep: #0b3cba;
   --dvijok-blue-pale: #7ea0fa;
+  --dvijok-gradient-brand: linear-gradient(
+    301.84deg,
+    var(--dvijok-bg-dark) 3.25%,
+    var(--dvijok-blue-deep) 114.95%
+  );
   --dvijok-muted: #d1daf3;
   --dvijok-text-secondary: #7a82a0;
   --dvijok-text-heading: #0f1f4a;

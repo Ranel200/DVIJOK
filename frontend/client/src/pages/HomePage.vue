@@ -60,7 +60,9 @@ async function onLogout() {
 .home {
   display: flex;
   flex-direction: column;
+  height: 100%;
   min-height: 100%;
+  overflow: auto;
 }
 
 .home__toolbar {

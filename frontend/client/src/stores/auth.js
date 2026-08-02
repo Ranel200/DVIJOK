@@ -2,17 +2,11 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { setAuthToken } from '@dvijok/shared/api/http.js'
 
-// Mock-авторизация клиентского кабинета. По умолчанию пользователь считается
-// авторизованным (dev), чтобы навигация работала до появления реальной формы
-// входа и API. Для строгой блокировки задайте начальные значения null/false.
-// login/logout — заглушки; подключение authApi — когда появится бэкенд.
+// Auth клиентского кабинета. Стартует без сессии — формы входа/регистрации
+// доступны сразу. login/logout — заглушки до появления реального API.
 export const useAuthStore = defineStore('auth', () => {
-  const user = ref({
-    id: 1,
-    name: 'Клиент',
-    email: 'client@dvijok.local'
-  })
-  const token = ref('mock-token')
+  const user = ref(null)
+  const token = ref(null)
 
   const isAuthenticated = computed(() => Boolean(token.value))
 
@@ -20,8 +14,9 @@ export const useAuthStore = defineStore('auth', () => {
     token.value = 'mock-token'
     user.value = {
       id: 1,
-      name: 'Клиент',
-      email: credentials?.email || 'client@dvijok.local'
+      name: credentials?.name || 'Клиент',
+      email: credentials?.email || 'client@dvijok.local',
+      phone: credentials?.phone || ''
     }
     setAuthToken(token.value)
     return user.value
