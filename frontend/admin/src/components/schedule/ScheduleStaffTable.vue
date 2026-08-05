@@ -488,8 +488,8 @@ defineExpose({ reload: loadEmployees })
 .schedule-staff__th--employees {
   padding: 0 10px 30px 20px;
   font-weight: 600;
-  font-size: 14px;
-  line-height: 17px;
+  font-size: 16px;
+  line-height: 19px;
   color: var(--dvijok-link-hover);
   text-align: left;
 }
@@ -531,8 +531,8 @@ defineExpose({ reload: loadEmployees })
 
 .schedule-staff__total-sub {
   font-weight: 400;
-  font-size: 10px;
-  line-height: 12px;
+  font-size: 12px;
+  line-height: 15px;
   color: var(--dvijok-text-secondary);
   text-align: center;
 }
@@ -551,8 +551,8 @@ defineExpose({ reload: loadEmployees })
 
 .schedule-staff__day-num {
   font-weight: 600;
-  font-size: 11px;
-  line-height: 13px;
+  font-size: 12px;
+  line-height: 15px;
   color: var(--dvijok-link-hover);
   text-align: center;
 }
@@ -579,8 +579,8 @@ defineExpose({ reload: loadEmployees })
   justify-content: center;
   gap: 5px;
   font-weight: 400;
-  font-size: 8px;
-  line-height: 10px;
+  font-size: 11px;
+  line-height: 13px;
   color: var(--dvijok-text-secondary);
 }
 
@@ -637,15 +637,15 @@ defineExpose({ reload: loadEmployees })
 
 .schedule-staff__employee-name {
   font-weight: 600;
-  font-size: 11px;
-  line-height: 13px;
+  font-size: 14px;
+  line-height: 17px;
   color: var(--dvijok-link-hover);
 }
 
 .schedule-staff__employee-role {
   font-weight: 400;
-  font-size: 10px;
-  line-height: 100%;
+  font-size: 12px;
+  line-height: 15px;
   color: var(--dvijok-text-secondary);
 }
 
@@ -668,16 +668,16 @@ defineExpose({ reload: loadEmployees })
 
 .schedule-staff__month-days {
   font-weight: 600;
-  font-size: 11px;
-  line-height: 13px;
+  font-size: 12px;
+  line-height: 15px;
   text-align: center;
   color: var(--dvijok-link-hover);
 }
 
 .schedule-staff__month-hours {
   font-weight: 400;
-  font-size: 10px;
-  line-height: 12px;
+  font-size: 12px;
+  line-height: 15px;
   text-align: center;
   color: var(--dvijok-text-secondary);
 }
@@ -698,8 +698,8 @@ defineExpose({ reload: loadEmployees })
   border-radius: 8px;
   border: 1px solid;
   font-weight: 400;
-  font-size: 11px;
-  line-height: 13px;
+  font-size: 12px;
+  line-height: 15px;
   text-align: center;
 }
 

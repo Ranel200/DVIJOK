@@ -586,6 +586,7 @@ function onSave() {
   flex: 0 1 500px;
   max-width: 500px;
   margin-left: auto;
+  align-items: flex-end;
 }
 
 .order-form__actions {

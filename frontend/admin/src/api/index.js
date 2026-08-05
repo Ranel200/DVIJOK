@@ -1451,6 +1451,7 @@ export const settingsApi = {
           taxSystem: 'УСН',
           inn: '7701234567',
           ogrn: '1027700132195',
+          bankAccount: '40702810123456789012',
           phone: '+7 495 123 45 67',
           email: 'service@dvijok.ru',
           address: 'г. Москва, ул. Автозаводская, д. 12',

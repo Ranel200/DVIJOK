@@ -37,7 +37,9 @@
         <th class="admin-table__th admin-table__th--check"></th>
         <th class="admin-table__th tasks__th--task">Задача</th>
         <th class="admin-table__th tasks__th--employee">Сотрудник</th>
+        <th class="admin-table__th tasks__th--deadline">Дедлайн</th>
         <th class="admin-table__th tasks__th--status">Статус</th>
+        <th class="admin-table__th tasks__th--completion">Выполнение</th>
       </template>
 
       <tr v-for="task in filteredTasks" :key="task.id" class="admin-table__row">
@@ -47,14 +49,24 @@
         <td class="admin-table__cell tasks__cell--task">
           <div class="admin-table__title">{{ task.title }}</div>
           <div class="admin-table__desc">{{ task.description }}</div>
-          <div class="tasks__deadline">Срок выполнения: {{ formatDeadline(task.deadline) }}</div>
         </td>
         <td class="admin-table__cell tasks__cell--employee">
           <span class="admin-table__text">{{ formatEmployee(task.employee) }}</span>
         </td>
+        <td class="admin-table__cell tasks__cell--deadline">
+          <span class="admin-table__text">{{ formatDeadline(task.deadline) }}</span>
+        </td>
         <td class="admin-table__cell tasks__cell--status">
           <span :class="`tasks__pill tasks__pill--${task.status}`">
             {{ statusLabel(task.status) }}
+          </span>
+        </td>
+        <td class="admin-table__cell tasks__cell--completion">
+          <span class="tasks__completion">
+            <span class="tasks__completion-circle" aria-hidden="true" />
+            <span class="tasks__completion-label">
+              {{ task.status === 'done' ? 'Выполнена' : 'Не выполнено' }}
+            </span>
           </span>
         </td>
       </tr>
@@ -135,14 +147,17 @@ import BaseModal from '@/components/ui/BaseModal.vue'
 import SuccessModal from '@/components/ui/SuccessModal.vue'
 import { tasksApi } from '@/api/index.js'
 import { pluralize } from '@/utils/pluralize.js'
+import { formatDeadlineUntil } from '@/utils/formatDateRu.js'
 
 const action = { label: '+ Новая задача' }
 
 const columns = [
   { key: 'check', width: '63px' },
-  { key: 'task', width: '45%' },
-  { key: 'employee' },
-  { key: 'status', width: '139px' }
+  { key: 'task', width: '25%' },
+  { key: 'employee' , width: '25%' },
+  { key: 'deadline', width: '15%' },
+  { key: 'status', width: '15%' },
+  { key: 'completion', width: '160px' }
 ]
 
 const summary = ref(null)
@@ -248,13 +263,7 @@ function statusLabel(value) {
 }
 
 function formatDeadline(date) {
-  if (!date) return '—'
-  if (date.includes('.')) {
-    const [d, m] = date.split('.')
-    return `${d}.${m}`
-  }
-  const [, m, d] = date.split('-')
-  return `${d}.${m}`
+  return formatDeadlineUntil(date) || '—'
 }
 
 function formatEmployee(emp) {
@@ -354,22 +363,44 @@ onMounted(async () => {
 .tasks__th--task,
 .tasks__cell--task,
 .tasks__th--employee,
-.tasks__cell--employee {
+.tasks__cell--employee,
+.tasks__th--deadline,
+.tasks__cell--deadline,
+.tasks__th--status,
+.tasks__cell--status {
   padding-right: 40px;
 }
 
-.tasks__th--status,
-.tasks__cell--status {
+.tasks__th--completion,
+.tasks__cell--completion {
   padding-right: 19px;
   text-align: right;
 }
 
-.tasks__deadline {
-  margin-top: 12px;
+.tasks__completion {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 9px;
+  border: 1px solid var(--dvijok-tab-inactive);
+  border-radius: 50px;
+  box-sizing: border-box;
+}
+
+.tasks__completion-circle {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--dvijok-tab-inactive);
+  border-radius: 50%;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.tasks__completion-label {
   font-weight: 600;
-  font-size: 10px;
-  line-height: 12px;
-  color: var(--dvijok-text-secondary);
+  font-size: 12px;
+  line-height: 15px;
+  color: var(--dvijok-tab-inactive);
 }
 
 .tasks__pill {

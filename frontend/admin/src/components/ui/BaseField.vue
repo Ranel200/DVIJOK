@@ -150,9 +150,9 @@ function onUpdate(value) {
 }
 
 .base-field__label {
-  color: var(--dvijok-form-label, var(--dvijok-text-secondary));
-  font-size: 14px;
-  line-height: 16px;
+  color: var(--dvijok-form-label, var(--dvijok-bg-dark));
+  font-size: 16px;
+  line-height: 19px;
   text-align: left;
   white-space: nowrap;
 }

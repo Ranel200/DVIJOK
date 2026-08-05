@@ -293,7 +293,7 @@ defineExpose({ reload: loadCalendar })
   flex-direction: column;
   align-items: stretch;
   justify-content: center;
-  min-height: 70px;
+  min-height: 84px;
   padding: 10px;
   box-sizing: border-box;
   border-radius: 8px;
@@ -352,8 +352,8 @@ defineExpose({ reload: loadCalendar })
 
 .schedule-calendar__meta {
   font-weight: 500;
-  font-size: 10px;
-  line-height: 12px;
+  font-size: 12px;
+  line-height: 15px;
   color: inherit;
 }
 

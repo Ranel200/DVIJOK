@@ -47,9 +47,9 @@ defineProps({
 .base-form-block__title {
   margin: 0;
   color: var(--dvijok-form-block-title, var(--dvijok-bg-dark));
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
-  line-height: 17px;
+  line-height: 19px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }

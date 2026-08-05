@@ -1,19 +1,26 @@
 <template>
   <div class="settings">
     <div class="settings__col">
-      <section class="settings-card">
-        <div class="settings-card__head">
-          <h2 class="settings-card__title">Данные автосервиса</h2>
-          <button
-            type="button"
-            class="settings-card__edit"
-            aria-label="Редактировать"
-            @click="openEdit()"
-          >
-            <img src="/admin/icons/services/edit.svg" alt="" />
-          </button>
-        </div>
-        <BaseForm v-model="form" :blocks="formBlocks" disable max-height="none" />
+      <section class="settings-card settings-card--service">
+        <BaseScrollbar
+          ref="serviceScrollbarRef"
+          track-position="start"
+          class="settings-card__body"
+          content-class="settings-card__scroll"
+        >
+          <div class="settings-card__head">
+            <h2 class="settings-card__title">Данные автосервиса</h2>
+            <button
+              type="button"
+              class="settings-card__edit"
+              aria-label="Редактировать"
+              @click="openEdit()"
+            >
+              <img src="/admin/icons/services/edit.svg" alt="" />
+            </button>
+          </div>
+          <BaseForm v-model="form" :blocks="formBlocks" disable max-height="none" />
+        </BaseScrollbar>
       </section>
     </div>
 
@@ -197,11 +204,12 @@
 </template>
 
 <script setup>
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import ArrowIcon from '@/components/ui/ArrowIcon.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseForm from '@/components/ui/BaseForm.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
+import BaseScrollbar from '@/components/ui/BaseScrollbar.vue'
 import Radio from '@/components/ui/Radio.vue'
 import SuccessModal from '@/components/ui/SuccessModal.vue'
 import { settingsApi } from '@/api/index.js'
@@ -219,6 +227,17 @@ const props = defineProps({
 
 const emit = defineEmits(['saved'])
 const editFormRef = ref(null)
+const serviceScrollbarRef = ref(null)
+
+function refreshServiceScrollbar() {
+  nextTick(() => {
+    serviceScrollbarRef.value?.update()
+    requestAnimationFrame(() => serviceScrollbarRef.value?.update())
+  })
+}
+
+watch(form, refreshServiceScrollbar, { deep: true })
+onMounted(refreshServiceScrollbar)
 
 const LEGAL_OPTIONS = [
   { label: 'ИП', value: 'ИП' },
@@ -309,7 +328,8 @@ const formBlocks = computed(() => [
           : []
       },
       { key: 'inn', label: 'ИНН', row: 'ids' },
-      { key: 'ogrn', label: 'ОГРН', row: 'ids' }
+      { key: 'ogrn', label: 'ОГРН', row: 'ids' },
+      { key: 'bankAccount', label: 'Расчётный счёт' }
     ]
   },
   {
@@ -351,7 +371,12 @@ const editBlocks = computed(() => [
         options: TAX_OPTIONS
       },
       { key: 'ogrn', label: 'ОГРН', placeholder: 'Введите ОГРН', row: 'ogrn' },
-      { key: 'ogrnSpacer', type: 'empty', row: 'ogrn' }
+      { key: 'ogrnSpacer', type: 'empty', row: 'ogrn' },
+      {
+        key: 'bankAccount',
+        label: 'Расчётный счёт',
+        placeholder: 'Введите расчётный счёт'
+      }
     ]
   },
   {
@@ -458,24 +483,51 @@ defineExpose({ openEdit })
   background: linear-gradient(301.84deg, #051b54 3.25%, #0b3cba 114.95%);
 }
 
-.settings-card :deep(.base-form) {
+.settings-card--service {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  max-height: 100%;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.settings-card--service > .settings-card__body {
+  position: absolute;
+  inset: 20px;
+  width: auto;
+  height: auto;
+  gap: 12px;
+  --base-scrollbar-thumb: #093095;
+}
+
+.settings-card--service > .settings-card__body :deep(.settings-card__scroll) {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.settings-card--service :deep(.base-form) {
   flex: none;
   gap: 0;
   overflow: visible;
 }
 
-.settings-card :deep(.base-form__body) {
+.settings-card--service :deep(.base-form__body) {
   flex: none;
   max-height: none;
   overflow: visible;
 }
 
-.settings-card :deep(.base-form__scroll) {
+.settings-card--service :deep(.base-form__scroll) {
   overflow: visible;
-  gap: 20px;
+  gap: 40px;
 }
 
-.settings-card :deep(.base-form-block__fields) {
+.settings-card--service :deep(.base-form-block__fields) {
   gap: 15px;
 }
 

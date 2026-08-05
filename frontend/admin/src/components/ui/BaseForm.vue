@@ -4,6 +4,7 @@
       ref="scrollbarRef"
       class="base-form__body"
       content-class="base-form__scroll"
+      :track-position="trackPosition"
       :content-style="scrollStyle"
       :enabled="allowScroll"
       :style="bodyStyle"
@@ -155,6 +156,11 @@ const props = defineProps({
   maxHeight: {
     type: [String, Number],
     default: '500px'
+  },
+  trackPosition: {
+    type: String,
+    default: 'end',
+    validator: value => ['start', 'end'].includes(value)
   }
 })
 
@@ -375,9 +381,9 @@ defineExpose({ focusField })
 }
 
 .base-form__label {
-  color: var(--dvijok-form-label, var(--dvijok-text-secondary));
-  font-size: 14px;
-  line-height: 16px;
+  color: var(--dvijok-form-label, var(--dvijok-bg-dark));
+  font-size: 16px;
+  line-height: 19px;
   text-align: left;
   white-space: nowrap;
 }

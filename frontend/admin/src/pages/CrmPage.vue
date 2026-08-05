@@ -376,8 +376,8 @@ onMounted(async () => {
 
 .crm-list-bar__count {
   font-weight: 600;
-  font-size: 12px;
-  line-height: 15px;
+  font-size: 14px;
+  line-height: 17px;
   color: var(--dvijok-text-secondary);
   white-space: nowrap;
 }

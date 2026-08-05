@@ -35,6 +35,19 @@ export function formatRuDate(iso) {
   return `${d.getDate()} ${MONTHS_GENITIVE[d.getMonth()]} ${d.getFullYear()}`
 }
 
+export function formatDeadlineUntil(date) {
+  if (!date) return ''
+  let iso = date
+  if (date.includes('.')) {
+    const [d, m, y] = date.split('.')
+    iso = y ? `${y}-${m}-${d}` : ''
+  }
+  if (!iso) return ''
+  const parsed = new Date(`${iso}T00:00:00`)
+  if (Number.isNaN(parsed.getTime())) return ''
+  return `До ${parsed.getDate()} ${MONTHS_GENITIVE[parsed.getMonth()]}`
+}
+
 export function formatRuDateShort(iso) {
   if (!iso) return ''
   const d = new Date(`${iso}T00:00:00`)

@@ -88,6 +88,7 @@ const form = ref({
   taxSystem: '',
   inn: '',
   ogrn: '',
+  bankAccount: '',
   phone: '',
   email: '',
   address: '',

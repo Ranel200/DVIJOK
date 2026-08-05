@@ -85,7 +85,7 @@
 
                     <div class="crm__card-meta">
                       <span>{{ element.clientName }}</span>
-                      <span>{{ element.phone }}</span>
+                      <span class="crm_card-phone">{{ element.phone }}</span>
                     </div>
 
                     <div class="crm__card-meta">
@@ -543,8 +543,8 @@ onBeforeUnmount(() => {
 .crm__column-title {
   margin: 0;
   font-weight: 600;
-  font-size: 14px;
-  line-height: 17px;
+  font-size: 16px;
+  line-height: 19px;
   color: var(--dvijok-white);
 }
 
@@ -644,8 +644,8 @@ onBeforeUnmount(() => {
 .crm__card-number {
   margin: 0;
   font-weight: 600;
-  font-size: 12px;
-  line-height: 15px;
+  font-size: 14px;
+  line-height: 17px;
   color: var(--dvijok-text-secondary);
 }
 
@@ -681,7 +681,7 @@ onBeforeUnmount(() => {
 .crm__card-price {
   margin: 0;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 15px;
   color: var(--dvijok-link-hover);
 }
@@ -691,9 +691,14 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: 2px;
   font-weight: 400;
-  font-size: 11px;
+  font-size: 14px;
   line-height: 15px;
   color: var(--dvijok-link-hover);
+}
+
+.crm__card-phone {
+  font-size: 14px;
+  line-height: 17px;
 }
 
 .crm__card-actions {
@@ -745,8 +750,8 @@ onBeforeUnmount(() => {
 .crm__card-masters {
   margin: 0;
   font-weight: 400;
-  font-size: 10px;
-  line-height: 14px;
+  font-size: 12px;
+  line-height: 18px;
   color: var(--dvijok-bg-dark);
 }
 
@@ -758,9 +763,9 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   font-weight: 400;
-  font-size: 8px;
+  font-size: 10px;
   line-height: 12px;
-  color: var(--dvijok-bg-dark);
+  color: var(--dvijok-tab-inactive);
 
   p {
     margin: 0;

@@ -144,8 +144,8 @@ function onKeydown(e) {
   border: none;
   background: transparent;
   cursor: pointer;
-  font-size: 13px;
-  line-height: 16px;
+  font-size: 16px;
+  line-height: 19px;
   font-weight: 400;
   color: var(--dvijok-text-secondary);
   transition: color 0.18s ease;

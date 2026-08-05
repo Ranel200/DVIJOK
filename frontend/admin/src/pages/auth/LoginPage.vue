@@ -171,9 +171,9 @@ function onForgotPassword() {}
 .login__subtitle {
   margin: 0;
   color: var(--dvijok-text-secondary);
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 400;
-  line-height: 17px;
+  line-height: 19px;
   text-align: center;
 }
 

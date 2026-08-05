@@ -1,5 +1,5 @@
 <template>
-  <BaseFormBlock class="order-car-fields" title="Автомобиль" layout="horizontal">
+  <BaseFormBlock class="order-car-fields order-car-fields__car" title="Автомобиль" layout="horizontal">
     <BaseField
       v-model="draft.plate"
       layout="horizontal"
@@ -70,6 +70,10 @@ defineProps({
 </script>
 
 <style scoped lang="scss">
+.order-car-fields__car {
+  max-width: 400px;
+}
+
 .order-car-fields :deep(.base-field__label),
 .order-car-fields__label {
   font-weight: 600;

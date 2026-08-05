@@ -2,7 +2,7 @@
   <q-drawer :width="233" :breakpoint="0" :model-value="true" class="admin-sidebar-drawer">
     <div class="admin-sidebar">
       <div class="admin-sidebar__logo">
-        <img src="/admin/icons/auth/logo.svg" alt="DVIJOK" />
+        <img src="/admin/icons/auth/logo.png" alt="DVIJOK" />
       </div>
 
       <nav class="admin-sidebar__nav">
@@ -208,9 +208,9 @@ onBeforeUnmount(() => {
 
 .admin-sidebar__label {
   color: var(--dvijok-white);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 400;
-  line-height: 16px;
+  line-height: 17px;
 }
 
 .admin-sidebar__user {
@@ -240,8 +240,8 @@ onBeforeUnmount(() => {
 .admin-sidebar__user-text {
   margin: 0;
   color: var(--dvijok-white);
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 400;
-  line-height: 11px;
+  line-height: 16px;
 }
 </style>

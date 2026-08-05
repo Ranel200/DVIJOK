@@ -6,7 +6,7 @@
     </div>
 
     <div class="auth-sidebar__block auth-sidebar__block--logo">
-      <img class="auth-sidebar__logo" src="/admin/icons/auth/logo.svg" alt="DVIJOK" />
+      <img class="auth-sidebar__logo" src="/admin/icons/auth/logo.png" alt="DVIJOK" />
     </div>
 
     <div class="auth-sidebar__block auth-sidebar__block--welcome">
@@ -163,17 +163,17 @@ const isLogin = computed(() => props.mode === 'login')
 .auth-sidebar__welcome-title {
   margin: 0;
   color: var(--dvijok-white);
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 600;
-  line-height: 30px;
+  line-height: 36px;
 }
 
 .auth-sidebar__welcome-text {
   margin: 0;
   color: var(--dvijok-muted);
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 400;
-  line-height: 17px;
+  line-height: 19px;
 }
 
 .auth-sidebar__block--beta {
@@ -196,9 +196,9 @@ const isLogin = computed(() => props.mode === 'login')
 .auth-sidebar__beta-text {
   margin: 0;
   color: var(--dvijok-muted);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 400;
-  line-height: 11px;
+  line-height: 15px;
 }
 
 .auth-sidebar__block--register {
@@ -210,9 +210,9 @@ const isLogin = computed(() => props.mode === 'login')
 .auth-sidebar__register-text {
   margin: 0;
   color: var(--dvijok-muted);
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 400;
-  line-height: 17px;
+  line-height: 19px;
 }
 
 .auth-sidebar__register-link {
@@ -281,8 +281,8 @@ const isLogin = computed(() => props.mode === 'login')
 .auth-sidebar__feature-text {
   margin: 0;
   color: var(--dvijok-muted);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 400;
-  line-height: 15px;
+  line-height: 17px;
 }
 </style>

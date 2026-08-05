@@ -403,8 +403,8 @@ onBeforeUnmount(() => {
   border-radius: 6px;
   background: var(--dvijok-white);
   font-weight: 400;
-  font-size: 12px;
-  line-height: 15px;
+  font-size: 14px;
+  line-height: 17px;
   color: var(--dvijok-text-primary);
 }
 

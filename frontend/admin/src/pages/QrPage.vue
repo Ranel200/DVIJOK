@@ -11,7 +11,7 @@
       </div>
       <div class="qr__info">
         <img
-          src="/admin/icons/qr/logo-client.svg"
+          src="/admin/icons/qr/logo-client.png"
           alt="Логотип клиентского сервиса"
           class="qr__logo"
         />
@@ -47,6 +47,7 @@ function onAction() {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 50px;
   padding: 100px 80px;
   background-color: var(--dvijok-white);
   border-radius: 15px;
@@ -54,9 +55,17 @@ function onAction() {
 
 .qr__info {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 50px;
   justify-content: center;
+  min-width: 0;
+}
+
+.qr__logo {
+  display: block;
+  max-width: 100%;
+  height: auto;
 }
 
 .qr__text {
@@ -68,16 +77,16 @@ function onAction() {
 .qr__title {
   margin: 0;
   font-weight: 600;
-  font-size: 20px;
-  line-height: 24px;
+  font-size: 24px;
+  line-height: 29px;
   color: var(--dvijok-bg-dark);
 }
 
 .qr__subtitle {
   margin: 0;
   font-weight: 400;
-  font-size: 14px;
-  line-height: 17px;
+  font-size: 20px;
+  line-height: 24px;
   color: var(--dvijok-text-secondary);
 }
 </style>
