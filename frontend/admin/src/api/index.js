@@ -1,7 +1,7 @@
 // Фасад доменных сервисов. Сейчас все методы возвращают моки.
 // Когда появится бэкенд — заменяем тело методов на вызовы http.* (импорт уже готов).
 
-import { http, USE_MOCK } from '@dvijok/shared/api/http.js'
+import { http, refreshAuthToken, USE_MOCK } from '@dvijok/shared/api/http.js'
 import { mockOk, mockReject } from '@dvijok/shared/api/mock.js'
 import { STAFF_ROLE_LABELS, mapLegacyRole } from '@/constants/staff.js'
 import { startOfWeek } from '@/utils/formatDateRu.js'
@@ -114,8 +114,9 @@ export const authApi = {
       currentUserId = user.id
       return mockOk({ token: session.token, user: publicUser(user) })
     }
+    const token = await refreshAuthToken()
     const user = await http.get('/auth/me')
-    return { user }
+    return { token, user }
   },
 
   async me() {

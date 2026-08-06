@@ -15,9 +15,44 @@ export class ApiError extends Error {
 }
 
 let authToken = null
+let refreshPromise = null
 
 export function setAuthToken(token) {
   authToken = token
+}
+
+export async function refreshAuthToken() {
+  if (!refreshPromise) {
+    const url = new URL(`${baseURL}/auth/refresh`, window.location.origin)
+
+    refreshPromise = (async () => {
+      const response = await fetch(url, {
+        method: 'POST',
+        credentials: 'include'
+      })
+      const isJson = response.headers.get('content-type')?.includes('application/json')
+      const data = isJson ? await response.json() : await response.text()
+
+      if (!response.ok) {
+        throw new ApiError(`Refresh failed: ${response.status}`, {
+          status: response.status,
+          data
+        })
+      }
+
+      const token = data?.token ?? data?.access_token
+      if (!token) {
+        throw new ApiError('Backend did not return access token')
+      }
+
+      setAuthToken(token)
+      return token
+    })().finally(() => {
+      refreshPromise = null
+    })
+  }
+
+  return refreshPromise
 }
 
 async function request(method, path, { params, body, headers } = {}) {
@@ -33,6 +68,7 @@ async function request(method, path, { params, body, headers } = {}) {
 
   const options = {
     method,
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
@@ -44,7 +80,18 @@ async function request(method, path, { params, body, headers } = {}) {
     options.body = JSON.stringify(body)
   }
 
-  const response = await fetch(url, options)
+  let response = await fetch(url, options)
+
+  const publicAuthPaths = ['/auth/login', '/auth/register', '/auth/refresh']
+  if (response.status === 401 && !publicAuthPaths.includes(path)) {
+    try {
+      const token = await refreshAuthToken()
+      options.headers.Authorization = `Bearer ${token}`
+      response = await fetch(url, options)
+    } catch {
+      setAuthToken(null)
+    }
+  }
 
   const isJson = response.headers.get('content-type')?.includes('application/json')
   const data = isJson ? await response.json() : await response.text()
