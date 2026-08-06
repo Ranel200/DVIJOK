@@ -107,7 +107,11 @@ async function onSubmit() {
   loading.value = true
   errorMessage.value = ''
   try {
-    await authStore.login({ email: form.login, password: form.password })
+    await authStore.login({
+      email: form.login,
+      password: form.password,
+      remember: remember.value
+    })
     router.push({ name: 'schedule' })
   } catch (err) {
     errorMessage.value = err?.data?.message || 'Не удалось войти'

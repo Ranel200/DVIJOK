@@ -330,8 +330,10 @@ async function saveCreate() {
   }
 }
 
-function onDeleteSelected() {
+async function onDeleteSelected() {
   if (!hasSelected.value) return
+  const ids = tasks.value.filter(task => task._selected).map(task => task.id)
+  await tasksApi.removeMany(ids)
   tasks.value = tasks.value.filter(task => !task._selected)
 }
 

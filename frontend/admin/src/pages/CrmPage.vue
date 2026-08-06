@@ -35,6 +35,7 @@
       :search="search"
       :loading="loading"
       @edit="onOpenOrder"
+      @change="onKanbanChange"
     />
 
     <CrmDealsList
@@ -168,9 +169,10 @@ function closeDeleteConfirm() {
   pendingDeleteNumber.value = 0
 }
 
-function confirmDelete() {
+async function confirmDelete() {
   if (deleteMode.value === 'selected') {
     const ids = deals.value.filter(deal => deal._selected).map(deal => deal.id)
+    await crmApi.removeOrders(ids)
     removeDealsByIds(ids)
     closeDeleteConfirm()
     savedMessage.value = 'Выбранные заказы удалены!'
@@ -180,11 +182,26 @@ function confirmDelete() {
 
   if (pendingDeleteId.value) {
     const number = pendingDeleteNumber.value
+    await crmApi.removeOrder(pendingDeleteId.value)
     removeDealsByIds([pendingDeleteId.value])
     closeDeleteConfirm()
     savedMessage.value = `Заказ ${formatCrmOrderNumber(number)} удален!`
     savedOpen.value = true
   }
+}
+
+async function onKanbanChange() {
+  const changes = []
+  for (const column of columns.value) {
+    for (const item of column.items || []) {
+      if (item.status !== column.id) {
+        changes.push(crmApi.updateOrderStatus(item.id, column.id))
+      }
+    }
+  }
+  if (!changes.length) return
+  await Promise.all(changes)
+  await reloadCrm()
 }
 
 function onRequestDeleteDeal(dealId) {
@@ -227,52 +244,6 @@ function onRequestDeleteFromModal(order) {
   openDeleteConfirm({ mode: 'single', id: order.id, number: order.number })
 }
 
-function applyOrderDraft(target, draft) {
-  const carBrand = [draft.brand, draft.model].filter(Boolean).join(' ').trim()
-  target.status = draft.status
-  target.clientName = draft.clientName
-  target.phone = draft.phone
-  target.email = draft.email
-  target.description = draft.description
-  target.date = draft.date
-  target.time = draft.time
-  target.source = draft.source
-  target.plate = draft.plate
-  target.carBrand = carBrand
-  target.carYear = draft.year ? Number(draft.year) || null : null
-  target.color = draft.color
-  target.vin = draft.vin
-  target.mileage = draft.mileage
-  if (Array.isArray(draft.lines)) target.lines = draft.lines
-  if (draft.amount != null) target.amount = draft.amount
-  if (Array.isArray(draft.services)) target.services = draft.services
-  if (draft.master !== undefined) target.master = draft.master
-  if (draft.masters !== undefined) target.masters = draft.masters
-}
-
-function updateLocalOrder(draft) {
-  const deal = deals.value.find(item => item.id === draft.id)
-  if (deal) applyOrderDraft(deal, draft)
-
-  let card = null
-  let fromColumn = null
-  for (const column of columns.value) {
-    const index = column.items.findIndex(item => item.id === draft.id)
-    if (index === -1) continue
-    card = column.items[index]
-    fromColumn = column
-    column.items.splice(index, 1)
-    break
-  }
-
-  if (!card) return
-  applyOrderDraft(card, draft)
-
-  const toColumn =
-    columns.value.find(column => column.id === draft.status) || fromColumn || columns.value[0]
-  toColumn?.items.unshift(card)
-}
-
 async function reloadCrm() {
   const [columnsResult, dealsResult] = await Promise.allSettled([
     crmApi.listColumns(),
@@ -295,7 +266,8 @@ async function onSaveOrder(draft) {
   orderSaving.value = true
   try {
     if (draft.id) {
-      updateLocalOrder(draft)
+      await crmApi.updateOrder(draft.id, draft)
+      await reloadCrm()
       orderOpen.value = false
       activeOrder.value = null
       orderMode.value = 'create'

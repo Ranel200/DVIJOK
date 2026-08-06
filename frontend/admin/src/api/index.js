@@ -58,7 +58,7 @@ function publicUser(user) {
 }
 
 export const authApi = {
-  async login({ email, password }) {
+  async login({ email, password, remember = false }) {
     if (USE_MOCK) {
       const user = mockUsers.find(u => u.email === email)
       if (!user || user.password !== password) {
@@ -67,7 +67,7 @@ export const authApi = {
       const token = issueToken(user)
       return mockOk({ token, user: publicUser(user) })
     }
-    return http.post('/auth/login', { email, password })
+    return http.post('/auth/login', { email, password, remember })
   },
 
   async register(payload) {
@@ -131,6 +131,29 @@ export const authApi = {
       return mockOk(publicUser(user))
     }
     return http.get('/auth/me')
+  },
+
+  async revokeSession(sessionId) {
+    if (USE_MOCK) return mockOk(null)
+    return http.delete(`/auth/sessions/${sessionId}`)
+  },
+
+  async revokeOtherSessions() {
+    if (USE_MOCK) return mockOk(null)
+    return http.delete('/auth/sessions')
+  }
+}
+
+export const referralsApi = {
+  async getOrCreate() {
+    if (USE_MOCK) {
+      return mockOk({
+        code: 'mock-referral',
+        url: window.location.origin,
+        qr_svg: null
+      })
+    }
+    return http.post('/referrals/me')
   }
 }
 
@@ -1008,6 +1031,26 @@ export const crmApi = {
       return mockOk(deal)
     }
     return http.post('/crm/orders', payload)
+  },
+
+  async updateOrder(id, payload) {
+    if (USE_MOCK) return mockOk({ id, ...payload })
+    return http.put(`/crm/orders/${id}`, payload)
+  },
+
+  async updateOrderStatus(id, status) {
+    if (USE_MOCK) return mockOk({ id, status })
+    return http.patch(`/crm/orders/${id}/status`, { status })
+  },
+
+  async removeOrder(id) {
+    if (USE_MOCK) return mockOk(null)
+    return http.delete(`/crm/orders/${id}`)
+  },
+
+  async removeOrders(ids) {
+    if (USE_MOCK) return mockOk(null)
+    return http.delete('/crm/orders/bulk', { body: { ids } })
   }
 }
 
@@ -1330,6 +1373,26 @@ export const servicesApi = {
     return http.get('/services/admin', { params })
   },
 
+  async create(payload) {
+    if (USE_MOCK) return mockOk(payload)
+    return http.post('/services/admin', payload)
+  },
+
+  async update(id, payload) {
+    if (USE_MOCK) return mockOk({ id, ...payload })
+    return http.put(`/services/admin/${id}`, payload)
+  },
+
+  async remove(id) {
+    if (USE_MOCK) return mockOk(null)
+    return http.delete(`/services/admin/${id}`)
+  },
+
+  async removeMany(ids) {
+    if (USE_MOCK) return mockOk(null)
+    return http.delete('/services/admin/bulk', { body: { ids } })
+  },
+
   async summary() {
     if (USE_MOCK) return mockOk(buildServicesSummary(mockServices))
     return http.get('/services/summary')
@@ -1438,6 +1501,11 @@ export const tasksApi = {
       })
     }
     return http.post('/tasks', payload)
+  },
+
+  async removeMany(ids) {
+    if (USE_MOCK) return mockOk(null)
+    return http.delete('/tasks/bulk', { body: { ids } })
   }
 }
 

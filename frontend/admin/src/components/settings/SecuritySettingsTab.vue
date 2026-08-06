@@ -349,7 +349,7 @@ import BaseSwitcher from '@/components/ui/BaseSwitcher.vue'
 import EyeIcon from '@/components/ui/EyeIcon.vue'
 import Radio from '@/components/ui/Radio.vue'
 import SuccessModal from '@/components/ui/SuccessModal.vue'
-import { settingsApi } from '@/api/index.js'
+import { authApi, settingsApi } from '@/api/index.js'
 import { formatDateTime, formatRuDateShort } from '@/utils/formatDateRu.js'
 
 const props = defineProps({
@@ -466,9 +466,6 @@ function validatePasswordDraft() {
   if (!draft.oldPassword.trim()) {
     passwordErrors.oldPassword = 'Введите старый пароль'
     valid = false
-  } else if (draft.oldPassword !== security.value.currentPassword) {
-    passwordErrors.oldPassword = 'Неверный старый пароль'
-    valid = false
   }
 
   if (!draft.newPassword.trim()) {
@@ -515,7 +512,7 @@ async function savePassword() {
   passwordSaving.value = true
   try {
     const today = new Date().toISOString().slice(0, 10)
-    await settingsApi.update({
+    const updated = await settingsApi.update({
       security: {
         currentPassword: passwordDraft.value.newPassword,
         passwordChangedAt: today,
@@ -523,20 +520,31 @@ async function savePassword() {
         code: passwordDraft.value.code
       }
     })
-    security.value.currentPassword = passwordDraft.value.newPassword
-    security.value.passwordChangedAt = today
+    if (updated?.security) {
+      security.value = { ...security.value, ...updated.security }
+    }
     passwordEditOpen.value = false
     passwordSavedOpen.value = true
+  } catch (err) {
+    const detail = err?.data?.detail
+    const message =
+      err?.data?.message ||
+      (typeof detail === 'string' ? detail : detail?.message) ||
+      'Не удалось изменить пароль'
+    if (err?.status === 401) passwordErrors.oldPassword = message
+    else passwordErrors.newPassword = message
   } finally {
     passwordSaving.value = false
   }
 }
 
-function terminateSession(id) {
+async function terminateSession(id) {
+  await authApi.revokeSession(id)
   security.value.sessions = security.value.sessions.filter(session => session.id !== id)
 }
 
-function terminateAllSessions() {
+async function terminateAllSessions() {
+  await authApi.revokeOtherSessions()
   security.value.sessions = security.value.sessions.filter(session => session.current)
 }
 </script>

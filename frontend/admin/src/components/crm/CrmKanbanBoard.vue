@@ -190,7 +190,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['edit'])
+const emit = defineEmits(['edit', 'change'])
 
 const columnItemsModels = new Map()
 
@@ -359,7 +359,10 @@ function onDragEnd() {
     cancelAnimationFrame(autoScrollRaf)
     autoScrollRaf = 0
   }
-  nextTick(updateThumb)
+  nextTick(() => {
+    updateThumb()
+    emit('change')
+  })
 }
 
 function scrollByColumn(direction) {

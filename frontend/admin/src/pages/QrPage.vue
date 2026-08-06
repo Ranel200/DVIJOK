@@ -7,7 +7,7 @@
   <div class="qr">
     <div class="qr__card">
       <div class="qr__code">
-        <img src="/admin/icons/qr/qr.svg" alt="QR-код" />
+        <img :src="qrImageSrc" alt="QR-код" />
       </div>
       <div class="qr__info">
         <img
@@ -28,14 +28,52 @@
 </template>
 
 <script setup>
+import { computed, onMounted, ref } from 'vue'
 import AdminHeader from '@/components/layout/AdminHeader.vue'
 import PrinterIcon from '@/components/ui/PrinterIcon.vue'
+import { referralsApi } from '@/api/index.js'
 
 const action = { label: 'Напечатать QR-код' }
+const referral = ref(null)
+
+const qrImageSrc = computed(() => {
+  const svg = referral.value?.qr_svg
+  return svg
+    ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
+    : '/admin/icons/qr/qr.svg'
+})
 
 function onAction() {
-  // TODO: печать QR-кода
+  const svg = referral.value?.qr_svg
+  if (!svg) return
+
+  const printWindow = window.open('', '_blank')
+  if (!printWindow) return
+  printWindow.opener = null
+
+  printWindow.document.open()
+  printWindow.document.write(`<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <title>QR-код автосервиса</title>
+    <style>
+      body { margin: 0; min-height: 100vh; display: grid; place-items: center; }
+      svg { width: 120mm; height: 120mm; }
+      @page { margin: 15mm; }
+    </style>
+  </head>
+  <body>${svg}</body>
+</html>`)
+  printWindow.document.close()
+  printWindow.focus()
+  printWindow.print()
+  printWindow.close()
 }
+
+onMounted(async () => {
+  referral.value = await referralsApi.getOrCreate()
+})
 </script>
 
 <style scoped lang="scss">

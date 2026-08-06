@@ -16,9 +16,14 @@ export class ApiError extends Error {
 
 let authToken = null
 let refreshPromise = null
+let authFailureHandler = null
 
 export function setAuthToken(token) {
   authToken = token
+}
+
+export function setAuthFailureHandler(handler) {
+  authFailureHandler = typeof handler === 'function' ? handler : null
 }
 
 export async function refreshAuthToken() {
@@ -90,11 +95,21 @@ async function request(method, path, { params, body, headers } = {}) {
       response = await fetch(url, options)
     } catch {
       setAuthToken(null)
+      authFailureHandler?.()
     }
   }
 
+  const responseText = response.status === 204 ? '' : await response.text()
   const isJson = response.headers.get('content-type')?.includes('application/json')
-  const data = isJson ? await response.json() : await response.text()
+  let data = responseText
+
+  if (isJson && responseText) {
+    try {
+      data = JSON.parse(responseText)
+    } catch {
+      data = responseText
+    }
+  }
 
   if (!response.ok) {
     throw new ApiError(`Request failed: ${response.status}`, {

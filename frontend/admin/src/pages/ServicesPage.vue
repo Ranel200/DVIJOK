@@ -393,26 +393,24 @@ function ordersBarWidth(count) {
   return `${Math.round((count / maxOrders.value) * 100)}%`
 }
 
-function resolveMaster(masterId) {
-  if (!masterId || masterId === 'all') {
-    return { id: 'all', name: 'Все сотрудники', role: '' }
+function toServicePayload(service, overrides = {}) {
+  const masters = Array.isArray(service.masters)
+    ? service.masters.map(item => item?.id ?? item).filter(Boolean)
+    : []
+  return {
+    title: service.title,
+    description: service.description || '',
+    category: service.category || '',
+    priceType: service.priceType || 'fixed',
+    price: Number(service.price) || 0,
+    priceTo: service.priceTo ?? null,
+    duration: Number(service.durationHours) || 0,
+    durationUnit: 'hours',
+    status: service.status === 'hidden' ? 'hidden' : 'active',
+    masters: masters.length ? masters : ['all'],
+    notes: service.notes || '',
+    ...overrides
   }
-  const employee = employees.value.find(item => item.id === masterId)
-  return employee
-    ? { id: employee.id, name: employee.name, role: employee.role }
-    : { id: masterId, name: String(masterId), role: '' }
-}
-
-function buildPriceNote(priceType, price) {
-  if (priceType === 'negotiable') return 'договорная'
-  if (priceType === 'range') return `от ${formatNumber(price)} ₽`
-  return 'фиксированная'
-}
-
-function toDurationHours(duration, unit) {
-  const value = Number(duration) || 0
-  if (unit === 'minutes') return Math.round((value / 60) * 100) / 100
-  return value
 }
 
 function onAction() {
@@ -493,26 +491,23 @@ function onEditService() {
   closeMenu()
 }
 
-function onDuplicateService() {
+async function onDuplicateService() {
   const service = menuService.value
   if (!service) return
-  const nextId = services.value.reduce((max, item) => Math.max(max, item.id), 0) + 1
-  const copy = {
-    ...service,
-    id: nextId,
-    title: `${service.title} (копия)`,
-    master: { ...service.master },
-    _selected: false
-  }
+  const copy = await servicesApi.create(
+    toServicePayload(service, { title: `${service.title} (копия)` })
+  )
   const index = services.value.findIndex(item => item.id === service.id)
-  services.value.splice(index + 1, 0, copy)
+  services.value.splice(index + 1, 0, { ...copy, _selected: false })
   closeMenu()
 }
 
-function onToggleVisibility() {
+async function onToggleVisibility() {
   const service = menuService.value
   if (!service) return
-  service.status = service.status === 'hidden' ? 'active' : 'hidden'
+  const status = service.status === 'hidden' ? 'active' : 'hidden'
+  const updated = await servicesApi.update(service.id, toServicePayload(service, { status }))
+  Object.assign(service, updated, { _selected: service._selected })
   closeMenu()
 }
 
@@ -526,8 +521,10 @@ function onDeleteService() {
   closeMenu()
 }
 
-function confirmDelete() {
+async function confirmDelete() {
   if (deleteMode.value === 'selected') {
+    const ids = services.value.filter(service => service._selected).map(service => service.id)
+    await servicesApi.removeMany(ids)
     services.value = services.value.filter(service => !service._selected)
     closeDeleteConfirm()
     resultMessage.value = 'Выбранные услуги удалены!'
@@ -538,6 +535,7 @@ function confirmDelete() {
   const id = pendingDeleteId.value
   const title = pendingDeleteTitle.value
   if (id == null) return
+  await servicesApi.remove(id)
   services.value = services.value.filter(item => item.id !== id)
   closeDeleteConfirm()
   resultMessage.value = `Услуга "${title}" удалена!`
@@ -547,46 +545,17 @@ function confirmDelete() {
 async function onSaveService(draft) {
   formSaving.value = true
   try {
-    const master = resolveMaster(draft.masters[0])
-    const durationHours = toDurationHours(draft.duration, draft.durationUnit)
-    const priceNote = buildPriceNote(draft.priceType, draft.price)
-
     if (editingService.value?.id) {
-      const target = services.value.find(item => item.id === editingService.value.id)
-      if (target) {
-        Object.assign(target, {
-          title: draft.title,
-          description: draft.description,
-          category: draft.category,
-          priceType: draft.priceType,
-          price: draft.price,
-          priceNote,
-          durationHours,
-          status: draft.status,
-          master,
-          masters: draft.masters.map(resolveMaster),
-          notes: draft.notes
-        })
-      }
+      const updated = await servicesApi.update(editingService.value.id, {
+        ...draft,
+        priceTo: editingService.value.priceTo ?? null
+      })
+      const index = services.value.findIndex(item => item.id === updated.id)
+      if (index !== -1) services.value.splice(index, 1, { ...updated, _selected: false })
       resultMessage.value = `Услуга "${draft.title}" обновлена!`
     } else {
-      const nextId = services.value.reduce((max, item) => Math.max(max, item.id), 0) + 1
-      services.value.unshift({
-        id: nextId,
-        title: draft.title,
-        description: draft.description,
-        category: draft.category,
-        priceType: draft.priceType,
-        price: draft.price,
-        priceNote,
-        durationHours,
-        ordersCount: 0,
-        status: draft.status,
-        master,
-        masters: draft.masters.map(resolveMaster),
-        notes: draft.notes,
-        _selected: false
-      })
+      const created = await servicesApi.create({ ...draft, priceTo: null })
+      services.value.unshift({ ...created, _selected: false })
       resultMessage.value = `Услуга "${draft.title}" добавлена!`
     }
 
