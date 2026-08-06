@@ -141,7 +141,7 @@ function onPaste(event) {
     background-color: var(--dvijok-white);
     border: 1px solid var(--dvijok-text-secondary);
     border-radius: 6px;
-    padding: 5px 9px;
+    padding: 15px;
     min-height: auto;
     height: auto;
   }

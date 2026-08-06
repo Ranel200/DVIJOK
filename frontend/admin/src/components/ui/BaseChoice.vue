@@ -138,7 +138,7 @@ function select(value) {
 }
 
 .base-choice--rounded .base-choice__option {
-  padding: 8px 15px;
+  padding: 15px;
   border-radius: 8px;
 }
 

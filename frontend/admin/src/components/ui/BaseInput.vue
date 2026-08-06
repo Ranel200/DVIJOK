@@ -126,7 +126,7 @@ function onMouseDown(event) {
     background-color: var(--dvijok-white);
     border: 1px solid var(--dvijok-text-secondary);
     border-radius: 10px;
-    padding: 7px 14px;
+    padding: 15px;
     min-height: auto;
     height: auto;
   }
@@ -159,7 +159,7 @@ function onMouseDown(event) {
     color: var(--dvijok-text-secondary);
     font-size: 12px;
     line-height: 16px;
-    top: 7px;
+    top: 15px;
   }
 }
 
