@@ -1,7 +1,7 @@
 // Тонкая обёртка над fetch: базовый URL, JSON, обработка ошибок, токен авторизации.
 // Переключение на реальный бэкенд — сменой USE_MOCK/baseURL.
 
-export const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false'
+export const USE_MOCK = String(import.meta.env.VITE_USE_MOCK).toLowerCase() !== 'false'
 
 const baseURL = import.meta.env.VITE_API_BASE_URL || '/api'
 

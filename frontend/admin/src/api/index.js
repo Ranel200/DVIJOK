@@ -1326,7 +1326,7 @@ function buildServicesSummary(services) {
 export const servicesApi = {
   async list(params) {
     if (USE_MOCK) return mockOk(mockServices.map(service => ({ ...service })))
-    return http.get('/services', { params })
+    return http.get('/services/admin', { params })
   },
 
   async summary() {

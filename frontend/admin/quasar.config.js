@@ -66,13 +66,22 @@ export default defineConfig((/* ctx */) => {
       publicPath: '/admin/',
       extendViteConf(viteConf) {
         viteConf.plugins = [...(viteConf.plugins || []), serveLandingDocs()]
+      },
+      env: {
+        clientPrefix: 'VITE_'
       }
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#devserver
     devServer: {
       port: 9000,
-      open: true // opens browser window automatically
+      open: true, // opens browser window automatically
+      proxy: {
+        '/api': {
+          target: 'http://127.0.0.1:8000',
+          changeOrigin: true
+        }
+      }
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#framework
