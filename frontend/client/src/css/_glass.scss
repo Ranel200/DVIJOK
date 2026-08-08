@@ -1,0 +1,61 @@
+@mixin glass-surface(
+  $background: var(--dvijok-glass-tint),
+  $inset: rgba(255, 255, 255, 0.45),
+  $edge-start: rgba(255, 255, 255, 0.85),
+  $edge-end: rgba(255, 255, 255, 0.7),
+  $raise-children: true
+) {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: $background;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: inset 0 1px 0 $inset;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      $edge-start 0%,
+      rgba(255, 255, 255, 0) 22%,
+      rgba(255, 255, 255, 0) 78%,
+      $edge-end 100%
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  @if $raise-children {
+    > * {
+      position: relative;
+      z-index: 2;
+    }
+  }
+}
+
+@mixin glass-light($raise-children: true) {
+  @include glass-surface($raise-children: $raise-children);
+}
+
+@mixin glass-dark($raise-children: true) {
+  @include glass-surface(
+    $background: rgba(255, 255, 255, 0.08),
+    $inset: rgba(255, 255, 255, 0.14),
+    $edge-start: rgba(255, 255, 255, 0.5),
+    $edge-end: rgba(255, 255, 255, 0.4),
+    $raise-children: $raise-children
+  );
+}

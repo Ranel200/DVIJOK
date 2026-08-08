@@ -58,10 +58,10 @@ const mockAllServices = [
 ]
 
 const mockServiceOptions = [
-  { value: 'diagnostics', label: 'Диагностика' },
-  { value: 'oil', label: 'Замена масла' },
-  { value: 'tires', label: 'Шиномонтаж' },
-  { value: 'brakes', label: 'Тормозная система' }
+  { value: 'diagnostics', label: 'Диагностика', price: 2500 },
+  { value: 'oil', label: 'Замена масла', price: 3200 },
+  { value: 'tires', label: 'Шиномонтаж', price: 1800 },
+  { value: 'brakes', label: 'Тормозная система', price: 4500 }
 ]
 
 const mockCarOptions = [
@@ -90,6 +90,69 @@ const mockMasters = [
     id: 'm3',
     name: 'Сидоров Дмитрий',
     subtitle: 'Услуги'
+  }
+]
+
+const mockBranches = [
+  {
+    id: 'branch-1',
+    name: 'Папин гараж',
+    address: 'ул. Улица, 14/1',
+    isOpen: true,
+    until: '21:00',
+    mapSrc: '/client/icons/record/map.png'
+  },
+  {
+    id: 'branch-2',
+    name: 'Папин гараж',
+    address: 'ул. Баумана, 45',
+    isOpen: true,
+    until: '20:00',
+    mapSrc: '/client/icons/record/map.png'
+  },
+  {
+    id: 'branch-3',
+    name: 'Папин гараж',
+    address: 'пр. Победы, 120',
+    isOpen: false,
+    until: '10:00',
+    mapSrc: '/client/icons/record/map.png'
+  }
+]
+
+const mockSpecialists = [
+  {
+    id: 's1',
+    name: 'Иванов Алексей',
+    role: 'Старший мастер',
+    avatarColor: 'var(--dvijok-accent-coral)',
+    rating: 4.2,
+    reviews: 18,
+    price: 5500,
+    nearestDate: 'четверг, 6 августа',
+    slots: ['10:00', '11:00', '12:00', '14:00', '15:30', '17:00']
+  },
+  {
+    id: 's2',
+    name: 'Петров Сергей',
+    role: 'Мастер',
+    avatarColor: 'var(--dvijok-accent-cyan)',
+    rating: 4.8,
+    reviews: 56,
+    price: 4500,
+    nearestDate: 'пятница, 7 августа',
+    slots: ['10:00', '13:00', '16:00', '18:00']
+  },
+  {
+    id: 's3',
+    name: 'Сидоров Дмитрий',
+    role: 'Механик',
+    avatarColor: 'var(--dvijok-blue-pale)',
+    rating: 4.5,
+    reviews: 34,
+    price: 3800,
+    nearestDate: 'суббота, 8 августа',
+    slots: ['11:00', '12:30', '15:00']
   }
 ]
 
@@ -133,6 +196,18 @@ export const servicesApi = {
   }
 }
 
+export const branchesApi = {
+  async list(params = {}) {
+    if (USE_MOCK) {
+      return mockOk({
+        city: 'Казань',
+        branches: mockBranches
+      })
+    }
+    return http.get('/branches', { params })
+  }
+}
+
 export const bookingApi = {
   async options(params = {}) {
     if (USE_MOCK) {
@@ -168,6 +243,15 @@ export const bookingApi = {
       })
     }
     return http.post('/booking', payload)
+  },
+
+  async specialists(params = {}) {
+    if (USE_MOCK) {
+      return mockOk({
+        specialists: mockSpecialists
+      })
+    }
+    return http.get('/booking/specialists', { params })
   }
 }
 

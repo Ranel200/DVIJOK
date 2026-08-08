@@ -156,10 +156,17 @@
       </div>
 
       <div class="booking-modal-actions">
-        <BaseButton color="blue2" size="sm" @click="confirmOpen = false">Вернуться</BaseButton>
-        <BaseButton color="green" size="sm" @click="onConfirmBooking"
-          >Подтвердить запись</BaseButton
+        <BaseButton color="green" size="sm" block @click="onConfirmBooking">
+          Подтвердить запись
+        </BaseButton>
+        <BaseButton
+          color="blue2"
+          size="sm"
+          class="booking-modal-actions__secondary"
+          @click="confirmOpen = false"
         >
+          Вернуться
+        </BaseButton>
       </div>
     </BaseModal>
 
@@ -169,7 +176,7 @@
         <p class="booking-modal-success__note">Ваша запись добавлена в раздел “Моё авто”</p>
       </div>
 
-      <BaseButton color="blue2" size="sm" @click="onGoToCar">Перейти</BaseButton>
+      <BaseButton color="blue2" size="sm" block @click="onGoToCar">Перейти</BaseButton>
     </BaseModal>
   </div>
 </template>
@@ -406,6 +413,8 @@ onMounted(async () => {
 </script>
 
 <style scoped lang="scss">
+@use '../../css/glass' as glass;
+
 .booking-flow {
   display: flex;
   flex-direction: column;
@@ -691,51 +700,15 @@ onMounted(async () => {
 }
 
 .booking-modal-card {
-  position: relative;
-  isolation: isolate;
+  @include glass.glass-dark;
   display: flex;
   flex-direction: column;
   gap: 10px;
   width: 100%;
   padding: 10px 15px;
-  overflow: hidden;
   border: none;
   border-radius: 5px;
   box-sizing: border-box;
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
-
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    border-radius: inherit;
-    padding: 1px;
-    background: linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.5) 0%,
-      rgba(255, 255, 255, 0) 22%,
-      rgba(255, 255, 255, 0) 78%,
-      rgba(255, 255, 255, 0.4) 100%
-    );
-    -webkit-mask:
-      linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
-    mask:
-      linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    pointer-events: none;
-  }
-
-  > * {
-    position: relative;
-    z-index: 2;
-  }
 }
 
 .booking-modal-card__title {
@@ -802,9 +775,14 @@ onMounted(async () => {
 
 .booking-modal-actions {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 20px;
   width: 100%;
+}
+
+.booking-modal-actions__secondary {
+  align-self: flex-start;
+  width: fit-content;
 }
 </style>

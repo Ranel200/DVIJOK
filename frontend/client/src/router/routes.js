@@ -27,6 +27,12 @@ const routes = [
         name: 'home',
         component: () => import('@/pages/HomePage.vue'),
         meta: { title: 'Кабинет', requiresAuth: true }
+      },
+      {
+        path: 'booking',
+        name: 'booking',
+        component: () => import('@/pages/BookingPage.vue'),
+        meta: { title: 'Запись' }
       }
     ]
   },

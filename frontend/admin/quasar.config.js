@@ -37,7 +37,10 @@ function serveLandingDocs() {
         }
         if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) return next()
 
-        res.setHeader('Content-Type', CONTENT_TYPES[path.extname(filePath)] || 'application/octet-stream')
+        res.setHeader(
+          'Content-Type',
+          CONTENT_TYPES[path.extname(filePath)] || 'application/octet-stream'
+        )
         fs.createReadStream(filePath).pipe(res)
       })
     }

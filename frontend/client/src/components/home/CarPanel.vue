@@ -133,7 +133,11 @@
             role="listitem"
           >
             <div class="car-panel__status-rail">
-              <StatusRadio :color="statusRadioColor(status)" :filled="status.state === 'done'" />
+              <Radio
+                :color="statusRadioColor(status)"
+                :filled="status.state === 'done'"
+                :size="27"
+              />
               <span
                 v-if="index < activeCar.repair.statuses.length - 1"
                 class="car-panel__status-line"
@@ -166,7 +170,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { carsApi } from '@/api/index.js'
 import AppBlock from '@/components/ui/AppBlock.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
-import StatusRadio from '@/components/ui/StatusRadio.vue'
+import Radio from '@/components/ui/Radio.vue'
 
 const INACTIVE_COLOR = '#7A82A0'
 
@@ -273,6 +277,8 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped lang="scss">
+@use '../../css/glass' as glass;
+
 .car-panel {
   display: flex;
   flex-direction: column;
@@ -484,46 +490,10 @@ onBeforeUnmount(() => {
 }
 
 .car-panel__glass {
-  position: relative;
-  isolation: isolate;
+  @include glass.glass-dark;
   padding: 8px 10px;
-  overflow: hidden;
   border-radius: 5px;
   box-sizing: border-box;
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
-
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    border-radius: inherit;
-    padding: 1px;
-    background: linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.5) 0%,
-      rgba(255, 255, 255, 0) 22%,
-      rgba(255, 255, 255, 0) 78%,
-      rgba(255, 255, 255, 0.4) 100%
-    );
-    -webkit-mask:
-      linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
-    mask:
-      linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    pointer-events: none;
-  }
-
-  > * {
-    position: relative;
-    z-index: 2;
-  }
 }
 
 .car-panel__appointment-card {
