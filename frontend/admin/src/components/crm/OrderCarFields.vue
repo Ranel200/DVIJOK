@@ -1,5 +1,9 @@
 <template>
-  <BaseFormBlock class="order-car-fields order-car-fields__car" title="Автомобиль" layout="horizontal">
+  <BaseFormBlock
+    class="order-car-fields order-car-fields__car"
+    title="Автомобиль"
+    layout="horizontal"
+  >
     <BaseField
       v-model="draft.plate"
       layout="horizontal"

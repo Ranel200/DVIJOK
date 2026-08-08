@@ -100,7 +100,7 @@ body {
   justify-content: center;
   align-items: flex-start;
   gap: 60px;
-  padding: 40px 5vw 40px 10vw;
+  padding: 100px 10vw 60px 10vw;
 }
 
 .page__logo img {

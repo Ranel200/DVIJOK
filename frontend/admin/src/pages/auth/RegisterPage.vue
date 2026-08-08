@@ -3,29 +3,69 @@
     <AuthSidebar mode="register" @toggle="goLogin" />
 
     <section class="register__main">
-      <div class="register__card">
-        <div class="register__heading">
-          <h1 class="register__title">Регистрация автосервиса</h1>
-          <p class="register__subtitle">Заполните данные о вашей организации</p>
+      <div class="register__content">
+        <div class="register__card">
+          <div class="register__heading">
+            <h1 class="register__title">Регистрация автосервиса</h1>
+            <p class="register__subtitle">Заполните данные о вашей организации</p>
+          </div>
+
+          <div class="register__form-wrap">
+            <BaseForm v-model="form" :blocks="blocks" :errors="errors" />
+          </div>
         </div>
 
-        <div class="register__form-wrap">
-          <BaseForm v-model="form" :blocks="blocks" :errors="errors" />
-
-          <div class="register__actions">
-            <p v-if="errorMessage" class="register__error">{{ errorMessage }}</p>
-            <BaseButton
-              color="blue1"
-              scheme="solid-light-outlined"
-              size="lg"
-              block
-              :loading="loading"
-              :disable="!form.consent"
-              @click="onSubmit"
-            >
-              Зарегистрироваться
-            </BaseButton>
+        <div class="register__actions">
+          <div class="register__consent">
+            <BaseCheckbox v-model="form.consent" />
+            <p class="register__consent-text">
+              Я принимаю
+              <a
+                class="register__link"
+                href="/docs/offer-agreement-autoservice.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                >Договор оферты на использование платформы</a
+              >
+              и ознакомился с
+              <a
+                class="register__link"
+                href="/docs/license-agreement-crm.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                >Лицензионным договором</a
+              >,
+              <a
+                class="register__link"
+                href="/docs/privacy-policy-b2b.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                >Политикой обработки персональных данных</a
+              >
+              и
+              <a
+                class="register__link"
+                href="/docs/platform-regulations.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                >Регламентом работы платформы</a
+              >.
+            </p>
           </div>
+
+          <p v-if="errorMessage" class="register__error">{{ errorMessage }}</p>
+          <BaseButton
+            class="register__submit"
+            color="blue1"
+            scheme="solid-light-outlined"
+            size="lg"
+            block
+            :loading="loading"
+            :disable="!form.consent"
+            @click="onSubmit"
+          >
+            Зарегистрировать автосервис
+          </BaseButton>
         </div>
       </div>
 
@@ -48,6 +88,7 @@ import { reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AuthSidebar from '@/components/auth/AuthSidebar.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import BaseCheckbox from '@/components/ui/BaseCheckbox.vue'
 import BaseForm from '@/components/ui/BaseForm.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import { useAuthStore } from '@/stores/auth.js'
@@ -143,10 +184,6 @@ const blocks = [
       { key: 'password', label: 'Придумайте пароль', placeholder: 'Пароль', type: 'password' },
       { key: 'passwordConfirm', label: 'Повторите пароль', placeholder: 'Пароль', type: 'password' }
     ]
-  },
-  {
-    title: '',
-    fields: [{ key: 'consent', type: 'consent' }]
   }
 ]
 
@@ -231,13 +268,22 @@ async function onSubmit() {
   overflow: hidden;
 }
 
+.register__content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  max-width: 680px;
+  max-height: 100%;
+  min-height: 0;
+}
+
 .register__card {
   display: flex;
   flex-direction: column;
   gap: 30px;
   width: 100%;
-  max-width: 680px;
-  max-height: 100%;
+  min-height: 0;
   padding: 30px;
   overflow: hidden;
   background-color: var(--dvijok-white);
@@ -255,15 +301,49 @@ async function onSubmit() {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
 }
 
 .register__actions {
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.register__consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.register__consent-text {
+  margin: 0;
+  color: var(--dvijok-text-secondary);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 17px;
+  text-align: left;
+}
+
+.register__link {
+  color: #2a4ec4;
+  text-decoration: underline;
+}
+
+.register__link:hover {
+  color: var(--dvijok-link-hover);
+}
+
+.register__submit:disabled,
+.register__submit.q-btn--disabled {
+  opacity: 1 !important;
+  color: var(--dvijok-white) !important;
+  background: #888888 !important;
+  box-shadow: none !important;
 }
 
 .register__error {
-  margin: 0 0 10px;
+  margin: 0;
   color: var(--dvijok-danger);
   font-size: 13px;
   font-weight: 500;

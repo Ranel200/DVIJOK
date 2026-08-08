@@ -154,7 +154,7 @@ const action = { label: '+ Новая задача' }
 const columns = [
   { key: 'check', width: '63px' },
   { key: 'task', width: '25%' },
-  { key: 'employee' , width: '25%' },
+  { key: 'employee', width: '25%' },
   { key: 'deadline', width: '15%' },
   { key: 'status', width: '15%' },
   { key: 'completion', width: '160px' }
