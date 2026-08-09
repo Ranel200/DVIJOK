@@ -7,8 +7,8 @@
           <img class="auth-header__round auth-header__round--2" src="/client/round.svg" alt="" />
         </div>
 
-        <p class="auth-header__welcome">Добро пожаловать!</p>
-        <img class="auth-header__logo" src="/client/icons/logo.svg" alt="DVIJOK" />
+        <p class="auth-header__welcome">{{ welcomeText }}</p>
+        <img class="auth-header__logo" src="/client/icons/logo.png" alt="DVIJOK" />
       </header>
 
       <q-page-container class="client-auth-layout__content">
@@ -18,7 +18,16 @@
   </q-layout>
 </template>
 
-<script setup></script>
+<script setup>
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+
+const welcomeText = computed(() =>
+  route.name === 'login' ? 'Рады вас видеть снова!' : 'Добро пожаловать!'
+)
+</script>
 
 <style scoped lang="scss">
 .client-auth-layout {

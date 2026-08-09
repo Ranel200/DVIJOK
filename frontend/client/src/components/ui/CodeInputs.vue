@@ -6,6 +6,8 @@
       :ref="el => setInputRef(el, index)"
       :model-value="digits[index]"
       class="code-inputs__cell"
+      block
+      placeholder="0"
       :maxlength="1"
       :input-attrs="{ inputmode: 'numeric', autocomplete: 'one-time-code' }"
       @update:model-value="value => onDigit(index, value)"
@@ -96,24 +98,25 @@ function onPaste(event) {
 <style scoped lang="scss">
 .code-inputs {
   display: flex;
+  width: 100%;
   gap: 5px;
 }
 
 .code-inputs__cell {
-  width: fit-content;
-  flex: 0 0 auto;
+  flex: 1 1 0;
+  min-width: 0;
 
   :deep(.q-field__control) {
-    width: fit-content;
+    width: 100%;
   }
 
   :deep(.q-field__control-container) {
-    width: auto;
-    flex: none;
+    width: 100%;
+    flex: 1;
   }
 
   :deep(.q-field__native) {
-    width: 1ch;
+    width: 100%;
     text-align: center;
   }
 }

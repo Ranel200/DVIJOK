@@ -182,6 +182,15 @@ function isMockDayAvailable(day) {
   return day % 3 !== 0
 }
 
+export const authApi = {
+  async requestCode({ phone, name }) {
+    if (USE_MOCK) {
+      return mockOk({ success: true })
+    }
+    return http.post('/auth/request-code', { phone, name })
+  }
+}
+
 export const servicesApi = {
   async list(params = {}) {
     if (USE_MOCK) {

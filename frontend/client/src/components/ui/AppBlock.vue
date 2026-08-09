@@ -115,5 +115,6 @@ defineProps({
   font-size: 13px;
   line-height: 16px;
   color: var(--dvijok-text-secondary);
+  white-space: pre-line;
 }
 </style>
