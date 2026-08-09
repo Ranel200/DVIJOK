@@ -11,43 +11,61 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="round round--1" aria-hidden="true"></div>
     <div class="rounds" aria-hidden="true">
+      <div class="round round--1"></div>
       <div class="round round--2"></div>
       <div class="round round--3"></div>
     </div>
 
     <main class="page">
-      <div class="page__logo">
-        <img src="assets/logo.svg" alt="DVIJOK" />
+      <div class="page__top">
+        <div class="page__logo">
+          <img src="assets/logo.svg" alt="DVIJOK" />
+        </div>
+
+        <section class="page__info">
+          <h1 class="page__welcome">Добро пожаловать!</h1>
+          <p class="page__lead">
+            Команда «Комит» рада представить новый сервис для оптимизации работы<br />
+            автомастерских — ERP-систему и клиентский сервис «Движок».
+          </p>
+        </section>
+
+        <section class="page__actions">
+          <div class="action">
+            <img class="action__icon" src="assets/car.svg" alt="" />
+            <p class="action__text">
+              Если вы — владелец автомобиля,<br />
+              перейдите в веб-приложение:
+            </p>
+            <a class="btn" href="/client/">Перейти в ERP-систему для автовладельца</a>
+          </div>
+          <div class="action">
+            <img class="action__icon" src="assets/groups.svg" alt="" />
+            <p class="action__text">
+              Если вы — владелец автосервиса, зарегистрируйте<br />
+              свой бизнес на платформе и начните работу прямо сейчас:
+            </p>
+            <a class="btn" href="/admin/">Перейти в ERP-систему для автосервиса</a>
+          </div>
+        </section>
       </div>
 
-      <section class="page__info">
-        <h1 class="page__welcome">Добро пожаловать!</h1>
-        <p class="page__lead">
-          Команда «Комит» рада представить новый сервис для оптимизации работы<br>
-          автомастерских — ERP-систему и клиентский сервис «Движок».
-        </p>
-      </section>
-
-      <section class="page__actions">
-        <div class="action">
-          <img class="action__icon" src="assets/car.svg" alt="" />
-          <p class="action__text">
-            Если вы — владелец автомобиля,<br />
-            перейдите в веб-приложение:
-          </p>
-          <a class="btn" href="/client/">Перейти в ERP-систему для автовладельца</a>
+      <div class="page__bottom">
+        <img class="page__brand" src="assets/logo-auth.png" alt="ДВИЖОК — ERP-система для автосервиса" />
+        <div class="page__operator">
+          <div class="page__komit-wrap">
+            <img class="page__komit" src="assets/logo-komit.png" alt="КОМИТ" />
+          </div>
+          <section class="page__requisites" aria-labelledby="operator-requisites-title">
+            <h2 class="page__requisites-title" id="operator-requisites-title">Реквизиты оператора</h2>
+            <p>Сокращенное наименование: ООО «КОМИТ»</p>
+            <p>ИНН: 1686059159</p>
+            <p>Email: <a href="mailto:kom1t-digital@yandex.ru">kom1t-digital@yandex.ru</a></p>
+            <p>Контакты: <a href="tel:+79270319114">+7 (927) 031-91-14</a></p>
+          </section>
         </div>
-        <div class="action">
-          <img class="action__icon" src="assets/groups.svg" alt="" />
-          <p class="action__text">
-            Если вы — владелец автосервиса, зарегистрируйте<br />
-            свой бизнес на платформе и начните работу прямо сейчас:
-          </p>
-          <a class="btn" href="/admin/">Перейти в ERP-систему для автосервиса</a>
-        </div>
-      </section>
+      </div>
     </main>
 
     <script src="script.js"></script>
