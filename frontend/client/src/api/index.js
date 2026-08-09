@@ -495,7 +495,7 @@ export const carsApi = {
         bots: mockBots
       })
     }
-    return http.get('/client-portal/ui/cars')
+    return http.get('/cars')
   },
 
   async get(id) {
@@ -503,8 +503,7 @@ export const carsApi = {
       const car = mockCars.find(item => item.id === id) || null
       return mockOk(car)
     }
-    const data = await http.get('/client-portal/ui/cars')
-    return data?.cars?.find(car => String(car.id) === String(id)) || null
+    return http.get(`/cars/${id}`)
   },
 
   async create(payload) {
@@ -523,7 +522,7 @@ export const carsApi = {
       mockCars.push(car)
       return mockOk(car)
     }
-    return http.post('/cars', payload)
+    return http.post('/cars', normalizeCarPayload(payload))
   },
 
   async update(id, payload) {
@@ -547,7 +546,7 @@ export const carsApi = {
       mockCars[index] = car
       return mockOk(car)
     }
-    return http.put(`/cars/${id}`, payload)
+    return http.put(`/cars/${id}`, normalizeCarPayload(payload))
   }
 }
 

@@ -251,6 +251,7 @@ const carOptions = ref([])
 const masters = ref([])
 const timeSlots = ref([])
 const availableDays = ref({})
+const availabilitySlots = ref([])
 
 const step = ref(1)
 const confirmOpen = ref(false)
@@ -346,6 +347,21 @@ function selectDate(cell) {
   form.date = cell.iso
 }
 
+function syncTimeSlotsForDate() {
+  if (!form.date) {
+    timeSlots.value = []
+    return
+  }
+  timeSlots.value = [
+    ...new Set(
+      availabilitySlots.value.filter(item => item.date === form.date).map(item => item.time)
+    )
+  ]
+  if (form.time && !timeSlots.value.includes(form.time)) {
+    form.time = ''
+  }
+}
+
 function shiftMonth(delta) {
   const next = new Date(monthCursor.value.getFullYear(), monthCursor.value.getMonth() + delta, 1)
   monthCursor.value = next
@@ -398,17 +414,28 @@ async function loadAvailability() {
   const data = await bookingApi.availability({
     shopId: props.serviceId,
     year: monthCursor.value.getFullYear(),
-    month: monthCursor.value.getMonth()
+    month: monthCursor.value.getMonth(),
+    serviceId: form.serviceId || undefined,
+    masterId: form.masterId
   })
   availableDays.value = data.days
+  availabilitySlots.value = data.slots || []
+  syncTimeSlotsForDate()
 }
 
 watch(monthCursor, () => {
   loadAvailability()
 })
 
+watch(() => form.date, syncTimeSlotsForDate)
+
+watch([() => form.serviceId, () => form.masterId], () => {
+  loadAvailability()
+})
+
 onMounted(async () => {
-  await Promise.all([loadOptions(), loadAvailability()])
+  await loadOptions()
+  await loadAvailability()
 })
 </script>
 

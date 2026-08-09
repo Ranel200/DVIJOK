@@ -106,6 +106,7 @@ const branches = ref([])
 const specialists = ref([])
 const serviceOptions = ref([])
 const timeSlots = ref([])
+const availabilitySlots = ref([])
 const availableDays = ref({})
 const selectedBranchId = ref('')
 const selectedSpecialistId = ref('any')
@@ -239,8 +240,9 @@ function goNext(fallback) {
   goToStep(fallback)
 }
 
-function selectBranch(branch) {
+async function selectBranch(branch) {
   selectedBranchId.value = branch.id
+  await Promise.all([loadBookingOptions(), loadSpecialists()])
   backTarget.value = null
   goToStep('menu')
 }
@@ -277,23 +279,47 @@ async function loadBranches() {
 }
 
 async function loadBookingOptions() {
+  if (!selectedBranchId.value) return
   const data = await bookingApi.options({ branchId: selectedBranchId.value })
   serviceOptions.value = data.serviceOptions
   timeSlots.value = data.timeSlots
 }
 
 async function loadSpecialists() {
+  if (!selectedBranchId.value) return
   const data = await bookingApi.specialists({ branchId: selectedBranchId.value })
   specialists.value = data.specialists
 }
 
+function syncTimeSlotsForDate() {
+  if (!selectedDate.value) {
+    timeSlots.value = []
+    return
+  }
+  timeSlots.value = [
+    ...new Set(
+      availabilitySlots.value
+        .filter(item => item.date === selectedDate.value)
+        .map(item => item.time)
+    )
+  ]
+  if (selectedTime.value && !timeSlots.value.includes(selectedTime.value)) {
+    selectedTime.value = ''
+  }
+}
+
 async function loadAvailability() {
+  if (!selectedBranchId.value || !selectedServiceId.value) return
   const data = await bookingApi.availability({
     branchId: selectedBranchId.value,
     year: monthCursor.value.getFullYear(),
-    month: monthCursor.value.getMonth()
+    month: monthCursor.value.getMonth(),
+    serviceId: selectedServiceId.value,
+    specialistId: selectedSpecialistId.value
   })
   availableDays.value = data.days
+  availabilitySlots.value = data.slots || []
+  syncTimeSlotsForDate()
 }
 
 watch(
@@ -315,13 +341,22 @@ watch(monthCursor, () => {
   if (step.value === 'datetime') loadAvailability()
 })
 
+watch(selectedDate, syncTimeSlotsForDate)
+
+watch([selectedServiceId, selectedSpecialistId], () => {
+  if (step.value === 'datetime') loadAvailability()
+})
+
 watch(step, value => {
   if (value === 'datetime') loadAvailability()
 })
 
 onMounted(async () => {
   applyQuery(route.query)
-  await Promise.all([loadBranches(), loadBookingOptions(), loadSpecialists()])
+  await loadBranches()
+  if (selectedBranchId.value) {
+    await Promise.all([loadBookingOptions(), loadSpecialists()])
+  }
   if (step.value === 'datetime' || selectedDate.value) {
     await loadAvailability()
   }
