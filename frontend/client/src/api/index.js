@@ -264,14 +264,72 @@ export const bookingApi = {
   }
 }
 
+function formatRuPlate(raw) {
+  const cleaned = String(raw ?? '')
+    .replace(/\s/g, '')
+    .toUpperCase()
+  if (cleaned.length < 6) return cleaned
+  const main = cleaned.slice(0, 6)
+  const region = cleaned.slice(6)
+  return `${main[0]} ${main.slice(1, 4)} ${main.slice(4)}${region ? ` ${region}` : ''}`
+}
+
+function formatPlateDisplay(plate, plateType = 'ru') {
+  if (!plate) return ''
+  if (plateType === 'foreign') return String(plate).trim()
+  return formatRuPlate(plate)
+}
+
+function formatMileage(value) {
+  const num = Number(String(value).replace(/\s/g, ''))
+  if (!Number.isFinite(num) || num <= 0) return null
+  return `${num.toLocaleString('ru-RU')} км`
+}
+
+function carLabel(car) {
+  return [car.brand, car.model].filter(Boolean).join(' ').trim()
+}
+
+function buildMaintenance(mileage, existing = []) {
+  const mileageLabel = formatMileage(mileage)
+  const rest = existing.filter(item => item.label !== 'Крайний пробег')
+  if (!mileageLabel) return rest.length ? rest : existing
+  return [{ label: 'Крайний пробег', value: mileageLabel }, ...rest]
+}
+
+function normalizeCarPayload(payload, previous = {}) {
+  const brand = String(payload.brand || '').trim()
+  const model = String(payload.model || '').trim()
+  const plateType = payload.plateType || previous.plateType || 'ru'
+  const plate = formatPlateDisplay(payload.plate, plateType)
+  const yearRaw = String(payload.year ?? '').trim()
+  const year = yearRaw ? Number(yearRaw) : null
+  const mileageRaw = String(payload.mileage ?? '').replace(/\s/g, '')
+  const mileage = mileageRaw ? Number(mileageRaw) : null
+
+  return {
+    brand,
+    model,
+    plateType,
+    plate,
+    vin: String(payload.vin || '').trim(),
+    year: Number.isFinite(year) ? year : null,
+    color: String(payload.color || '').trim(),
+    mileage: Number.isFinite(mileage) ? mileage : null
+  }
+}
+
 const mockCars = [
   {
     id: 'car-1',
-    brand: 'Toyota Camry',
+    brand: 'Toyota',
+    model: 'Camry',
     year: 2019,
     color: 'Белый',
     plate: 'А 123 ВС 116',
+    plateType: 'ru',
     vin: '12345678912345678',
+    mileage: 66000,
     nextAppointment: {
       serviceName: 'ПАПИН ГАРАЖ',
       datetime: '31 июля 13:00',
@@ -287,46 +345,21 @@ const mockCars = [
     repair: {
       orderNumber: '001',
       carLabel: 'Toyota Camry',
-      statuses: [
-        {
-          id: 'booked',
-          title: 'Записан',
-          subtitle: '14 июля 2026 · 15:00',
-          color: '#093095',
-          state: 'done'
-        },
-        {
-          id: 'in_progress',
-          title: 'В работе',
-          subtitle: 'Работает мастер Кузнецов Д.',
-          color: '#D45813',
-          state: 'done'
-        },
-        {
-          id: 'needs_approval',
-          title: '! Нуждается в согласовании',
-          subtitle: 'Ожидает вашего ответа',
-          color: '#430890',
-          state: 'current',
-          action: 'Связаться с мастером'
-        },
-        {
-          id: 'not_ready',
-          title: 'Еще не готово',
-          subtitle: 'Ожидайте выполнения услуги',
-          color: '#157848',
-          state: 'inactive'
-        }
-      ]
+      status: 'booked',
+      bookedAt: '14 июля 2026 · 15:00',
+      master: 'Кузнецов Д.'
     }
   },
   {
     id: 'car-2',
-    brand: 'Kia Rio',
+    brand: 'Kia',
+    model: 'Rio',
     year: 2021,
     color: 'Серый',
     plate: 'В 456 ОР 116',
+    plateType: 'ru',
     vin: '98765432109876543',
+    mileage: 42500,
     nextAppointment: {
       serviceName: 'МоторПро',
       datetime: '5 августа 11:00',
@@ -342,37 +375,63 @@ const mockCars = [
     repair: {
       orderNumber: '014',
       carLabel: 'Kia Rio',
-      statuses: [
-        {
-          id: 'booked',
-          title: 'Записан',
-          subtitle: '2 июня 2026 · 11:00',
-          color: '#093095',
-          state: 'done'
-        },
-        {
-          id: 'in_progress',
-          title: 'В работе',
-          subtitle: 'Работает мастер Иванов А.',
-          color: '#D45813',
-          state: 'done'
-        },
-        {
-          id: 'needs_approval',
-          title: '! Нуждается в согласовании',
-          subtitle: 'Ожидает вашего ответа',
-          color: '#430890',
-          state: 'current',
-          action: 'Связаться с мастером'
-        },
-        {
-          id: 'not_ready',
-          title: 'Еще не готово',
-          subtitle: 'Ожидайте выполнения услуги',
-          color: '#157848',
-          state: 'inactive'
-        }
-      ]
+      status: 'in_progress',
+      bookedAt: '2 июня 2026 · 11:00',
+      master: 'Иванов А.'
+    }
+  },
+  {
+    id: 'car-3',
+    brand: 'Hyundai',
+    model: 'Solaris',
+    year: 2020,
+    color: 'Чёрный',
+    plate: 'Е 789 КХ 116',
+    plateType: 'ru',
+    vin: '11223344556677889',
+    mileage: 58200,
+    nextAppointment: {
+      serviceName: 'ПАПИН ГАРАЖ',
+      datetime: '12 августа 10:00',
+      service: 'Ремонт тормозов',
+      master: 'Кузнецов Сергей',
+      car: 'Hyundai Solaris'
+    },
+    maintenance: [
+      { label: 'Крайний пробег', value: '58 200 км' },
+      { label: 'Масло', value: 'замена на 70 000' },
+      { label: 'ТО', value: 'рекомендовано на 80 000' }
+    ],
+    repair: {
+      orderNumber: '022',
+      carLabel: 'Hyundai Solaris',
+      status: 'needs_approval',
+      bookedAt: '8 июля 2026 · 12:30',
+      master: 'Кузнецов Д.'
+    }
+  },
+  {
+    id: 'car-4',
+    brand: 'Volkswagen',
+    model: 'Polo',
+    year: 2018,
+    color: 'Синий',
+    plate: 'М 321 ТУ 116',
+    plateType: 'ru',
+    vin: '55667788990011223',
+    mileage: 91400,
+    nextAppointment: null,
+    maintenance: [
+      { label: 'Крайний пробег', value: '91 400 км' },
+      { label: 'Масло', value: 'замена на 100 000' },
+      { label: 'ТО', value: 'рекомендовано на 105 000' }
+    ],
+    repair: {
+      orderNumber: '031',
+      carLabel: 'Volkswagen Polo',
+      status: 'ready',
+      bookedAt: '20 июня 2026 · 09:00',
+      master: 'Лобанов С.'
     }
   }
 ]
@@ -392,6 +451,57 @@ export const carsApi = {
       })
     }
     return http.get('/cars')
+  },
+
+  async get(id) {
+    if (USE_MOCK) {
+      const car = mockCars.find(item => item.id === id) || null
+      return mockOk(car)
+    }
+    return http.get(`/cars/${id}`)
+  },
+
+  async create(payload) {
+    if (USE_MOCK) {
+      const data = normalizeCarPayload(payload)
+      const car = {
+        id: `car-${Date.now()}`,
+        ...data,
+        nextAppointment: null,
+        maintenance: buildMaintenance(data.mileage, [
+          { label: 'Масло', value: '—' },
+          { label: 'ТО', value: '—' }
+        ]),
+        repair: null
+      }
+      mockCars.push(car)
+      return mockOk(car)
+    }
+    return http.post('/cars', payload)
+  },
+
+  async update(id, payload) {
+    if (USE_MOCK) {
+      const index = mockCars.findIndex(item => item.id === id)
+      if (index === -1) return mockOk(null)
+      const previous = mockCars[index]
+      const data = normalizeCarPayload(payload, previous)
+      const label = carLabel(data)
+      const car = {
+        ...previous,
+        ...data,
+        maintenance: buildMaintenance(data.mileage, previous.maintenance),
+        nextAppointment: previous.nextAppointment
+          ? { ...previous.nextAppointment, car: label || previous.nextAppointment.car }
+          : null,
+        repair: previous.repair
+          ? { ...previous.repair, carLabel: label || previous.repair.carLabel }
+          : null
+      }
+      mockCars[index] = car
+      return mockOk(car)
+    }
+    return http.put(`/cars/${id}`, payload)
   }
 }
 

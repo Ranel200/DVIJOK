@@ -33,6 +33,24 @@ const routes = [
         name: 'booking',
         component: () => import('@/pages/BookingPage.vue'),
         meta: { title: 'Запись' }
+      },
+      {
+        path: 'settings',
+        name: 'settings',
+        component: () => import('@/pages/SettingsPage.vue'),
+        meta: { title: 'Настройки', requiresAuth: true }
+      },
+      {
+        path: 'cars/new',
+        name: 'car-create',
+        component: () => import('@/pages/CarFormPage.vue'),
+        meta: { title: 'Добавить автомобиль', requiresAuth: true }
+      },
+      {
+        path: 'cars/:id/edit',
+        name: 'car-edit',
+        component: () => import('@/pages/CarFormPage.vue'),
+        meta: { title: 'Изменить автомобиль', requiresAuth: true }
       }
     ]
   },

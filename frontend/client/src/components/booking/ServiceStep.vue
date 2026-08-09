@@ -49,5 +49,4 @@ const emit = defineEmits(['update:modelValue', 'back', 'next'])
   flex-direction: column;
   gap: 15px;
 }
-
 </style>

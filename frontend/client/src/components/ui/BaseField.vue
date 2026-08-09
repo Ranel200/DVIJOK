@@ -1,7 +1,7 @@
 <template>
   <div :class="['base-field', { 'base-field--block': block }]">
     <label v-if="label" :for="readonly || disable ? undefined : fieldId" class="base-field__label">
-      {{ label }}
+      {{ label }}<span v-if="required" class="base-field__required" aria-hidden="true"> *</span>
     </label>
     <div class="base-field__control">
       <BaseInput
@@ -54,6 +54,10 @@ defineProps({
   label: {
     type: String,
     default: ''
+  },
+  required: {
+    type: Boolean,
+    default: false
   },
   hint: {
     type: String,
@@ -128,6 +132,10 @@ function onUpdate(value) {
   font-size: 12px;
   line-height: 15px;
   text-align: left;
+}
+
+.base-field__required {
+  color: var(--dvijok-danger);
 }
 
 .base-field__control {

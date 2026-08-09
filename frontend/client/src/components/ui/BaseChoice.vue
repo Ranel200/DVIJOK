@@ -159,7 +159,8 @@ function select(value) {
   color: var(--dvijok-text-secondary);
 }
 
-.base-choice--glass.base-choice--disabled .base-choice__option:hover:not(.base-choice__option--active) {
+.base-choice--glass.base-choice--disabled
+  .base-choice__option:hover:not(.base-choice__option--active) {
   border-color: transparent;
   background: var(--dvijok-glass-tint);
   color: var(--dvijok-bg-dark);

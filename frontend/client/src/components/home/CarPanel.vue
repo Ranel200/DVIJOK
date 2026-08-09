@@ -26,8 +26,8 @@
           </div>
 
           <div class="car-panel__car-main">
-            <span class="car-panel__car-brand">{{ car.brand }}</span>
-            <span class="car-panel__car-meta">{{ car.year }} · {{ car.color }}</span>
+            <span class="car-panel__car-brand">{{ carTitle(car) }}</span>
+            <span class="car-panel__car-meta">{{ carMeta(car) }}</span>
           </div>
 
           <div class="car-panel__plate">{{ car.plate }}</div>
@@ -127,30 +127,29 @@
       <AppBlock v-if="activeCar.repair" title="Статус ремонта" :subtitle="repairSubtitle">
         <div class="car-panel__status" role="list">
           <div
-            v-for="(status, index) in activeCar.repair.statuses"
+            v-for="(status, index) in repairStatuses"
             :key="status.id"
             class="car-panel__status-row"
+            :class="[
+              `car-panel__status-row--${status.id}`,
+              `car-panel__status-row--${status.state}`
+            ]"
             role="listitem"
           >
             <div class="car-panel__status-rail">
               <Radio
-                :color="statusRadioColor(status)"
-                :filled="status.state === 'done'"
+                color="currentColor"
+                :filled="status.state === 'done' || status.state === 'current'"
                 :size="27"
               />
-              <span
-                v-if="index < activeCar.repair.statuses.length - 1"
-                class="car-panel__status-line"
-              />
+              <span v-if="index < repairStatuses.length - 1" class="car-panel__status-line" />
             </div>
 
             <div class="car-panel__status-body">
-              <span class="car-panel__status-title" :style="{ color: statusTitleColor(status) }">
-                {{ status.title }}
-              </span>
+              <span class="car-panel__status-title">{{ status.title }}</span>
               <span class="car-panel__status-subtitle">{{ status.subtitle }}</span>
               <button
-                v-if="status.state === 'current' && status.action"
+                v-if="status.action"
                 type="button"
                 class="car-panel__status-action"
                 @click="onStatusAction(status)"
@@ -167,12 +166,14 @@
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { carsApi } from '@/api/index.js'
 import AppBlock from '@/components/ui/AppBlock.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import Radio from '@/components/ui/Radio.vue'
+import { buildRepairStatuses } from '@/constants/repairStatus.js'
 
-const INACTIVE_COLOR = '#7A82A0'
+const router = useRouter()
 
 const cars = ref([])
 const bots = ref([])
@@ -197,15 +198,7 @@ const repairSubtitle = computed(() => {
   return `Заказ-наряд №${car.repair.orderNumber} · ${car.repair.carLabel}`
 })
 
-function statusRadioColor(status) {
-  if (status.state === 'inactive') return INACTIVE_COLOR
-  return status.color
-}
-
-function statusTitleColor(status) {
-  if (status.state === 'inactive') return INACTIVE_COLOR
-  return status.color
-}
+const repairStatuses = computed(() => buildRepairStatuses(activeCar.value?.repair))
 
 function stopPageSwipe(event) {
   event.stopPropagation()
@@ -253,9 +246,21 @@ function scrollToSlide(index) {
   activeSlide.value = index
 }
 
-function onEdit() {}
+function carTitle(car) {
+  return [car.brand, car.model].filter(Boolean).join(' ')
+}
 
-function onAddCar() {}
+function carMeta(car) {
+  return [car.year, car.color].filter(Boolean).join(' · ')
+}
+
+function onEdit(car) {
+  router.push({ name: 'car-edit', params: { id: car.id } })
+}
+
+function onAddCar() {
+  router.push({ name: 'car-create' })
+}
 
 function onStatusAction() {}
 
@@ -623,6 +628,23 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-columns: 27px 1fr;
   column-gap: 20px;
+  color: var(--dvijok-text-secondary);
+
+  &--booked:not(.car-panel__status-row--inactive) {
+    color: var(--dvijok-blue-primary);
+  }
+
+  &--in_progress:not(.car-panel__status-row--inactive) {
+    color: #d45813;
+  }
+
+  &--approval:not(.car-panel__status-row--inactive) {
+    color: #430890;
+  }
+
+  &--ready:not(.car-panel__status-row--inactive) {
+    color: var(--dvijok-workday);
+  }
 }
 
 .car-panel__status-rail {
@@ -658,6 +680,7 @@ onBeforeUnmount(() => {
   font-weight: 700;
   font-size: 14px;
   line-height: 17px;
+  color: inherit;
 }
 
 .car-panel__status-subtitle {

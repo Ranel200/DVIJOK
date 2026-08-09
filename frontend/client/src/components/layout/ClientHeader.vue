@@ -5,14 +5,31 @@
       <img class="client-header__round client-header__round--2" src="/client/round.svg" alt="" />
     </div>
 
-    <div class="client-header__text">
-      <p class="client-header__subtitle">{{ subtitle || '\u00A0' }}</p>
-      <h1 class="client-header__title">{{ title }}</h1>
+    <div class="client-header__body">
+      <div class="client-header__text">
+        <p class="client-header__subtitle">{{ subtitle || '\u00A0' }}</p>
+        <h1 class="client-header__title">{{ title }}</h1>
+      </div>
+
+      <button
+        v-if="showSettingsButton"
+        type="button"
+        class="client-header__settings"
+        aria-label="Настройки"
+        @click="goToSettings"
+      >
+        <img src="/client/icons/gear.svg" alt="" width="30" height="30" />
+      </button>
     </div>
   </header>
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth.js'
+
 defineProps({
   title: {
     type: String,
@@ -23,6 +40,17 @@ defineProps({
     default: ''
   }
 })
+
+const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore()
+const { isAuthenticated } = storeToRefs(authStore)
+
+const showSettingsButton = computed(() => isAuthenticated.value && route.name !== 'settings')
+
+function goToSettings() {
+  router.push({ name: 'settings' })
+}
 </script>
 
 <style scoped lang="scss">
@@ -64,12 +92,20 @@ defineProps({
   transform: translate(-30%, 50%);
 }
 
-.client-header__text {
+.client-header__body {
   position: relative;
   z-index: 1;
   display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.client-header__text {
+  display: flex;
   flex-direction: column;
   gap: 5px;
+  min-width: 0;
 }
 
 .client-header__subtitle {
@@ -87,5 +123,18 @@ defineProps({
   font-size: 20px;
   line-height: 30px;
   color: var(--dvijok-white);
+}
+
+.client-header__settings {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  line-height: 0;
 }
 </style>

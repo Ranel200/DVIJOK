@@ -28,11 +28,23 @@ export const useAuthStore = defineStore('auth', () => {
     setAuthToken(null)
   }
 
+  async function updateProfile(payload = {}) {
+    if (!user.value) return null
+    user.value = {
+      ...user.value,
+      name: payload.name ?? user.value.name,
+      phone: payload.phone ?? user.value.phone,
+      email: payload.email ?? user.value.email
+    }
+    return user.value
+  }
+
   return {
     user,
     token,
     isAuthenticated,
     login,
-    logout
+    logout,
+    updateProfile
   }
 })

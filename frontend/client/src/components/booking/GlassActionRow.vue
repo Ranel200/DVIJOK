@@ -1,10 +1,12 @@
 <template>
   <button type="button" class="glass-action-row" @click="emit('click', $event)">
     <div class="glass-action-row__main">
-      <img v-if="icon" class="glass-action-row__icon" :src="icon" alt="" />
-      <span class="glass-action-row__label">{{ label }}</span>
+      <slot>
+        <img v-if="icon" class="glass-action-row__icon" :src="icon" alt="" />
+        <span v-if="label" class="glass-action-row__label">{{ label }}</span>
+      </slot>
     </div>
-    <slot name="trailing">
+    <slot v-if="showChevron" name="trailing">
       <img
         class="glass-action-row__chevron"
         src="/client/icons/record/chevron-right.svg"
@@ -24,7 +26,11 @@ defineProps({
   },
   label: {
     type: String,
-    required: true
+    default: ''
+  },
+  showChevron: {
+    type: Boolean,
+    default: true
   }
 })
 
@@ -56,6 +62,7 @@ const emit = defineEmits(['click'])
   align-items: center;
   gap: 15px;
   min-width: 0;
+  flex: 1;
 }
 
 .glass-action-row__icon {
