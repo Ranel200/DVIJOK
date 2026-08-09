@@ -1649,6 +1649,14 @@ export const settingsApi = {
               loggedAt: '2025-08-02T17:36:00'
             }
           ]
+        },
+        documents: {
+          acceptedAtById: {
+            offer: '2026-04-17',
+            license: '2026-04-17',
+            privacy: '2026-04-17',
+            regulations: '2026-04-17'
+          }
         }
       })
     }

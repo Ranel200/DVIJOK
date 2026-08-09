@@ -22,34 +22,21 @@
               Я принимаю
               <a
                 class="register__link"
-                href="/docs/offer-agreement-autoservice.html"
+                :href="offerDocument.href"
                 target="_blank"
                 rel="noopener noreferrer"
-                >Договор оферты на использование платформы</a
+                >{{ offerDocument.consentLabel }}</a
               >
               и ознакомился с
-              <a
-                class="register__link"
-                href="/docs/license-agreement-crm.html"
-                target="_blank"
-                rel="noopener noreferrer"
-                >Лицензионным договором</a
-              >,
-              <a
-                class="register__link"
-                href="/docs/privacy-policy-b2b.html"
-                target="_blank"
-                rel="noopener noreferrer"
-                >Политикой обработки персональных данных</a
-              >
-              и
-              <a
-                class="register__link"
-                href="/docs/platform-regulations.html"
-                target="_blank"
-                rel="noopener noreferrer"
-                >Регламентом работы платформы</a
-              >.
+              <template v-for="(doc, index) in reviewDocuments" :key="doc.id">
+                <a
+                  class="register__link"
+                  :href="doc.href"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >{{ doc.consentLabel }}</a
+                >{{ reviewSeparator(index) }}
+              </template>
             </p>
           </div>
 
@@ -91,10 +78,20 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseCheckbox from '@/components/ui/BaseCheckbox.vue'
 import BaseForm from '@/components/ui/BaseForm.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
+import { PLATFORM_DOCUMENTS } from '@/constants/platformDocuments.js'
 import { useAuthStore } from '@/stores/auth.js'
 
 const router = useRouter()
 const authStore = useAuthStore()
+
+const offerDocument = PLATFORM_DOCUMENTS.find(doc => doc.id === 'offer')
+const reviewDocuments = PLATFORM_DOCUMENTS.filter(doc => doc.id !== 'offer')
+
+function reviewSeparator(index) {
+  if (index < reviewDocuments.length - 2) return ', '
+  if (index === reviewDocuments.length - 2) return ' и '
+  return '.'
+}
 
 const form = ref({
   name: '',

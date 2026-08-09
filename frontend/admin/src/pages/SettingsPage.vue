@@ -18,6 +18,10 @@
       @logout="logoutConfirmOpen = true"
       @edit-service="openServiceEdit"
     />
+    <DocumentsSettingsTab
+      v-show="activeTab === 'documents'"
+      :accepted-at-by-id="documents.acceptedAtById"
+    />
 
     <BaseModal v-model="logoutConfirmOpen">
       <div class="logout-modal">
@@ -49,6 +53,7 @@
 import { nextTick, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminHeader from '@/components/layout/AdminHeader.vue'
+import DocumentsSettingsTab from '@/components/settings/DocumentsSettingsTab.vue'
 import SecuritySettingsTab from '@/components/settings/SecuritySettingsTab.vue'
 import ServiceSettingsTab from '@/components/settings/ServiceSettingsTab.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -63,7 +68,8 @@ const authStore = useAuthStore()
 
 const tabs = [
   { label: 'Автосервис', value: 'service' },
-  { label: 'Безопасность', value: 'security' }
+  { label: 'Безопасность', value: 'security' },
+  { label: 'Документы', value: 'documents' }
 ]
 const activeTab = ref('service')
 const serviceTabRef = ref(null)
@@ -118,6 +124,10 @@ const security = ref({
   loginHistory: []
 })
 
+const documents = ref({
+  acceptedAtById: {}
+})
+
 async function confirmLogout() {
   logoutLoading.value = true
   try {
@@ -152,6 +162,9 @@ onMounted(async () => {
   }
   if (data?.security) {
     security.value = { ...security.value, ...data.security }
+  }
+  if (data?.documents) {
+    documents.value = { ...documents.value, ...data.documents }
   }
   applyCurrentSessionInfo()
 })

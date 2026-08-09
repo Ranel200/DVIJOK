@@ -274,14 +274,13 @@
                 *Код подтверждения смены пароля придет на почту {{ email }}
               </p>
             </div>
-            <BaseField
-              v-model="passwordDraft.code"
-              label="Код подтверждения"
-              placeholder="Код"
-              :error="Boolean(passwordErrors.code)"
-              :error-message="passwordErrors.code"
-              class="password-edit__code"
-            />
+            <div class="password-edit__code">
+              <span class="password-edit__code-label">Код подтверждения</span>
+              <CodeInputs v-model="passwordDraft.code" :error="Boolean(passwordErrors.code)" />
+              <p v-if="passwordErrors.code" class="password-edit__code-error">
+                {{ passwordErrors.code }}
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -344,6 +343,7 @@ import ArrowIcon from '@/components/ui/ArrowIcon.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseField from '@/components/ui/BaseField.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
+import CodeInputs from '@/components/ui/CodeInputs.vue'
 import BaseScrollbar from '@/components/ui/BaseScrollbar.vue'
 import BaseSwitcher from '@/components/ui/BaseSwitcher.vue'
 import EyeIcon from '@/components/ui/EyeIcon.vue'
@@ -490,7 +490,7 @@ function validatePasswordDraft() {
   if (!codeSent.value) {
     passwordErrors.code = 'Сначала отправьте код подтверждения'
     valid = false
-  } else if (!draft.code.trim()) {
+  } else if (draft.code.replace(/\D/g, '').length < 4) {
     passwordErrors.code = 'Введите код подтверждения'
     valid = false
   }
@@ -606,7 +606,26 @@ function terminateAllSessions() {
 }
 
 .password-edit__code {
-  width: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+}
+
+.password-edit__code-label {
+  color: var(--dvijok-form-label, var(--dvijok-bg-dark));
+  font-size: 16px;
+  line-height: 19px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.password-edit__code-error {
+  margin: 0;
+  color: var(--q-negative, #c10015);
+  font-size: 12px;
+  line-height: 15px;
 }
 
 .password-edit__eye {

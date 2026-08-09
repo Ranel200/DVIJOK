@@ -15,6 +15,7 @@
     :dense="dense"
     :mask="mask"
     :fill-mask="fillMask"
+    :maxlength="maxlength"
     :autogrow="autogrow"
     :outlined="false"
     :borderless="true"
@@ -23,6 +24,8 @@
     @update:model-value="onUpdate"
     @focus="onFocus"
     @mousedown="onMouseDown"
+    @keydown="onKeydown"
+    @paste="onPaste"
   >
     <template v-if="$slots.prepend" #prepend>
       <slot name="prepend" />
@@ -93,17 +96,26 @@ const props = defineProps({
     type: [Boolean, String],
     default: false
   },
+  maxlength: {
+    type: [Number, String],
+    default: undefined
+  },
+  inputAttrs: {
+    type: Object,
+    default: () => ({})
+  },
   autogrow: {
     type: Boolean,
     default: false
   }
 })
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'keydown', 'paste'])
 
-const nativeAttrs = computed(() =>
-  props.readonly || props.disable ? { tabindex: -1, readonly: true } : undefined
-)
+const nativeAttrs = computed(() => {
+  const locked = props.readonly || props.disable ? { tabindex: -1, readonly: true } : {}
+  return { ...props.inputAttrs, ...locked }
+})
 
 function onUpdate(value) {
   emit('update:modelValue', value)
@@ -117,6 +129,14 @@ function onFocus(event) {
 function onMouseDown(event) {
   if (!props.readonly) return
   event.preventDefault()
+}
+
+function onKeydown(event) {
+  emit('keydown', event)
+}
+
+function onPaste(event) {
+  emit('paste', event)
 }
 </script>
 
