@@ -59,9 +59,7 @@ const mockAllServices = [
 
 const mockServiceOptions = [
   { value: 'diagnostics', label: 'Диагностика', price: 2500 },
-  { value: 'oil', label: 'Замена масла', price: 3200 },
-  { value: 'tires', label: 'Шиномонтаж', price: 1800 },
-  { value: 'brakes', label: 'Тормозная система', price: 4500 }
+  { value: 'repair', label: 'Ремонт', price: 5000 }
 ]
 
 const mockCarOptions = [

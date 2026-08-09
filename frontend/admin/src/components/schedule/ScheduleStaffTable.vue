@@ -8,6 +8,7 @@
           :style="todayBgStyle"
           aria-hidden="true"
         />
+        <div class="schedule-staff__sticky-mask schedule-staff__sticky-mask--top" aria-hidden="true" />
         <table class="schedule-staff__table">
           <colgroup>
             <col class="schedule-staff__col schedule-staff__col--employees" />
@@ -104,6 +105,10 @@
             </tr>
           </tbody>
         </table>
+        <div
+          class="schedule-staff__sticky-mask schedule-staff__sticky-mask--bottom"
+          aria-hidden="true"
+        />
       </div>
     </div>
 
@@ -177,7 +182,8 @@ const columnVars = {
   '--schedule-col-day': `${COL.day}px`,
   '--schedule-sticky-dots': `${COL.employees}px`,
   '--schedule-sticky-total': `${COL.employees + COL.dots}px`,
-  '--schedule-sticky-gap': `${COL.employees + COL.dots + COL.total}px`
+  '--schedule-sticky-gap': `${COL.employees + COL.dots + COL.total}px`,
+  '--schedule-sticky-width': `${COLS_BEFORE_DAYS}px`
 }
 
 const menuItems = [
@@ -418,6 +424,27 @@ defineExpose({ reload: loadEmployees })
   border: 1px solid var(--dvijok-today);
   border-radius: 8px;
   pointer-events: none;
+}
+
+.schedule-staff__sticky-mask {
+  position: sticky;
+  left: 0;
+  z-index: 4;
+  width: var(--schedule-sticky-width);
+  height: 10px;
+  background-color: var(--dvijok-white);
+  pointer-events: none;
+}
+
+.schedule-staff__sticky-mask--top {
+  top: 0;
+  margin-top: -10px;
+  margin-bottom: -10px;
+}
+
+.schedule-staff__sticky-mask--bottom {
+  bottom: 0;
+  margin-bottom: -10px;
 }
 
 .schedule-staff__table {

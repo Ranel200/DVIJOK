@@ -129,11 +129,15 @@ function updateListPosition() {
   if (!trigger || !open.value) return
 
   const rect = trigger.getBoundingClientRect()
+  const spaceBelow = window.innerHeight - rect.bottom - 8
+  const maxHeight = Math.max(120, Math.min(280, spaceBelow))
+
   listStyle.value = {
     position: 'fixed',
     top: `${rect.bottom - 1}px`,
     left: `${rect.left}px`,
     width: `${rect.width}px`,
+    maxHeight: `${maxHeight}px`,
     zIndex: 7000
   }
 }
@@ -240,7 +244,8 @@ onBeforeUnmount(() => {
   border-radius: 0 0 8px 8px;
   background-color: var(--dvijok-white);
   box-sizing: border-box;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .base-select__option {

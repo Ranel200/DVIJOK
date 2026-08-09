@@ -82,7 +82,6 @@ import { formatWeekdayDay } from '@/utils/formatDateRu.js'
 const COL = {
   time: 48,
   timeGap: 20,
-  dayMin: 96,
   dayPad: 5
 }
 
@@ -90,13 +89,11 @@ const COL = {
 const columnVars = {
   '--schedule-cal-time': `${COL.time}px`,
   '--schedule-cal-time-col': `${COL.time + COL.timeGap - COL.dayPad}px`,
-  '--schedule-cal-day-min': `${COL.dayMin}px`,
   '--schedule-cal-day-pad': `${COL.dayPad}px`
 }
 
 const gridTemplateStyle = {
-  gridTemplateColumns:
-    'var(--schedule-cal-time-col) repeat(7, minmax(var(--schedule-cal-day-min), 1fr))'
+  gridTemplateColumns: 'var(--schedule-cal-time-col) repeat(7, minmax(0, 1fr))'
 }
 
 const scheduleFilter = useScheduleFilterStore()
@@ -196,7 +193,8 @@ defineExpose({ reload: loadCalendar })
 .schedule-calendar__panel {
   flex: 1;
   min-height: 0;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   box-sizing: border-box;
   background-color: var(--dvijok-white);
   border-radius: 10px;
@@ -212,8 +210,7 @@ defineExpose({ reload: loadCalendar })
 
 .schedule-calendar__table-wrap {
   position: relative;
-  width: max-content;
-  min-width: 100%;
+  width: 100%;
   padding: 5px 10px;
   box-sizing: border-box;
 }
@@ -222,7 +219,7 @@ defineExpose({ reload: loadCalendar })
 .schedule-calendar__grid {
   display: grid;
   width: 100%;
-  min-width: calc(var(--schedule-cal-time-col) + 7 * var(--schedule-cal-day-min));
+  min-width: 0;
 }
 
 .schedule-calendar__today-overlay {
@@ -280,6 +277,8 @@ defineExpose({ reload: loadCalendar })
 }
 
 .schedule-calendar__day-cell {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   padding: 10px var(--schedule-cal-day-pad);
 }
@@ -290,9 +289,11 @@ defineExpose({ reload: loadCalendar })
 
 .schedule-calendar__block {
   display: flex;
+  flex: 1;
   flex-direction: column;
   align-items: stretch;
   justify-content: center;
+  min-width: 0;
   min-height: 84px;
   padding: 10px;
   box-sizing: border-box;
@@ -348,6 +349,8 @@ defineExpose({ reload: loadCalendar })
   font-size: 11px;
   line-height: 13px;
   color: inherit;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .schedule-calendar__meta {
@@ -355,6 +358,8 @@ defineExpose({ reload: loadCalendar })
   font-size: 12px;
   line-height: 15px;
   color: inherit;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .schedule-calendar__meta--service {

@@ -11,6 +11,8 @@ export const useAuthStore = defineStore('auth', () => {
   const token = ref(null)
 
   const isAuthenticated = computed(() => Boolean(token.value))
+  const subscriptionPlan = computed(() => user.value?.subscriptionPlan ?? 'none')
+  const hasSubscription = computed(() => Boolean(user.value) && subscriptionPlan.value !== 'none')
 
   async function init() {
     try {
@@ -50,13 +52,22 @@ export const useAuthStore = defineStore('auth', () => {
     setAuthToken(null)
   }
 
+  async function selectSubscriptionPlan(plan) {
+    const { user: nextUser } = await authApi.selectSubscriptionPlan(plan)
+    user.value = nextUser
+    return nextUser
+  }
+
   return {
     user,
     token,
     isAuthenticated,
+    subscriptionPlan,
+    hasSubscription,
     init,
     login,
     register,
+    selectSubscriptionPlan,
     logout
   }
 })

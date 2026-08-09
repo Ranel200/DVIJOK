@@ -17,7 +17,6 @@ import { useAuthStore } from '@/stores/auth.js'
  * async/await or return a Promise which resolves
  * with the Router instance.
  */
-
 export default defineRouter((/* { store, ssrContext } */) => {
   const createHistory = import.meta.env.QUASAR_SERVER
     ? createMemoryHistory
@@ -35,8 +34,11 @@ export default defineRouter((/* { store, ssrContext } */) => {
     history: createHistory(import.meta.env.QUASAR_VUE_ROUTER_BASE)
   })
 
-  // Mock-гард авторизации. Пока auth-стор по умолчанию авторизован,
-  // редиректов не происходит; логика готова к реальной блокировке.
+  function homeRoute(auth) {
+    return auth.hasSubscription ? { name: 'schedule' } : { name: 'tariffs' }
+  }
+
+  // Mock-гард авторизации + обязательная подписка.
   Router.beforeEach(to => {
     const auth = useAuthStore()
 
@@ -45,10 +47,18 @@ export default defineRouter((/* { store, ssrContext } */) => {
     }
 
     if (to.name === 'login' && auth.isAuthenticated) {
-      return { name: 'schedule' }
+      return homeRoute(auth)
     }
 
     if (to.name === 'register' && auth.isAuthenticated) {
+      return homeRoute(auth)
+    }
+
+    if (auth.isAuthenticated && !auth.hasSubscription && to.name !== 'tariffs') {
+      return { name: 'tariffs' }
+    }
+
+    if (to.name === 'tariffs' && auth.isAuthenticated && auth.hasSubscription) {
       return { name: 'schedule' }
     }
 
