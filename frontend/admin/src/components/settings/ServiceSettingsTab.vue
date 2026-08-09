@@ -81,6 +81,7 @@
           block
           :icon-spacing="10"
           class="subscription__change"
+          @click="goToTariffs"
         >
           Изменить тариф
           <template #append>
@@ -205,6 +206,7 @@
 
 <script setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import ArrowIcon from '@/components/ui/ArrowIcon.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseForm from '@/components/ui/BaseForm.vue'
@@ -215,6 +217,12 @@ import SuccessModal from '@/components/ui/SuccessModal.vue'
 import { settingsApi } from '@/api/index.js'
 import { formatRuDate } from '@/utils/formatDateRu.js'
 import { pluralize } from '@/utils/pluralize.js'
+
+const router = useRouter()
+
+function goToTariffs() {
+  router.push({ name: 'tariffs' })
+}
 
 const form = defineModel('form', { type: Object, required: true })
 

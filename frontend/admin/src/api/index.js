@@ -3,11 +3,17 @@
 
 import { http, USE_MOCK } from '@dvijok/shared/api/http.js'
 import { mockOk, mockReject } from '@dvijok/shared/api/mock.js'
-import { STAFF_ROLE_LABELS, mapLegacyRole } from '@/constants/staff.js'
+import {
+  STAFF_ROLE_LABELS,
+  fullStaffAccess,
+  mapLegacyRole,
+  normalizeStaffAccess
+} from '@/constants/staff.js'
 import { startOfWeek } from '@/utils/formatDateRu.js'
 
 const SUBSCRIPTION_PLANS = ['none', 'standard', 'pro', 'premium']
 
+// Владелец сервиса. Демо: admin / admin
 const mockUsers = [
   {
     id: 1,
@@ -15,7 +21,8 @@ const mockUsers = [
     role: 'Владелец',
     email: 'admin',
     password: 'admin',
-    subscriptionPlan: 'pro'
+    subscriptionPlan: 'pro',
+    isOwner: true
   }
 ]
 let mockUserIdSeq = 2
@@ -47,28 +54,87 @@ function clearMockSession() {
 }
 
 let currentUserId = null
+/** 'owner' | 'staff' */
+let currentAccountType = null
 
-function issueToken(user) {
-  currentUserId = user.id
-  const token = `mock-token-${user.id}-${Date.now()}`
-  writeMockSession({ userId: user.id, token })
+function issueToken(account, accountType) {
+  currentUserId = account.id
+  currentAccountType = accountType
+  const token = `mock-token-${accountType}-${account.id}-${Date.now()}`
+  writeMockSession({ userId: account.id, token, accountType })
   return token
 }
 
-function publicUser(user) {
-  const { password: _password, ...rest } = user
-  return rest
+function toOwnerAuthUser(user) {
+  return {
+    id: user.id,
+    name: user.name,
+    role: user.role,
+    email: user.email,
+    subscriptionPlan: user.subscriptionPlan ?? 'none',
+    isOwner: true,
+    access: fullStaffAccess()
+  }
+}
+
+function toStaffAuthUser(employee) {
+  return {
+    id: employee.id,
+    name: employee.name,
+    role: employee.role,
+    email: employee.login || employee.email || '',
+    subscriptionPlan: 'pro',
+    isOwner: false,
+    employeeId: employee.id,
+    access: normalizeStaffAccess(employee.access)
+  }
+}
+
+function findStaffByLogin(login) {
+  const value = String(login || '').trim()
+  if (!value) return null
+  return mockEmployees.find(item => item.login === value || (item.email && item.email === value))
+}
+
+function resolveAuthUser() {
+  if (currentUserId == null || !currentAccountType) return null
+  if (currentAccountType === 'staff') {
+    const employee = mockEmployees.find(item => item.id === currentUserId)
+    return employee ? toStaffAuthUser(employee) : null
+  }
+  const user = mockUsers.find(item => item.id === currentUserId)
+  return user ? toOwnerAuthUser(user) : null
+}
+
+function isLoginTaken(login, { excludeEmployeeId } = {}) {
+  const value = String(login || '').trim()
+  if (!value) return false
+  if (mockUsers.some(item => item.email === value)) return true
+  return mockEmployees.some(
+    item =>
+      item.id !== excludeEmployeeId &&
+      (item.login === value || (item.email && item.email === value))
+  )
 }
 
 export const authApi = {
   async login({ email, password }) {
     if (USE_MOCK) {
-      const user = mockUsers.find(u => u.email === email)
-      if (!user || user.password !== password) {
+      const owner = mockUsers.find(u => u.email === email)
+      if (owner) {
+        if (owner.password !== password) {
+          return mockReject(401, { message: 'Неверный email или пароль' })
+        }
+        const token = issueToken(owner, 'owner')
+        return mockOk({ token, user: toOwnerAuthUser(owner) })
+      }
+
+      const employee = findStaffByLogin(email)
+      if (!employee || !employee.login || employee.password !== password) {
         return mockReject(401, { message: 'Неверный email или пароль' })
       }
-      const token = issueToken(user)
-      return mockOk({ token, user: publicUser(user) })
+      const token = issueToken(employee, 'staff')
+      return mockOk({ token, user: toStaffAuthUser(employee) })
     }
     return http.post('/auth/login', { email, password })
   },
@@ -76,20 +142,21 @@ export const authApi = {
   async register(payload) {
     if (USE_MOCK) {
       const email = payload.email
-      if (mockUsers.some(u => u.email === email)) {
+      if (mockUsers.some(u => u.email === email) || findStaffByLogin(email)) {
         return mockReject(409, { message: 'Пользователь с таким email уже существует' })
       }
       const user = {
         id: mockUserIdSeq++,
         name: payload.contactName || payload.headName || 'Автосервис',
-        role: mockUsers[0].role,
+        role: 'Владелец',
         email,
         password: payload.password,
-        subscriptionPlan: 'none'
+        subscriptionPlan: 'none',
+        isOwner: true
       }
       mockUsers.push(user)
-      const token = issueToken(user)
-      return mockOk({ token, user: publicUser(user) })
+      const token = issueToken(user, 'owner')
+      return mockOk({ token, user: toOwnerAuthUser(user) })
     }
     return http.post('/auth/register', payload)
   },
@@ -99,7 +166,7 @@ export const authApi = {
       if (!SUBSCRIPTION_PLANS.includes(plan) || plan === 'none') {
         return mockReject(400, { message: 'Некорректный тариф' })
       }
-      if (currentUserId == null) {
+      if (currentUserId == null || currentAccountType !== 'owner') {
         return mockReject(401, { message: 'Не авторизован' })
       }
       const user = mockUsers.find(u => u.id === currentUserId)
@@ -107,7 +174,7 @@ export const authApi = {
         return mockReject(401, { message: 'Не авторизован' })
       }
       user.subscriptionPlan = plan
-      return mockOk({ user: publicUser(user) })
+      return mockOk({ user: toOwnerAuthUser(user) })
     }
     return http.post('/auth/subscription', { plan })
   },
@@ -115,6 +182,7 @@ export const authApi = {
   async logout() {
     if (USE_MOCK) {
       currentUserId = null
+      currentAccountType = null
       clearMockSession()
       return mockOk({ success: true })
     }
@@ -127,14 +195,17 @@ export const authApi = {
       if (!session || session.userId == null) {
         return mockReject(401, { message: 'Не авторизован' })
       }
-      const user = mockUsers.find(u => u.id === session.userId)
+      const accountType = session.accountType === 'staff' ? 'staff' : 'owner'
+      currentUserId = session.userId
+      currentAccountType = accountType
+      const user = resolveAuthUser()
       if (!user) {
         clearMockSession()
         currentUserId = null
+        currentAccountType = null
         return mockReject(401, { message: 'Не авторизован' })
       }
-      currentUserId = user.id
-      return mockOk({ token: session.token, user: publicUser(user) })
+      return mockOk({ token: session.token, user })
     }
     const user = await http.get('/auth/me')
     return { user }
@@ -142,46 +213,77 @@ export const authApi = {
 
   async me() {
     if (USE_MOCK) {
-      if (currentUserId == null) {
-        return mockReject(401, { message: 'Не авторизован' })
-      }
-      const user = mockUsers.find(u => u.id === currentUserId)
+      const user = resolveAuthUser()
       if (!user) {
         return mockReject(401, { message: 'Не авторизован' })
       }
-      return mockOk(publicUser(user))
+      return mockOk(user)
     }
     return http.get('/auth/me')
   }
 }
 
+// Демо-логины сотрудников (пароль = логин):
+// smirnov — почти всё, без настроек
+// sidorov — расписание, CRM, задачи
+// petrov — только расписание
+// morozova — CRM и услуги
+// sokolova — полный доступ сотрудника (включая настройки)
 const mockEmployees = [
   {
     id: 1,
     name: 'Михайлов Артем Сергеевич',
     role: 'Владелец',
+    roleKey: 'senior_admin',
     avatarBg: '#5C6BC0',
     workDays: [1, 2, 3, 4, 5],
     start: '09:00',
-    end: '18:00'
+    end: '18:00',
+    access: fullStaffAccess()
   },
   {
     id: 2,
     name: 'Петров Иван Сергеевич',
-    role: 'Мастер',
+    role: 'Старший мастер',
+    roleKey: 'senior_master',
     avatarBg: '#43A047',
     workDays: [1, 2, 3, 4, 5],
     start: '09:00',
-    end: '18:00'
+    end: '18:00',
+    login: 'petrov',
+    password: 'petrov',
+    phone: '+7 900 111-22-33',
+    email: 'petrov@dvijok.ru',
+    access: {
+      schedule: true,
+      crm: false,
+      services: false,
+      tasks: false,
+      qr: false,
+      settings: false
+    }
   },
   {
     id: 3,
     name: 'Сидоров Алексей Николаевич',
-    role: 'Менеджер',
+    role: 'Младший администратор',
+    roleKey: 'junior_admin',
     avatarBg: '#FB8C00',
     workDays: [1, 2, 3, 4, 5, 6],
     start: '10:00',
-    end: '19:00'
+    end: '19:00',
+    login: 'sidorov',
+    password: 'sidorov',
+    phone: '+7 900 222-33-44',
+    email: 'sidorov@dvijok.ru',
+    access: {
+      schedule: true,
+      crm: true,
+      services: false,
+      tasks: true,
+      qr: false,
+      settings: false
+    }
   },
   {
     id: 4,
@@ -195,11 +297,24 @@ const mockEmployees = [
   {
     id: 5,
     name: 'Смирнов Дмитрий Олегович',
-    role: 'Администратор',
+    role: 'Старший администратор',
+    roleKey: 'senior_admin',
     avatarBg: '#039BE5',
     workDays: [1, 2, 3, 4, 5],
     start: '08:00',
-    end: '17:00'
+    end: '17:00',
+    login: 'smirnov',
+    password: 'smirnov',
+    phone: '+7 900 333-44-55',
+    email: 'smirnov@dvijok.ru',
+    access: {
+      schedule: true,
+      crm: true,
+      services: true,
+      tasks: true,
+      qr: true,
+      settings: false
+    }
   },
   {
     id: 6,
@@ -231,11 +346,24 @@ const mockEmployees = [
   {
     id: 9,
     name: 'Морозова Елена Сергеевна',
-    role: 'Менеджер',
+    role: 'Младший администратор',
+    roleKey: 'junior_admin',
     avatarBg: '#F4511E',
     workDays: [1, 2, 3, 4, 5],
     start: '09:00',
-    end: '18:00'
+    end: '18:00',
+    login: 'morozova',
+    password: 'morozova',
+    phone: '+7 900 444-55-66',
+    email: 'morozova@dvijok.ru',
+    access: {
+      schedule: false,
+      crm: true,
+      services: true,
+      tasks: false,
+      qr: false,
+      settings: false
+    }
   },
   {
     id: 10,
@@ -249,11 +377,17 @@ const mockEmployees = [
   {
     id: 11,
     name: 'Соколова Ирина Алексеевна',
-    role: 'Администратор',
+    role: 'Старший администратор',
+    roleKey: 'senior_admin',
     avatarBg: '#7B1FA2',
     workDays: [1, 2, 3, 4, 5, 6],
     start: '08:00',
-    end: '16:00'
+    end: '16:00',
+    login: 'sokolova',
+    password: 'sokolova',
+    phone: '+7 900 555-66-77',
+    email: 'sokolova@dvijok.ru',
+    access: fullStaffAccess()
   },
   {
     id: 12,
@@ -308,17 +442,6 @@ function mockEmployeeBrief(id) {
   return { id: employee.id, name: employee.name, role: employee.role }
 }
 
-function emptyStaffAccess() {
-  return {
-    schedule: false,
-    crm: false,
-    services: false,
-    tasks: false,
-    qr: false,
-    settings: false
-  }
-}
-
 function emptyStaffDocuments() {
   return { passport: null, inn: null, medicalBook: null }
 }
@@ -339,10 +462,7 @@ function toEmployeeDetail(staff) {
       ...emptyStaffDocuments(),
       ...staff.documents
     },
-    access: {
-      ...emptyStaffAccess(),
-      ...staff.access
-    },
+    access: normalizeStaffAccess(staff.access),
     login: staff.login || '',
     password: staff.password || ''
   }
@@ -363,10 +483,7 @@ function applyEmployeePayload(staff, payload) {
     ...emptyStaffDocuments(),
     ...(payload.documents || staff.documents)
   }
-  staff.access = {
-    ...emptyStaffAccess(),
-    ...(payload.access || staff.access)
-  }
+  staff.access = normalizeStaffAccess(payload.access || staff.access)
   if (payload.login !== undefined) staff.login = payload.login || ''
   if (payload.password !== undefined) staff.password = payload.password || ''
 }
@@ -448,7 +565,12 @@ function formatHourLabel(hour) {
 
 function buildCalendarWeek(weekStartIso) {
   const start = new Date(`${weekStartIso}T00:00:00`)
-  const masters = mockEmployees.filter(item => item.role === 'Мастер').slice(0, 5)
+  const masters = mockEmployees
+    .filter(item => {
+      const roleKey = item.roleKey || mapLegacyRole(item.role)
+      return roleKey === 'senior_master' || roleKey === 'junior_master' || item.role === 'Мастер'
+    })
+    .slice(0, 5)
 
   let minHour = 24
   let maxHour = 0
@@ -612,6 +734,10 @@ export const scheduleApi = {
 
   async createEmployee(payload) {
     if (USE_MOCK) {
+      const login = String(payload.login || '').trim()
+      if (login && isLoginTaken(login)) {
+        return mockReject(409, { message: 'Такой логин уже занят' })
+      }
       const nextId = mockEmployees.reduce((max, item) => Math.max(max, item.id), 0) + 1
       const roleKey = payload.role || 'senior_admin'
       const employee = {
@@ -629,11 +755,8 @@ export const scheduleApi = {
           ...emptyStaffDocuments(),
           ...payload.documents
         },
-        access: {
-          ...emptyStaffAccess(),
-          ...payload.access
-        },
-        login: payload.login || '',
+        access: normalizeStaffAccess(payload.access),
+        login,
         password: payload.password || '',
         workDays: [1, 2, 3, 4, 5],
         start: '09:00',
@@ -649,7 +772,14 @@ export const scheduleApi = {
     if (USE_MOCK) {
       const employee = mockEmployees.find(item => item.id === id)
       if (!employee) return mockReject(404, { message: 'Сотрудник не найден' })
-      applyEmployeePayload(employee, payload)
+      const nextPayload =
+        payload.login !== undefined
+          ? { ...payload, login: String(payload.login || '').trim() }
+          : payload
+      if (nextPayload.login && isLoginTaken(nextPayload.login, { excludeEmployeeId: id })) {
+        return mockReject(409, { message: 'Такой логин уже занят' })
+      }
+      applyEmployeePayload(employee, nextPayload)
       return mockOk(toEmployeeDetail(employee))
     }
     return http.put(`/schedule/employees/${id}`, payload)

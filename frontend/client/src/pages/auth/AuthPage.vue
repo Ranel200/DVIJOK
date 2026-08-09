@@ -187,12 +187,7 @@ const canProceedName = computed(() => form.name.trim().length > 0)
 const canProceedPhone = computed(() => {
   if (!isPhoneComplete(form.phone)) return false
   if (isLogin.value) return true
-  return (
-    form.acceptTerms &&
-    form.consentPersonal &&
-    form.consentTransfer &&
-    form.consentMarketing
-  )
+  return form.acceptTerms && form.consentPersonal && form.consentTransfer && form.consentMarketing
 })
 
 function resetForm() {

@@ -229,7 +229,7 @@ async function confirmPay() {
 
 function goToSystem() {
   success.value = false
-  router.push({ name: 'schedule' })
+  router.push(authStore.homeRoute)
 }
 </script>
 

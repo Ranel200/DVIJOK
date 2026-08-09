@@ -8,7 +8,10 @@
           :style="todayBgStyle"
           aria-hidden="true"
         />
-        <div class="schedule-staff__sticky-mask schedule-staff__sticky-mask--top" aria-hidden="true" />
+        <div
+          class="schedule-staff__sticky-mask schedule-staff__sticky-mask--top"
+          aria-hidden="true"
+        />
         <table class="schedule-staff__table">
           <colgroup>
             <col class="schedule-staff__col schedule-staff__col--employees" />

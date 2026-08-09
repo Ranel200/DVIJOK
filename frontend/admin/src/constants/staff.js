@@ -33,6 +33,30 @@ export const STAFF_ACCESS_OPTIONS = [
   { key: 'settings', label: 'Настройки' }
 ]
 
+/** Ключи доступа = имена роутов страниц админки. */
+export const STAFF_ACCESS_KEYS = STAFF_ACCESS_OPTIONS.map(item => item.key)
+
+export function emptyStaffAccess() {
+  return Object.fromEntries(STAFF_ACCESS_KEYS.map(key => [key, false]))
+}
+
+export function fullStaffAccess() {
+  return Object.fromEntries(STAFF_ACCESS_KEYS.map(key => [key, true]))
+}
+
+export function normalizeStaffAccess(access) {
+  return {
+    ...emptyStaffAccess(),
+    ...(access && typeof access === 'object' ? access : {})
+  }
+}
+
+/** Первая доступная страница или null, если доступов нет. */
+export function firstAccessiblePage(access, { isOwner = false } = {}) {
+  if (isOwner) return STAFF_ACCESS_KEYS[0]
+  return STAFF_ACCESS_KEYS.find(key => Boolean(access?.[key])) || null
+}
+
 export function mapLegacyRole(role) {
   const value = String(role || '')
   if (STAFF_ROLE_LABELS[value]) return value

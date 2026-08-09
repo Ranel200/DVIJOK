@@ -194,7 +194,7 @@ function goLogin() {
 
 function goToSystem() {
   success.value = false
-  router.push(authStore.hasSubscription ? { name: 'schedule' } : { name: 'tariffs' })
+  router.push(authStore.homeRoute)
 }
 
 function validate() {

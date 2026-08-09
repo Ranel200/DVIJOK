@@ -8,6 +8,7 @@ import {
 
 import routes from './routes.js'
 import { useAuthStore } from '@/stores/auth.js'
+import { STAFF_ACCESS_KEYS } from '@/constants/staff.js'
 
 /*
  * If not building with SSR mode, you can
@@ -34,11 +35,7 @@ export default defineRouter((/* { store, ssrContext } */) => {
     history: createHistory(import.meta.env.QUASAR_VUE_ROUTER_BASE)
   })
 
-  function homeRoute(auth) {
-    return auth.hasSubscription ? { name: 'schedule' } : { name: 'tariffs' }
-  }
-
-  // Mock-гард авторизации + обязательная подписка.
+  // Mock-гард: авторизация, подписка, доступы сотрудника к страницам.
   Router.beforeEach(to => {
     const auth = useAuthStore()
 
@@ -46,20 +43,23 @@ export default defineRouter((/* { store, ssrContext } */) => {
       return { name: 'login' }
     }
 
-    if (to.name === 'login' && auth.isAuthenticated) {
-      return homeRoute(auth)
+    if ((to.name === 'login' || to.name === 'register') && auth.isAuthenticated) {
+      return auth.homeRoute
     }
 
-    if (to.name === 'register' && auth.isAuthenticated) {
-      return homeRoute(auth)
+    if (to.name === 'tariffs') {
+      if (!auth.isAuthenticated) return { name: 'login' }
+      if (!auth.isOwner) return auth.homeRoute
+      return true
     }
 
-    if (auth.isAuthenticated && !auth.hasSubscription && to.name !== 'tariffs') {
+    if (auth.isAuthenticated && !auth.hasSubscription) {
       return { name: 'tariffs' }
     }
 
-    if (to.name === 'tariffs' && auth.isAuthenticated && auth.hasSubscription) {
-      return { name: 'schedule' }
+    const permission = STAFF_ACCESS_KEYS.includes(to.name) ? to.name : null
+    if (permission && !auth.canAccess(permission)) {
+      return auth.homeRoute
     }
 
     return true

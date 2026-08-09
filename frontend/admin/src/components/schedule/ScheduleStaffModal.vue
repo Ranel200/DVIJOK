@@ -135,8 +135,8 @@
         </BaseFormBlock>
       </div>
 
-      <div class="staff-form__col staff-form__col--access">
-        <BaseFormBlock title="Доступ" stack-fields>
+      <div v-if="showAccessColumn" class="staff-form__col staff-form__col--access">
+        <BaseFormBlock v-if="visibleAccessOptions.length" title="Доступ" stack-fields>
           <div class="staff-form__access">
             <div
               v-for="item in visibleAccessOptions"
@@ -223,6 +223,7 @@ import {
   STAFF_ACCESS_OPTIONS,
   STAFF_ROLE_LABELS,
   STAFF_ROLE_OPTIONS,
+  emptyStaffAccess,
   formatStaffRate,
   mapLegacyRole,
   parseStaffRate
@@ -296,7 +297,7 @@ watch(
 )
 
 function emptyAccess() {
-  return Object.fromEntries(STAFF_ACCESS_OPTIONS.map(item => [item.key, false]))
+  return emptyStaffAccess()
 }
 
 function emptyDocuments() {

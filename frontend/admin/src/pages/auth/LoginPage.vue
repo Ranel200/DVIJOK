@@ -108,7 +108,7 @@ async function onSubmit() {
   errorMessage.value = ''
   try {
     await authStore.login({ email: form.login, password: form.password })
-    router.push(authStore.hasSubscription ? { name: 'schedule' } : { name: 'tariffs' })
+    router.push(authStore.homeRoute)
   } catch (err) {
     errorMessage.value = err?.data?.message || 'Не удалось войти'
   } finally {

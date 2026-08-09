@@ -53,7 +53,6 @@ defineProps({
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: space-between;
   gap: 30px;
   width: 446px;
   flex-shrink: 0;
