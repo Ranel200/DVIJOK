@@ -9,7 +9,7 @@ import {
 import routes from './routes.js'
 import { useAuthStore } from '@/stores/auth.js'
 
-const AUTH_ROUTE_NAMES = new Set(['login', 'register'])
+const AUTH_ROUTE_NAMES = new Set(['login', 'register', 'referral'])
 
 export default defineRouter((/* { store, ssrContext } */) => {
   const createHistory = import.meta.env.QUASAR_SERVER

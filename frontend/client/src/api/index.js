@@ -1,5 +1,14 @@
-import { http, USE_MOCK } from '@dvijok/shared/api/http.js'
+import { http, refreshAuthToken, setAuthToken, USE_MOCK } from '@dvijok/shared/api/http.js'
 import { mockOk } from '@dvijok/shared/api/mock.js'
+
+function clientUser(profile) {
+  return {
+    id: profile.id,
+    name: profile.full_name || 'Клиент',
+    email: profile.email || '',
+    phone: profile.phone
+  }
+}
 
 const DEFAULT_DESCRIPTION =
   'Автосервис полного цикла: диагностика, ремонт и обслуживание автомобилей. Качественная работа, опытные мастера и забота о вашем автомобиле.'
@@ -183,11 +192,47 @@ function isMockDayAvailable(day) {
 }
 
 export const authApi = {
-  async requestCode({ phone, name }) {
+  async requestCode({ phone }) {
     if (USE_MOCK) {
-      return mockOk({ success: true })
+      return mockOk({ detail: 'Код отправлен', debug_code: '1111' })
     }
-    return http.post('/auth/request-code', { phone, name })
+    return http.post('/client-auth/otp/request', { phone })
+  },
+
+  async verifyOtp(payload) {
+    if (USE_MOCK) {
+      return mockOk({
+        token: 'mock-token',
+        user: {
+          id: 1,
+          name: payload.name || payload.full_name || 'Клиент',
+          email: '',
+          phone: payload.phone
+        }
+      })
+    }
+    const session = await http.post('/client-auth/otp/verify', {
+      phone: payload.phone,
+      code: payload.code,
+      full_name: payload.name || payload.full_name || undefined,
+      referral_code: payload.referral_code || undefined
+    })
+    const token = session.access_token
+    setAuthToken(token)
+    const profile = await http.get('/client-auth/me')
+    return { token, user: clientUser(profile) }
+  },
+
+  async restoreSession() {
+    if (USE_MOCK) throw new Error('Mock client session is not persistent')
+    const token = await refreshAuthToken()
+    const profile = await http.get('/client-auth/me')
+    return { token, user: clientUser(profile) }
+  },
+
+  async logout() {
+    if (USE_MOCK) return mockOk({ success: true })
+    return http.post('/client-auth/logout')
   }
 }
 
@@ -201,7 +246,7 @@ export const servicesApi = {
         all: mockAllServices.filter(item => matchesService(item, query))
       })
     }
-    return http.get('/services', { params })
+    return http.get('/client-portal/ui/services', { params })
   }
 }
 
@@ -227,7 +272,7 @@ export const bookingApi = {
         timeSlots: mockTimeSlots
       })
     }
-    return http.get('/booking/options', { params })
+    return http.get('/client-portal/ui/booking/options', { params })
   },
 
   async availability(params = {}) {
@@ -241,7 +286,7 @@ export const bookingApi = {
       }
       return mockOk({ days }, 0)
     }
-    return http.get('/booking/availability', { params })
+    return http.get('/client-portal/ui/booking/availability', { params })
   },
 
   async create(payload) {
@@ -251,7 +296,7 @@ export const bookingApi = {
         ...payload
       })
     }
-    return http.post('/booking', payload)
+    return http.post('/client-portal/ui/booking', payload)
   },
 
   async specialists(params = {}) {
@@ -450,7 +495,7 @@ export const carsApi = {
         bots: mockBots
       })
     }
-    return http.get('/cars')
+    return http.get('/client-portal/ui/cars')
   },
 
   async get(id) {
@@ -458,7 +503,8 @@ export const carsApi = {
       const car = mockCars.find(item => item.id === id) || null
       return mockOk(car)
     }
-    return http.get(`/cars/${id}`)
+    const data = await http.get('/client-portal/ui/cars')
+    return data?.cars?.find(car => String(car.id) === String(id)) || null
   },
 
   async create(payload) {
@@ -588,6 +634,11 @@ export const historyApi = {
     if (USE_MOCK) {
       return mockOk({ items: mockHistoryItems })
     }
-    return http.get('/history', { params })
+    return http.get('/client-portal/ui/history', { params })
+  },
+
+  async document(orderId) {
+    if (USE_MOCK) return null
+    return http.raw(`/client-portal/ui/history/${orderId}/document`)
   }
 }

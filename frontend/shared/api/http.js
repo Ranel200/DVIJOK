@@ -1,9 +1,14 @@
 // Тонкая обёртка над fetch: базовый URL, JSON, обработка ошибок, токен авторизации.
 // Переключение на реальный бэкенд — сменой USE_MOCK/baseURL.
 
-export const USE_MOCK = String(import.meta.env.VITE_USE_MOCK).toLowerCase() !== 'false'
+const runtimeEnv = import.meta.env
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || '/api'
+// Quasar CLI exposes dotenv values with the QCLI_ prefix. Keep the VITE_
+// fallback so this shared module also works in plain Vite applications.
+export const USE_MOCK =
+  String(runtimeEnv.QCLI_USE_MOCK ?? runtimeEnv.VITE_USE_MOCK).toLowerCase() !== 'false'
+
+const baseURL = runtimeEnv.QCLI_API_BASE_URL ?? runtimeEnv.VITE_API_BASE_URL ?? '/api'
 
 export class ApiError extends Error {
   constructor(message, { status, data } = {}) {
@@ -17,6 +22,8 @@ export class ApiError extends Error {
 let authToken = null
 let refreshPromise = null
 let authFailureHandler = null
+let refreshPath = '/auth/refresh'
+let publicAuthPaths = new Set(['/auth/login', '/auth/register', '/auth/refresh'])
 
 export function setAuthToken(token) {
   authToken = token
@@ -26,9 +33,14 @@ export function setAuthFailureHandler(handler) {
   authFailureHandler = typeof handler === 'function' ? handler : null
 }
 
+export function configureAuthFlow({ refresh, publicPaths } = {}) {
+  if (refresh) refreshPath = refresh
+  if (Array.isArray(publicPaths)) publicAuthPaths = new Set(publicPaths)
+}
+
 export async function refreshAuthToken() {
   if (!refreshPromise) {
-    const url = new URL(`${baseURL}/auth/refresh`, window.location.origin)
+    const url = new URL(`${baseURL}${refreshPath}`, window.location.origin)
 
     refreshPromise = (async () => {
       const response = await fetch(url, {
@@ -87,8 +99,7 @@ async function request(method, path, { params, body, headers } = {}) {
 
   let response = await fetch(url, options)
 
-  const publicAuthPaths = ['/auth/login', '/auth/register', '/auth/refresh']
-  if (response.status === 401 && !publicAuthPaths.includes(path)) {
+  if (response.status === 401 && !publicAuthPaths.has(path)) {
     try {
       const token = await refreshAuthToken()
       options.headers.Authorization = `Bearer ${token}`
@@ -121,10 +132,53 @@ async function request(method, path, { params, body, headers } = {}) {
   return data
 }
 
+async function requestRaw(method, path, { params, body, headers } = {}) {
+  const url = new URL(`${baseURL}${path}`, window.location.origin)
+
+  if (params) {
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined && value !== null) url.searchParams.set(key, value)
+    }
+  }
+
+  const options = {
+    method,
+    credentials: 'include',
+    headers: {
+      ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      ...headers
+    }
+  }
+  if (body !== undefined) options.body = JSON.stringify(body)
+
+  let response = await fetch(url, options)
+  if (response.status === 401 && !publicAuthPaths.has(path)) {
+    try {
+      const token = await refreshAuthToken()
+      options.headers.Authorization = `Bearer ${token}`
+      response = await fetch(url, options)
+    } catch {
+      setAuthToken(null)
+      authFailureHandler?.()
+    }
+  }
+  if (!response.ok) {
+    const isJson = response.headers.get('content-type')?.includes('application/json')
+    const data = isJson ? await response.json() : await response.text()
+    throw new ApiError(`Request failed: ${response.status}`, {
+      status: response.status,
+      data
+    })
+  }
+  return response
+}
+
 export const http = {
   get: (path, options) => request('GET', path, options),
   post: (path, body, options) => request('POST', path, { ...options, body }),
   put: (path, body, options) => request('PUT', path, { ...options, body }),
   patch: (path, body, options) => request('PATCH', path, { ...options, body }),
-  delete: (path, options) => request('DELETE', path, options)
+  delete: (path, options) => request('DELETE', path, options),
+  raw: (path, options) => requestRaw('GET', path, options)
 }

@@ -145,6 +145,7 @@ import { useAuthStore } from '@/stores/auth.js'
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const REFERRAL_STORAGE_KEY = 'dvijok_client_referral'
 
 const form = reactive({
   name: '',
@@ -203,6 +204,16 @@ function resetForm() {
 
 watch(isLogin, resetForm, { immediate: true })
 
+watch(
+  () => route.params.referralCode,
+  value => {
+    if (typeof value === 'string' && value) {
+      sessionStorage.setItem(REFERRAL_STORAGE_KEY, value)
+    }
+  },
+  { immediate: true }
+)
+
 function goToggle() {
   router.push({ name: isLogin.value ? 'register' : 'login' })
 }
@@ -245,8 +256,12 @@ async function onSubmit() {
     await authStore.login({
       phone: form.phone,
       code: form.code,
-      name: form.name
+      name: form.name,
+      ...(sessionStorage.getItem(REFERRAL_STORAGE_KEY)
+        ? { referral_code: sessionStorage.getItem(REFERRAL_STORAGE_KEY) }
+        : {})
     })
+    sessionStorage.removeItem(REFERRAL_STORAGE_KEY)
     await router.push({ name: 'home' })
   } finally {
     loading.value = false

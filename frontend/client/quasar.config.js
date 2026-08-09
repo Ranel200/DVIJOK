@@ -51,7 +51,7 @@ export default defineConfig((/* ctx */) => {
   return {
     // app boot file (/src/boot)
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
-    boot: ['fonts'],
+    boot: ['fonts', 'auth'],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#css
     css: ['app.scss'],
@@ -66,6 +66,9 @@ export default defineConfig((/* ctx */) => {
       publicPath: '/client/',
       extendViteConf(viteConf) {
         viteConf.plugins = [...(viteConf.plugins || []), serveLandingDocs()]
+      },
+      env: {
+        clientPrefix: 'VITE_'
       }
     },
 

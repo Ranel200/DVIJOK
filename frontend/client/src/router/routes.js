@@ -19,6 +19,19 @@ const routes = [
   },
 
   {
+    path: '/r/:referralCode',
+    component: () => import('@/layouts/ClientAuthLayout.vue'),
+    children: [
+      {
+        path: '',
+        name: 'referral',
+        component: () => import('@/pages/auth/AuthPage.vue'),
+        meta: { title: 'Регистрация' }
+      }
+    ]
+  },
+
+  {
     path: '/',
     component: () => import('@/layouts/ClientLayout.vue'),
     children: [

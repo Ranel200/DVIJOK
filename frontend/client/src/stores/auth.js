@@ -1,31 +1,53 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { setAuthToken } from '@dvijok/shared/api/http.js'
+import { authApi } from '@/api/index.js'
+import { configureAuthFlow, setAuthToken } from '@dvijok/shared/api/http.js'
 
-// Auth клиентского кабинета. Стартует без сессии — формы входа/регистрации
-// доступны сразу. login/logout — заглушки до появления реального API.
+configureAuthFlow({
+  refresh: '/client-auth/refresh',
+  publicPaths: ['/client-auth/otp/request', '/client-auth/otp/verify', '/client-auth/refresh']
+})
+
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
   const token = ref(null)
+  let initialized = false
 
   const isAuthenticated = computed(() => Boolean(token.value))
 
-  async function login(credentials) {
-    token.value = 'mock-token'
-    user.value = {
-      id: 1,
-      name: credentials?.name || 'Клиент',
-      email: credentials?.email || 'client@dvijok.local',
-      phone: credentials?.phone || ''
-    }
-    setAuthToken(token.value)
-    return user.value
-  }
-
-  async function logout() {
+  function clearSession() {
     token.value = null
     user.value = null
     setAuthToken(null)
+  }
+
+  async function init() {
+    if (initialized) return
+    initialized = true
+    try {
+      const session = await authApi.restoreSession()
+      token.value = session.token
+      user.value = session.user
+      setAuthToken(session.token)
+    } catch {
+      clearSession()
+    }
+  }
+
+  async function login(credentials) {
+    const session = await authApi.verifyOtp(credentials)
+    token.value = session.token
+    user.value = session.user
+    setAuthToken(session.token)
+    return session.user
+  }
+
+  async function logout() {
+    try {
+      await authApi.logout()
+    } finally {
+      clearSession()
+    }
   }
 
   async function updateProfile(payload = {}) {
@@ -43,6 +65,8 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     token,
     isAuthenticated,
+    clearSession,
+    init,
     login,
     logout,
     updateProfile
