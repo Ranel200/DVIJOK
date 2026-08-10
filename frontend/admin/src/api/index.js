@@ -255,7 +255,9 @@ export const referralsApi = {
       return mockOk({
         code: 'mock-referral',
         url: window.location.origin,
-        qr_svg: null
+        qr_svg: null,
+        booking_url: `${window.location.origin}/client/book/mock-referral`,
+        booking_qr_svg: null
       })
     }
     return http.post('/referrals/me')

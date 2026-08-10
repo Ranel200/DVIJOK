@@ -99,6 +99,10 @@ import SpecialistStep from '@/components/booking/SpecialistStep.vue'
 
 const route = useRoute()
 const router = useRouter()
+const publicCode = computed(() =>
+  typeof route.params.referralCode === 'string' ? route.params.referralCode : ''
+)
+const isPublicBooking = computed(() => Boolean(publicCode.value))
 
 const step = ref('branches')
 const city = ref('Казань')
@@ -171,7 +175,7 @@ function shiftMonth(delta) {
 
 function buildQuery() {
   const query = { step: step.value }
-  if (selectedBranchId.value) query.branch = selectedBranchId.value
+  if (!isPublicBooking.value && selectedBranchId.value) query.branch = selectedBranchId.value
   if (selectedSpecialistId.value) query.specialist = selectedSpecialistId.value
   if (selectedServiceId.value) query.service = selectedServiceId.value
   if (selectedDate.value) query.date = selectedDate.value
@@ -200,9 +204,16 @@ async function syncQuery() {
 }
 
 function applyQuery(query) {
-  const nextStep = BOOKING_STEPS.has(query.step) ? query.step : 'branches'
+  let nextStep = BOOKING_STEPS.has(query.step)
+    ? query.step
+    : isPublicBooking.value
+      ? 'menu'
+      : 'branches'
+  if (isPublicBooking.value && nextStep === 'branches') nextStep = 'menu'
   step.value = nextStep
-  selectedBranchId.value = typeof query.branch === 'string' ? query.branch : ''
+  if (!isPublicBooking.value) {
+    selectedBranchId.value = typeof query.branch === 'string' ? query.branch : ''
+  }
   selectedSpecialistId.value =
     typeof query.specialist === 'string' && query.specialist ? query.specialist : 'any'
   selectedServiceId.value = typeof query.service === 'string' ? query.service : ''
@@ -248,14 +259,21 @@ async function selectBranch(branch) {
 }
 
 async function onSubmitBooking(client) {
-  await bookingApi.create({
-    branchId: selectedBranchId.value,
+  const payload = {
     specialistId: selectedSpecialistId.value,
     serviceId: selectedServiceId.value,
     date: selectedDate.value,
     time: selectedTime.value,
     client
-  })
+  }
+  if (isPublicBooking.value) {
+    await bookingApi.publicCreate(publicCode.value, payload)
+  } else {
+    await bookingApi.create({
+      branchId: selectedBranchId.value,
+      ...payload
+    })
+  }
   successOpen.value = true
 }
 
@@ -270,9 +288,15 @@ function onExit() {
 }
 
 async function loadBranches() {
-  const data = await branchesApi.list()
+  const data = isPublicBooking.value
+    ? await bookingApi.publicContext(publicCode.value)
+    : await branchesApi.list()
   city.value = data.city
   branches.value = data.branches
+  if (isPublicBooking.value) {
+    selectedBranchId.value = branches.value[0]?.id || ''
+    return
+  }
   if (selectedBranchId.value && !branches.value.some(item => item.id === selectedBranchId.value)) {
     selectedBranchId.value = ''
   }
@@ -280,14 +304,18 @@ async function loadBranches() {
 
 async function loadBookingOptions() {
   if (!selectedBranchId.value) return
-  const data = await bookingApi.options({ branchId: selectedBranchId.value })
+  const data = isPublicBooking.value
+    ? await bookingApi.publicOptions(publicCode.value)
+    : await bookingApi.options({ branchId: selectedBranchId.value })
   serviceOptions.value = data.serviceOptions
   timeSlots.value = data.timeSlots
 }
 
 async function loadSpecialists() {
   if (!selectedBranchId.value) return
-  const data = await bookingApi.specialists({ branchId: selectedBranchId.value })
+  const data = isPublicBooking.value
+    ? await bookingApi.publicSpecialists(publicCode.value)
+    : await bookingApi.specialists({ branchId: selectedBranchId.value })
   specialists.value = data.specialists
 }
 
@@ -310,13 +338,18 @@ function syncTimeSlotsForDate() {
 
 async function loadAvailability() {
   if (!selectedBranchId.value || !selectedServiceId.value) return
-  const data = await bookingApi.availability({
-    branchId: selectedBranchId.value,
+  const params = {
     year: monthCursor.value.getFullYear(),
     month: monthCursor.value.getMonth(),
     serviceId: selectedServiceId.value,
     specialistId: selectedSpecialistId.value
-  })
+  }
+  const data = isPublicBooking.value
+    ? await bookingApi.publicAvailability(publicCode.value, params)
+    : await bookingApi.availability({
+        branchId: selectedBranchId.value,
+        ...params
+      })
   availableDays.value = data.days
   availabilitySlots.value = data.slots || []
   syncTimeSlotsForDate()

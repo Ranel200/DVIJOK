@@ -42,6 +42,12 @@ const routes = [
         meta: { title: 'Кабинет', requiresAuth: true }
       },
       {
+        path: 'book/:referralCode',
+        name: 'public-booking',
+        component: () => import('@/pages/BookingPage.vue'),
+        meta: { title: 'Запись' }
+      },
+      {
         path: 'booking',
         name: 'booking',
         component: () => import('@/pages/BookingPage.vue'),

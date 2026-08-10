@@ -261,6 +261,26 @@ export const branchesApi = {
 }
 
 export const bookingApi = {
+  async publicContext(code) {
+    return http.get(`/public-booking/${encodeURIComponent(code)}`)
+  },
+
+  async publicOptions(code) {
+    return http.get(`/public-booking/${encodeURIComponent(code)}/options`)
+  },
+
+  async publicAvailability(code, params = {}) {
+    return http.get(`/public-booking/${encodeURIComponent(code)}/availability`, { params })
+  },
+
+  async publicCreate(code, payload) {
+    return http.post(`/public-booking/${encodeURIComponent(code)}`, payload)
+  },
+
+  async publicSpecialists(code) {
+    return http.get(`/public-booking/${encodeURIComponent(code)}/specialists`)
+  },
+
   async options(params = {}) {
     if (USE_MOCK) {
       return mockOk({
