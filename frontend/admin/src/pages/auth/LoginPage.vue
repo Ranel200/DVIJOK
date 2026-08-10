@@ -76,7 +76,13 @@
         </div>
       </div>
 
-      <p class="login__support">Техподдержка: support@dvijok.ru · 8 800 000-00-00</p>
+      <div class="login__footer">
+        <p class="login__support">Техподдержка: support@dvijok.ru · 8 800 000-00-00</p>
+        <div class="login__status-tests">
+          <BaseButton color="blue1" text @click="overlay.toggle('loading')">Загрузка</BaseButton>
+          <BaseButton color="blue1" text @click="overlay.toggle('error')">Ошибка</BaseButton>
+        </div>
+      </div>
     </section>
   </q-page>
 </template>
@@ -90,8 +96,10 @@ import BaseCheckbox from '@/components/ui/BaseCheckbox.vue'
 import BaseField from '@/components/ui/BaseField.vue'
 import EyeIcon from '@/components/ui/EyeIcon.vue'
 import { useAuthStore } from '@/stores/auth.js'
+import { useStatusOverlayStore } from '@/stores/statusOverlay.js'
 
 const authStore = useAuthStore()
+const overlay = useStatusOverlayStore()
 const router = useRouter()
 
 const form = reactive({
@@ -231,13 +239,26 @@ function onForgotPassword() {}
   }
 }
 
-.login__support {
+.login__footer {
   position: absolute;
   bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.login__support {
   margin: 0;
   color: var(--dvijok-text-tertiary);
   font-size: 11px;
   font-weight: 500;
   line-height: 13px;
+}
+
+.login__status-tests {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 </style>
