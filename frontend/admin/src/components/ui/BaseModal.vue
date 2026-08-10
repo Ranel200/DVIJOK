@@ -186,7 +186,7 @@ function onHide() {
 }
 
 .base-modal--panel .q-dialog__inner {
-  padding: 40px;
+  padding: 30px 150px;
   height: 100%;
 }
 

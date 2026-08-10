@@ -195,11 +195,8 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'save'])
 
 const categoryOptions = [
-  { value: 'maintenance', label: 'ТО' },
   { value: 'diagnostics', label: 'Диагностика' },
-  { value: 'repair', label: 'Ремонт' },
-  { value: 'body', label: 'Кузовные работы' },
-  { value: 'other', label: 'Прочее' }
+  { value: 'repair', label: 'Ремонт' }
 ]
 
 const priceTypeOptions = [

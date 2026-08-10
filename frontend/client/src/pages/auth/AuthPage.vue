@@ -151,10 +151,10 @@ const form = reactive({
   name: '',
   phone: '',
   code: '',
-  acceptTerms: false,
-  consentPersonal: false,
-  consentTransfer: false,
-  consentMarketing: false
+  acceptTerms: true,
+  consentPersonal: true,
+  consentTransfer: true,
+  consentMarketing: true
 })
 const loading = ref(false)
 const step = ref('phone')
@@ -188,17 +188,17 @@ const canProceedName = computed(() => form.name.trim().length > 0)
 const canProceedPhone = computed(() => {
   if (!isPhoneComplete(form.phone)) return false
   if (isLogin.value) return true
-  return form.acceptTerms && form.consentPersonal && form.consentTransfer
+  return form.acceptTerms && form.consentPersonal && form.consentTransfer && form.consentMarketing
 })
 
 function resetForm() {
   form.name = ''
   form.phone = ''
   form.code = ''
-  form.acceptTerms = false
-  form.consentPersonal = false
-  form.consentTransfer = false
-  form.consentMarketing = false
+  form.acceptTerms = true
+  form.consentPersonal = true
+  form.consentTransfer = true
+  form.consentMarketing = true
   step.value = isLogin.value ? 'phone' : 'name'
 }
 

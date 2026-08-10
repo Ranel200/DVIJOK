@@ -400,8 +400,8 @@ onMounted(async () => {
 
 .tasks__completion-label {
   font-weight: 600;
-  font-size: 12px;
-  line-height: 15px;
+  font-size: 10px;
+  line-height: 12px;
   color: var(--dvijok-tab-inactive);
 }
 

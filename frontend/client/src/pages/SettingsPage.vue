@@ -75,6 +75,11 @@
           </div>
         </section>
 
+        <button type="button" class="settings__edit-link" @click="startEdit">
+          <span>Изменить данные аккаунта</span>
+          <span class="settings__edit-icon" aria-hidden="true" />
+        </button>
+
         <section class="settings__section" aria-labelledby="settings-consents-title">
           <h2 id="settings-consents-title" class="settings__section-title">Согласия</h2>
           <div class="settings__list">
@@ -109,11 +114,6 @@
             </GlassActionRow>
           </div>
         </section>
-
-        <button type="button" class="settings__edit-link" @click="startEdit">
-          <span>Изменить данные аккаунта</span>
-          <span class="settings__edit-icon" aria-hidden="true" />
-        </button>
 
         <div class="settings__operator">
           <div class="settings__komit-wrap">
@@ -461,27 +461,25 @@ function openDocument(href) {
 }
 
 .settings__operator {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: stretch;
-  column-gap: 15px;
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
   width: fit-content;
   max-width: 100%;
   margin-inline: auto;
   min-width: 0;
+  box-sizing: border-box;
 }
 
 .settings__komit-wrap {
-  position: relative;
-  height: 100%;
+  flex: 0 0 auto;
+  height: calc(15px + 15px + 4 * 15px);
   aspect-ratio: 198 / 216;
-  min-width: 0;
-  min-height: 0;
+  overflow: hidden;
 }
 
 .settings__komit {
-  position: absolute;
-  inset: 0;
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: contain;
@@ -491,6 +489,7 @@ function openDocument(href) {
   display: flex;
   flex-direction: column;
   gap: 0;
+  flex: 0 1 auto;
   min-width: 0;
   color: var(--dvijok-text-secondary);
   font-weight: 400;

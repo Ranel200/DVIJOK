@@ -2,15 +2,34 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { authApi } from '@/api/index.js'
 import { setAuthToken } from '@dvijok/shared/api/http.js'
+import { STAFF_ACCESS_KEYS, firstAccessiblePage } from '@/constants/staff.js'
 
-// Auth-стор админки. Строгий режим: по умолчанию не авторизован,
-// форма входа доступна для проверки моков.
-// Демо-доступ: admin / admin
+// Auth-стор админки. Строгий режим: по умолчанию не авторизован.
+// Демо-владелец: admin / admin
+// Демо-сотрудники: smirnov, sidorov, petrov, morozova, sokolova (пароль = логин)
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
   const token = ref(null)
 
   const isAuthenticated = computed(() => Boolean(token.value))
+  const isOwner = computed(() => Boolean(user.value?.isOwner))
+  const subscriptionPlan = computed(() => user.value?.subscriptionPlan ?? 'none')
+  const hasSubscription = computed(() => Boolean(user.value) && subscriptionPlan.value !== 'none')
+
+  const homeRoute = computed(() => {
+    if (!isAuthenticated.value) return { name: 'login' }
+    if (!hasSubscription.value) return { name: 'tariffs' }
+    const page = firstAccessiblePage(user.value?.access, { isOwner: isOwner.value })
+    return page ? { name: page } : { name: 'not-found' }
+  })
+
+  function canAccess(permission) {
+    if (!permission) return true
+    if (!isAuthenticated.value) return false
+    if (isOwner.value) return true
+    if (!STAFF_ACCESS_KEYS.includes(permission)) return false
+    return Boolean(user.value?.access?.[permission])
+  }
 
   function clearSession() {
     token.value = null
@@ -55,14 +74,26 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function selectSubscriptionPlan(plan) {
+    const { user: nextUser } = await authApi.selectSubscriptionPlan(plan)
+    user.value = nextUser
+    return nextUser
+  }
+
   return {
     user,
     token,
     isAuthenticated,
     clearSession,
+    isOwner,
+    subscriptionPlan,
+    hasSubscription,
+    homeRoute,
+    canAccess,
     init,
     login,
     register,
+    selectSubscriptionPlan,
     logout
   }
 })

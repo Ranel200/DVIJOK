@@ -19,6 +19,19 @@ const routes = [
   },
 
   {
+    path: '/tariffs',
+    component: () => import('@/layouts/AuthLayout.vue'),
+    children: [
+      {
+        path: '',
+        name: 'tariffs',
+        component: () => import('@/pages/auth/TariffsPage.vue'),
+        meta: { title: 'Тарифы', requiresAuth: true }
+      }
+    ]
+  },
+
+  {
     path: '/',
     component: () => import('@/layouts/AdminLayout.vue'),
     children: [

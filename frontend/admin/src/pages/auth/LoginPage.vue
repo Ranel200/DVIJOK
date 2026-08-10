@@ -112,7 +112,7 @@ async function onSubmit() {
       password: form.password,
       remember: remember.value
     })
-    router.push({ name: 'schedule' })
+    router.push(authStore.homeRoute)
   } catch (err) {
     errorMessage.value = err?.data?.message || 'Не удалось войти'
   } finally {

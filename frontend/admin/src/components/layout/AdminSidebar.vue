@@ -9,7 +9,7 @@
         <ul ref="listEl" class="admin-sidebar__list">
           <li class="admin-sidebar__indicator" :style="indicatorStyle" aria-hidden="true"></li>
           <li
-            v-for="item in adminNavigation"
+            v-for="item in visibleNavigation"
             :key="item.label"
             :ref="el => setItemRef(el, item)"
             :class="[
@@ -42,12 +42,21 @@ import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@/stores/auth.js'
 import { adminNavigation } from '@/constants/navigation.js'
+import { STAFF_ACCESS_KEYS } from '@/constants/staff.js'
 import { getInitials, getShortName } from '@/utils/name.js'
 
 const authStore = useAuthStore()
 const route = useRoute()
 
 const { user } = storeToRefs(authStore)
+
+const visibleNavigation = computed(() =>
+  adminNavigation.filter(item => {
+    const routeName = item.to?.name
+    if (STAFF_ACCESS_KEYS.includes(routeName)) return authStore.canAccess(routeName)
+    return true
+  })
+)
 
 const initials = computed(() => getInitials(user.value?.name))
 const userText = computed(() => {
@@ -87,7 +96,7 @@ const indicatorStyle = computed(() => ({
 }))
 
 watch(
-  () => route.name,
+  () => [route.name, visibleNavigation.value],
   () => nextTick(updateIndicator)
 )
 

@@ -93,32 +93,15 @@
                       <span>{{ element.plate }}</span>
                     </div>
 
-                    <div class="crm__card-actions">
-                      <button
-                        type="button"
-                        class="crm__card-action"
-                        aria-label="Позвонить"
-                        @pointerdown.stop
-                      >
-                        <img src="/admin/icons/crm/phone.svg" alt="" />
-                      </button>
-                      <button
-                        type="button"
-                        class="crm__card-action"
-                        aria-label="Написать на почту"
-                        @pointerdown.stop
-                      >
-                        <img src="/admin/icons/crm/mail.svg" alt="" />
-                      </button>
-                      <button
-                        type="button"
-                        class="crm__card-action"
-                        aria-label="Отправить SMS"
-                        @pointerdown.stop
-                      >
-                        <img src="/admin/icons/crm/sms.svg" alt="" />
-                      </button>
-                    </div>
+                    <a
+                      v-if="element.email"
+                      class="crm__card-email"
+                      :href="`mailto:${element.email}`"
+                      @pointerdown.stop
+                      @click.stop
+                    >
+                      {{ element.email }}
+                    </a>
 
                     <div class="crm__card-services">
                       <div class="crm__card-pills">
@@ -704,27 +687,13 @@ onBeforeUnmount(() => {
   line-height: 17px;
 }
 
-.crm__card-actions {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 10px;
-}
-
-.crm__card-action {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: none;
-  background: transparent;
+.crm__card-email {
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 15px;
+  text-decoration: underline;
+  color: #093095;
   cursor: pointer;
-
-  img {
-    display: block;
-    width: 20px;
-    height: 20px;
-  }
 }
 
 .crm__card-services {
