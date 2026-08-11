@@ -74,6 +74,7 @@
               </td>
               <td class="schedule-staff__td schedule-staff__td--dots">
                 <DotsMenu
+                  v-if="canManage && (isOwner || employee.role !== 'Владелец')"
                   :open="menuEmployeeId === employee.id"
                   :items="menuItems"
                   @update:open="open => onMenuOpen(employee.id, open)"
@@ -115,7 +116,7 @@
       </div>
     </div>
 
-    <div class="schedule-staff__footer">
+    <div v-if="canManage" class="schedule-staff__footer">
       <BaseButton color="blue1" size="lg" @click="onAddEmployee">+ Добавить сотрудника</BaseButton>
     </div>
 
@@ -163,6 +164,14 @@ const props = defineProps({
   visible: {
     type: Boolean,
     default: true
+  },
+  canManage: {
+    type: Boolean,
+    default: false
+  },
+  isOwner: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -263,10 +272,12 @@ const monthDays = computed(() => {
 })
 
 function onMenuOpen(employeeId, open) {
+  if (!props.canManage) return
   menuEmployeeId.value = open ? employeeId : null
 }
 
 function onMenuSelect(key, employee) {
+  if (!props.canManage) return
   if (key === 'open') {
     openEmployeeForm(employee.id, 'view')
     return
@@ -305,6 +316,7 @@ async function confirmDelete() {
 }
 
 function onAddEmployee() {
+  if (!props.canManage) return
   editingEmployee.value = null
   formMode.value = 'create'
   formOpen.value = true

@@ -62,6 +62,8 @@
         ref="staffTableRef"
         v-show="activeTab === 'staff'"
         :visible="activeTab === 'staff'"
+        :can-manage="authStore.canManageSchedule"
+        :is-owner="authStore.isOwner"
       />
     </div>
 
@@ -89,8 +91,10 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import SuccessModal from '@/components/ui/SuccessModal.vue'
 import { crmApi, scheduleApi } from '@/api/index.js'
 import { formatCrmOrderNumber } from '@/constants/crm.js'
+import { useAuthStore } from '@/stores/auth.js'
 import { useScheduleFilterStore } from '@/stores/scheduleFilter.js'
 
+const authStore = useAuthStore()
 const scheduleFilter = useScheduleFilterStore()
 
 const tabs = [
@@ -104,7 +108,10 @@ const isCalendar = computed(() => activeTab.value === 'calendar')
 const CALENDAR_ACTION = { label: '+ Новый заказ' }
 const STAFF_ACTION = { label: 'Настройки графика' }
 
-const action = computed(() => (isCalendar.value ? CALENDAR_ACTION : STAFF_ACTION))
+const action = computed(() => {
+  if (isCalendar.value) return authStore.canAccess('crm') ? CALENDAR_ACTION : null
+  return authStore.canManageSchedule ? STAFF_ACTION : null
+})
 
 const periodLabel = computed(() =>
   isCalendar.value ? scheduleFilter.weekLabel : scheduleFilter.monthLabel
@@ -159,9 +166,11 @@ function onNext() {
 
 function onAction() {
   if (isCalendar.value) {
+    if (!authStore.canAccess('crm')) return
     orderOpen.value = true
     return
   }
+  if (!authStore.canManageSchedule) return
   settingsOpen.value = true
 }
 

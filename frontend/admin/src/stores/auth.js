@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { authApi } from '@/api/index.js'
 import { setAuthToken } from '@dvijok/shared/api/http.js'
-import { STAFF_ACCESS_KEYS, firstAccessiblePage } from '@/constants/staff.js'
+import { STAFF_ACCESS_KEYS, isAdministratorRole, mapLegacyRole } from '@/constants/staff.js'
 
 // Auth-стор админки. Строгий режим: по умолчанию не авторизован.
 // Демо-владелец: admin / admin
@@ -13,13 +13,18 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isAuthenticated = computed(() => Boolean(token.value))
   const isOwner = computed(() => Boolean(user.value?.isOwner))
+  const staffRoleKey = computed(() => mapLegacyRole(user.value?.roleKey || user.value?.role))
+  const isAdministrator = computed(() => isOwner.value || isAdministratorRole(staffRoleKey.value))
+  const canManageSchedule = computed(() => isOwner.value || staffRoleKey.value === 'senior_admin')
+  const canManageServices = computed(() => isAdministrator.value)
+  const canManageTasks = computed(() => isAdministrator.value)
   const subscriptionPlan = computed(() => user.value?.subscriptionPlan ?? 'none')
   const hasSubscription = computed(() => Boolean(user.value) && subscriptionPlan.value !== 'none')
 
   const homeRoute = computed(() => {
     if (!isAuthenticated.value) return { name: 'login' }
     if (!hasSubscription.value) return { name: 'tariffs' }
-    const page = firstAccessiblePage(user.value?.access, { isOwner: isOwner.value })
+    const page = STAFF_ACCESS_KEYS.find(key => canAccess(key))
     return page ? { name: page } : { name: 'not-found' }
   })
 
@@ -28,6 +33,8 @@ export const useAuthStore = defineStore('auth', () => {
     if (!isAuthenticated.value) return false
     if (isOwner.value) return true
     if (!STAFF_ACCESS_KEYS.includes(permission)) return false
+    if (permission === 'settings') return false
+    if (permission === 'qr' && !isAdministrator.value) return false
     return Boolean(user.value?.access?.[permission])
   }
 
@@ -86,6 +93,11 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated,
     clearSession,
     isOwner,
+    staffRoleKey,
+    isAdministrator,
+    canManageSchedule,
+    canManageServices,
+    canManageTasks,
     subscriptionPlan,
     hasSubscription,
     homeRoute,

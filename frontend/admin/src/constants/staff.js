@@ -36,6 +36,22 @@ export const STAFF_ACCESS_OPTIONS = [
 /** Ключи доступа = имена роутов страниц админки. */
 export const STAFF_ACCESS_KEYS = STAFF_ACCESS_OPTIONS.map(item => item.key)
 
+export const ADMIN_STAFF_ROLE_KEYS = ['senior_admin', 'junior_admin']
+
+export function isAdministratorRole(roleKey) {
+  return ADMIN_STAFF_ROLE_KEYS.includes(mapLegacyRole(roleKey))
+}
+
+/** Права, которые владелец может выдать выбранной должности сотрудника. */
+export function editableStaffAccessOptions(roleKey) {
+  const isAdministrator = isAdministratorRole(roleKey)
+  return STAFF_ACCESS_OPTIONS.filter(item => {
+    if (item.key === 'settings') return false
+    if (item.key === 'qr') return isAdministrator
+    return true
+  })
+}
+
 export function emptyStaffAccess() {
   return Object.fromEntries(STAFF_ACCESS_KEYS.map(key => [key, false]))
 }
@@ -49,6 +65,14 @@ export function normalizeStaffAccess(access) {
     ...emptyStaffAccess(),
     ...(access && typeof access === 'object' ? access : {})
   }
+}
+
+export function sanitizeStaffAccess(roleKey, access) {
+  const normalized = normalizeStaffAccess(access)
+  const allowed = new Set(editableStaffAccessOptions(roleKey).map(item => item.key))
+  return Object.fromEntries(
+    STAFF_ACCESS_KEYS.map(key => [key, allowed.has(key) && Boolean(normalized[key])])
+  )
 }
 
 /** Первая доступная страница или null, если доступов нет. */

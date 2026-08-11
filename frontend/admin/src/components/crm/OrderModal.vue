@@ -240,7 +240,7 @@ import BaseScrollbar from '@/components/ui/BaseScrollbar.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
 import PdfIcon from '@/components/ui/PdfIcon.vue'
 import PrinterIcon from '@/components/ui/PrinterIcon.vue'
-import { servicesApi, tasksApi } from '@/api/index.js'
+import { crmApi } from '@/api/index.js'
 import {
   CRM_STATUS_LIST,
   ORDER_SOURCE_OPTIONS,
@@ -328,7 +328,7 @@ watch(
     Object.assign(lineDraft, emptyLine())
 
     if (props.mode !== 'view' && !serviceOptions.value.length) {
-      const [services, employees] = await Promise.all([servicesApi.list(), tasksApi.employees()])
+      const [services, employees] = await Promise.all([crmApi.services(), crmApi.employees()])
       serviceOptions.value = (services || []).map(item => ({
         value: item.id,
         label: item.title

@@ -67,7 +67,7 @@
 
       <tr v-for="service in filteredServices" :key="service.id" class="admin-table__row">
         <td class="admin-table__cell admin-table__cell--check">
-          <BaseCheckbox v-model="service._selected" />
+          <BaseCheckbox v-if="canManage" v-model="service._selected" />
         </td>
         <td class="admin-table__cell services__cell--name">
           <div class="admin-table__title">{{ service.title }}</div>
@@ -104,6 +104,7 @@
         </td>
         <td class="admin-table__cell services__cell--actions">
           <button
+            v-if="canManage"
             type="button"
             class="services__dots"
             aria-label="Действия"
@@ -116,7 +117,7 @@
         </td>
       </tr>
 
-      <template #footer>
+      <template v-if="canManage" #footer>
         <BaseButton color="red" size="lg" :disable="!hasSelected" @click="onDeleteSelected">
           Удалить выбранные
         </BaseButton>
@@ -126,7 +127,7 @@
     <Teleport to="body">
       <Transition name="services-menu">
         <div
-          v-if="menuService"
+          v-if="canManage && menuService"
           ref="menuEl"
           class="services-menu"
           :class="{ 'services-menu--above': menuAbove }"
@@ -215,10 +216,13 @@ import BaseSelect from '@/components/ui/BaseSelect.vue'
 import EyeIcon from '@/components/ui/EyeIcon.vue'
 import SuccessModal from '@/components/ui/SuccessModal.vue'
 import SummaryCards from '@/components/ui/SummaryCards.vue'
-import { servicesApi, tasksApi } from '@/api/index.js'
+import { servicesApi } from '@/api/index.js'
+import { useAuthStore } from '@/stores/auth.js'
 import { pluralize } from '@/utils/pluralize.js'
 
-const action = { label: '+ Добавить услугу' }
+const authStore = useAuthStore()
+const canManage = computed(() => authStore.canManageServices)
+const action = computed(() => (canManage.value ? { label: '+ Добавить услугу' } : null))
 
 const columns = [
   { key: 'check', width: '63px' },
@@ -414,11 +418,13 @@ function toServicePayload(service, overrides = {}) {
 }
 
 function onAction() {
+  if (!canManage.value) return
   editingService.value = null
   formOpen.value = true
 }
 
 function onDeleteSelected() {
+  if (!canManage.value) return
   if (!hasSelected.value) return
   deleteMode.value = 'selected'
   pendingDeleteId.value = null
@@ -467,6 +473,7 @@ function positionMenu(anchorRect) {
 }
 
 async function toggleMenu(service, event) {
+  if (!canManage.value) return
   if (menuServiceId.value === service.id) {
     closeMenu()
     return
@@ -484,6 +491,7 @@ async function toggleMenu(service, event) {
 }
 
 function onEditService() {
+  if (!canManage.value) return
   const service = menuService.value
   if (!service) return
   editingService.value = { ...service }
@@ -492,6 +500,7 @@ function onEditService() {
 }
 
 async function onDuplicateService() {
+  if (!canManage.value) return
   const service = menuService.value
   if (!service) return
   const copy = await servicesApi.create(
@@ -503,6 +512,7 @@ async function onDuplicateService() {
 }
 
 async function onToggleVisibility() {
+  if (!canManage.value) return
   const service = menuService.value
   if (!service) return
   const status = service.status === 'hidden' ? 'active' : 'hidden'
@@ -512,6 +522,7 @@ async function onToggleVisibility() {
 }
 
 function onDeleteService() {
+  if (!canManage.value) return
   const service = menuService.value
   if (!service) return
   deleteMode.value = 'single'
@@ -522,6 +533,7 @@ function onDeleteService() {
 }
 
 async function confirmDelete() {
+  if (!canManage.value) return
   if (deleteMode.value === 'selected') {
     const ids = services.value.filter(service => service._selected).map(service => service.id)
     await servicesApi.removeMany(ids)
@@ -543,6 +555,7 @@ async function confirmDelete() {
 }
 
 async function onSaveService(draft) {
+  if (!canManage.value) return
   formSaving.value = true
   try {
     if (editingService.value?.id) {
@@ -587,7 +600,7 @@ onMounted(async () => {
     const [summaryData, servicesData, employeesData] = await Promise.all([
       servicesApi.summary(),
       servicesApi.list(),
-      tasksApi.employees()
+      servicesApi.masters()
     ])
     summary.value = summaryData
     services.value = servicesData.map(service => ({ ...service, _selected: false }))

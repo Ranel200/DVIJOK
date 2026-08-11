@@ -44,7 +44,7 @@
 
       <tr v-for="task in filteredTasks" :key="task.id" class="admin-table__row">
         <td class="admin-table__cell admin-table__cell--check">
-          <BaseCheckbox v-model="task._selected" />
+          <BaseCheckbox v-if="canManage" v-model="task._selected" />
         </td>
         <td class="admin-table__cell tasks__cell--task">
           <div class="admin-table__title">{{ task.title }}</div>
@@ -57,9 +57,14 @@
           <span class="admin-table__text">{{ formatDeadline(task.deadline) }}</span>
         </td>
         <td class="admin-table__cell tasks__cell--status">
-          <span :class="`tasks__pill tasks__pill--${task.status}`">
+          <button
+            type="button"
+            :class="`tasks__pill tasks__pill--${task.status}`"
+            title="Изменить статус"
+            @click="cycleStatus(task)"
+          >
             {{ statusLabel(task.status) }}
-          </span>
+          </button>
         </td>
         <td class="admin-table__cell tasks__cell--completion">
           <span class="tasks__completion">
@@ -71,7 +76,7 @@
         </td>
       </tr>
 
-      <template #footer>
+      <template v-if="canManage" #footer>
         <BaseButton color="red" size="lg" :disable="!hasSelected" @click="onDeleteSelected">
           Удалить выбранные
         </BaseButton>
@@ -146,10 +151,13 @@ import BaseField from '@/components/ui/BaseField.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import SuccessModal from '@/components/ui/SuccessModal.vue'
 import { tasksApi } from '@/api/index.js'
+import { useAuthStore } from '@/stores/auth.js'
 import { pluralize } from '@/utils/pluralize.js'
 import { formatDeadlineUntil } from '@/utils/formatDateRu.js'
 
-const action = { label: '+ Новая задача' }
+const authStore = useAuthStore()
+const canManage = computed(() => authStore.canManageTasks)
+const action = computed(() => (canManage.value ? { label: '+ Новая задача' } : null))
 
 const columns = [
   { key: 'check', width: '63px' },
@@ -300,6 +308,7 @@ function resetDraft() {
 }
 
 function onAction() {
+  if (!canManage.value) return
   resetDraft()
   createOpen.value = true
 }
@@ -309,6 +318,7 @@ function closeCreate() {
 }
 
 async function saveCreate() {
+  if (!canManage.value) return
   const title = draft.title.trim()
   if (!title || saving.value) return
 
@@ -331,10 +341,18 @@ async function saveCreate() {
 }
 
 async function onDeleteSelected() {
+  if (!canManage.value) return
   if (!hasSelected.value) return
   const ids = tasks.value.filter(task => task._selected).map(task => task.id)
   await tasksApi.removeMany(ids)
   tasks.value = tasks.value.filter(task => !task._selected)
+}
+
+async function cycleStatus(task) {
+  const currentIndex = statusOptions.findIndex(option => option.value === task.status)
+  const next = statusOptions[(currentIndex + 1) % statusOptions.length]
+  const updated = await tasksApi.updateStatus(task.id, next.value)
+  Object.assign(task, updated, { _selected: task._selected })
 }
 
 onMounted(async () => {

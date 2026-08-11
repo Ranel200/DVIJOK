@@ -73,6 +73,7 @@ function toOwnerAuthUser(user) {
     email: user.email,
     subscriptionPlan: user.subscriptionPlan ?? 'none',
     isOwner: true,
+    roleKey: 'senior_admin',
     access: fullStaffAccess()
   }
 }
@@ -86,6 +87,7 @@ function toStaffAuthUser(employee) {
     subscriptionPlan: 'pro',
     isOwner: false,
     employeeId: employee.id,
+    roleKey: mapLegacyRole(employee.roleKey || employee.role),
     access: normalizeStaffAccess(employee.access)
   }
 }
@@ -96,6 +98,9 @@ function toRealAuthUser(user) {
     ...user,
     name: user?.name || user?.full_name || '',
     role: isOwner ? 'Владелец' : user?.roleLabel || user?.role || '',
+    roleKey: isOwner
+      ? 'senior_admin'
+      : mapLegacyRole(user?.roleKey || user?.staff_role_key || user?.role),
     isOwner,
     subscriptionPlan: String(user?.subscriptionPlan || 'none').toLowerCase(),
     access: normalizeStaffAccess(user?.access || user?.ui_permissions)
@@ -1123,6 +1128,18 @@ const mockCrmColumns = [
 ]
 
 export const crmApi = {
+  async services() {
+    if (USE_MOCK) return mockOk(mockServices.map(service => ({ ...service })))
+    return http.get('/crm/services')
+  },
+
+  async employees() {
+    if (USE_MOCK) {
+      return mockOk(mockEmployees.map(({ id, name, role }) => ({ id, name, role })))
+    }
+    return http.get('/crm/employees')
+  },
+
   async listClients(params) {
     if (USE_MOCK) return mockOk([])
     return http.get('/crm/clients', { params })
@@ -1477,6 +1494,13 @@ function buildServicesSummary(services) {
 }
 
 export const servicesApi = {
+  async masters() {
+    if (USE_MOCK) {
+      return mockOk(mockEmployees.map(({ id, name, role }) => ({ id, name, role })))
+    }
+    return http.get('/services/masters')
+  },
+
   async list(params) {
     if (USE_MOCK) return mockOk(mockServices.map(service => ({ ...service })))
     return http.get('/services/admin', { params })
@@ -1610,6 +1634,11 @@ export const tasksApi = {
       })
     }
     return http.post('/tasks', payload)
+  },
+
+  async updateStatus(id, status) {
+    if (USE_MOCK) return mockOk({ id, status })
+    return http.patch(`/tasks/${id}/status`, { status })
   },
 
   async removeMany(ids) {

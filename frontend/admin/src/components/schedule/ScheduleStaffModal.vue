@@ -135,7 +135,7 @@
         </BaseFormBlock>
       </div>
 
-      <div v-if="showAccessColumn" class="staff-form__col staff-form__col--access">
+      <div class="staff-form__col staff-form__col--access">
         <BaseFormBlock v-if="visibleAccessOptions.length" title="Доступ" stack-fields>
           <div class="staff-form__access">
             <div
@@ -220,13 +220,14 @@ import BaseModal from '@/components/ui/BaseModal.vue'
 import BaseSwitcher from '@/components/ui/BaseSwitcher.vue'
 import EyeIcon from '@/components/ui/EyeIcon.vue'
 import {
-  STAFF_ACCESS_OPTIONS,
   STAFF_ROLE_LABELS,
   STAFF_ROLE_OPTIONS,
+  editableStaffAccessOptions,
   emptyStaffAccess,
   formatStaffRate,
   mapLegacyRole,
-  parseStaffRate
+  parseStaffRate,
+  sanitizeStaffAccess
 } from '@/constants/staff.js'
 import { formatStaffName } from '@/utils/name.js'
 
@@ -281,8 +282,9 @@ const roleOptions = computed(() => {
 })
 
 const visibleAccessOptions = computed(() => {
-  if (!isView.value) return STAFF_ACCESS_OPTIONS
-  return STAFF_ACCESS_OPTIONS.filter(item => draft.access[item.key])
+  const available = editableStaffAccessOptions(draft.role)
+  if (!isView.value) return available
+  return available.filter(item => draft.access[item.key])
 })
 
 const rateDisplay = computed(() => formatStaffRate(draft.rate))
@@ -383,7 +385,7 @@ function onSave() {
     rate: draft.rate === '' ? null : Number(draft.rate),
     color: draft.color || null,
     documents: { ...draft.documents },
-    access: { ...draft.access },
+    access: sanitizeStaffAccess(draft.role, draft.access),
     login: draft.login.trim(),
     password: draft.password
   })
