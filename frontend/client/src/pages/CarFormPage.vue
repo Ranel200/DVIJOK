@@ -39,10 +39,11 @@
           block
         />
         <BaseField
-          v-model="form.mileage"
+          :model-value="form.mileage"
           label="Пробег (в км)"
           placeholder="66000"
-          type="number"
+          mask="######"
+          @update:model-value="form.mileage = normalizeMileageInput($event)"
           block
         />
 
@@ -127,6 +128,12 @@ function carLabelFromForm() {
   return [form.brand.trim(), form.model.trim()].filter(Boolean).join(' ')
 }
 
+function normalizeMileageInput(value) {
+  return String(value ?? '')
+    .replace(/\D/g, '')
+    .slice(0, 6)
+}
+
 function goToHomeTab(name) {
   router.push({ name: 'home', query: { tab: name } })
 }
@@ -173,6 +180,16 @@ async function onSubmit() {
 
 function onSuccessContinue() {
   successOpen.value = false
+  if (route.query.returnTo === 'booking' && route.query.shopId) {
+    router.push({
+      name: 'home',
+      query: {
+        tab: 'book',
+        resumeBooking: String(route.query.shopId)
+      }
+    })
+    return
+  }
   router.push({ name: 'home', query: { tab: 'car' } })
 }
 

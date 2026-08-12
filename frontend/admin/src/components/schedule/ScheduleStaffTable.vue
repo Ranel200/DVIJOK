@@ -175,6 +175,8 @@ const props = defineProps({
   }
 })
 
+const emit = defineEmits(['employees-changed'])
+
 const WEEKDAY_LABELS = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб']
 
 const COL = {
@@ -307,6 +309,7 @@ async function confirmDelete() {
   try {
     await scheduleApi.removeEmployee(id)
     employees.value = employees.value.filter(item => item.id !== id)
+    emit('employees-changed')
     closeDeleteConfirm()
     resultMessage.value = `Сотрудник ${name} удален!`
     resultOpen.value = true
@@ -351,6 +354,7 @@ async function onSaveEmployee(draft) {
       await scheduleApi.createEmployee(draft)
     }
     await loadEmployees()
+    emit('employees-changed')
     formOpen.value = false
     editingEmployee.value = null
     formMode.value = 'create'

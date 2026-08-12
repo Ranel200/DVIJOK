@@ -202,7 +202,9 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['close', 'complete', 'go-to-car'])
+const emit = defineEmits(['close', 'complete', 'go-to-car', 'add-car'])
+
+const ADD_CAR_VALUE = '__add_car__'
 
 const STEP_TITLES = ['Выберите параметры', 'Выберите мастера', 'Выберите дату и время']
 
@@ -402,7 +404,9 @@ function onGoToCar() {
 async function loadOptions() {
   const data = await bookingApi.options({ shopId: props.serviceId })
   serviceOptions.value = data.serviceOptions
-  carOptions.value = data.carOptions
+  carOptions.value = data.carOptions?.length
+    ? data.carOptions
+    : [{ value: ADD_CAR_VALUE, label: '+ Добавить автомобиль' }]
   masters.value = data.masters
   timeSlots.value = data.timeSlots
   if (!form.masterId && data.masters[0]) {
@@ -428,6 +432,15 @@ watch(monthCursor, () => {
 })
 
 watch(() => form.date, syncTimeSlotsForDate)
+
+watch(
+  () => form.carId,
+  value => {
+    if (value !== ADD_CAR_VALUE) return
+    form.carId = ''
+    emit('add-car', { shopId: props.serviceId })
+  }
+)
 
 watch([() => form.serviceId, () => form.masterId], () => {
   loadAvailability()

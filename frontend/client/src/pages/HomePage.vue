@@ -5,7 +5,7 @@
     <div class="home__body">
       <q-tab-panels v-model="tab" animated swipeable class="home__panels">
         <q-tab-panel name="book" class="home__panel">
-          <BookPanel @go-to-car="tab = 'car'" />
+          <BookPanel @go-to-car="tab = 'car'" @add-car="onAddCar" />
         </q-tab-panel>
 
         <q-tab-panel name="car" class="home__panel">
@@ -30,7 +30,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@/stores/auth.js'
 import { clientTabs } from '@/constants/navigation.js'
@@ -44,6 +44,7 @@ import ClientHeader from '@/components/layout/ClientHeader.vue'
 const COOKIES_STORAGE_KEY = 'dvijok-cookies-accepted'
 
 const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
 const { user } = storeToRefs(authStore)
 
@@ -55,6 +56,16 @@ const cookiesVisible = ref(localStorage.getItem(COOKIES_STORAGE_KEY) !== '1')
 function acceptCookies() {
   localStorage.setItem(COOKIES_STORAGE_KEY, '1')
   cookiesVisible.value = false
+}
+
+function onAddCar({ shopId }) {
+  router.push({
+    name: 'car-create',
+    query: {
+      returnTo: 'booking',
+      shopId
+    }
+  })
 }
 
 const greeting = computed(() => {

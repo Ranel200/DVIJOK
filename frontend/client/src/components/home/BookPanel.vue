@@ -6,6 +6,7 @@
     @close="bookingService = null"
     @complete="onBookingComplete"
     @go-to-car="onGoToCar"
+    @add-car="onAddCar"
   />
 
   <div v-else class="book-panel">
@@ -71,13 +72,16 @@
 
 <script setup>
 import { onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { servicesApi } from '@/api/index.js'
 import AppBlock from '@/components/ui/AppBlock.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BookingFlow from '@/components/home/BookingFlow.vue'
 import ServiceCard from '@/components/home/ServiceCard.vue'
 
-const emit = defineEmits(['go-to-car'])
+const emit = defineEmits(['go-to-car', 'add-car'])
+const route = useRoute()
+const router = useRouter()
 
 const query = ref('')
 const city = ref('г. Казань')
@@ -95,6 +99,14 @@ async function loadServices() {
   city.value = data.city
   yourServices.value = data.yours
   allServices.value = data.all
+  const resumeId = typeof route.query.resumeBooking === 'string' ? route.query.resumeBooking : ''
+  if (resumeId) {
+    const resumed = [...data.yours, ...data.all].find(item => String(item.id) === resumeId)
+    if (resumed) bookingService.value = resumed
+    const query = { ...route.query }
+    delete query.resumeBooking
+    await router.replace({ query })
+  }
 }
 
 function startBooking(item) {
@@ -108,6 +120,11 @@ function onBookingComplete() {
 function onGoToCar() {
   bookingService.value = null
   emit('go-to-car')
+}
+
+function onAddCar(payload) {
+  bookingService.value = null
+  emit('add-car', payload)
 }
 
 watch(query, () => {

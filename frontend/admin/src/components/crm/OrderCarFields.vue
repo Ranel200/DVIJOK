@@ -45,12 +45,13 @@
       block
     />
     <BaseField
-      v-model="draft.mileage"
+      :model-value="draft.mileage"
       layout="horizontal"
-      type="number"
       label="Пробег"
       placeholder="Пробег в км"
+      mask="######"
       :readonly="readonly"
+      @update:model-value="draft.mileage = normalizeMileageInput($event)"
       block
     />
   </BaseFormBlock>
@@ -71,6 +72,12 @@ defineProps({
     default: false
   }
 })
+
+function normalizeMileageInput(value) {
+  return String(value ?? '')
+    .replace(/\D/g, '')
+    .slice(0, 6)
+}
 </script>
 
 <style scoped lang="scss">

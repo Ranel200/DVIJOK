@@ -331,7 +331,8 @@ watch(
       const [services, employees] = await Promise.all([crmApi.services(), crmApi.employees()])
       serviceOptions.value = (services || []).map(item => ({
         value: item.id,
-        label: item.title
+        label: item.title,
+        price: item.price == null ? null : Number(item.price)
       }))
       masterOptions.value = (employees || []).map(item => ({
         value: item.id,
@@ -341,6 +342,14 @@ watch(
 
     await nextTick()
     viewScrollbarRef.value?.update()
+  }
+)
+
+watch(
+  () => lineDraft.serviceId,
+  serviceId => {
+    const selected = serviceOptions.value.find(item => item.value === serviceId)
+    lineDraft.price = selected?.price == null ? '' : String(selected.price)
   }
 )
 

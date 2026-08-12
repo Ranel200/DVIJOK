@@ -64,6 +64,7 @@
         :visible="activeTab === 'staff'"
         :can-manage="authStore.canManageSchedule"
         :is-owner="authStore.isOwner"
+        @employees-changed="onEmployeesChanged"
       />
     </div>
 
@@ -190,6 +191,10 @@ async function onSettingsSaved() {
   await Promise.all([staffTableRef.value?.reload?.(), calendarTableRef.value?.reload?.()])
   savedMessage.value = 'График сохранен!'
   savedOpen.value = true
+}
+
+async function onEmployeesChanged() {
+  await calendarTableRef.value?.reload?.()
 }
 
 onMounted(() => scheduleFilter.resetToCurrent())
