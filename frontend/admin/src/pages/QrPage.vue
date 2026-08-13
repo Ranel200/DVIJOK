@@ -7,7 +7,7 @@
   <div class="qr">
     <div class="qr__card">
       <div class="qr__code">
-        <img :src="qrImageSrc" alt="QR-код" />
+        <img v-if="qrImageSrc" :src="qrImageSrc" alt="QR-код" width="415" height="415" />
       </div>
       <div class="qr__info">
         <img
@@ -40,7 +40,7 @@ const qrImageSrc = computed(() => {
   const svg = referral.value?.qr_svg
   return svg
     ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
-    : '/admin/icons/qr/qr.svg'
+    : null
 })
 
 function onAction() {
