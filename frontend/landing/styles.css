@@ -117,10 +117,10 @@ body {
   flex: 0 0 auto;
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   gap: clamp(24px, 4vw, 60px);
-  padding: 0 clamp(16px, 4vw, 40px) clamp(24px, 5vh, 60px);
+  padding: 0 var(--page-pad-x) clamp(24px, 5vh, 60px);
 }
 
 .page__brand {
@@ -188,7 +188,8 @@ body {
 
 .page__logo img {
   display: block;
-  max-width: min(100%, 420px);
+  width: 55vw;
+  max-width: none;
   height: auto;
 }
 
@@ -229,8 +230,9 @@ body {
   align-items: center;
   gap: 20px;
   text-align: center;
-  flex: 1 1 220px;
-  max-width: 500px;
+  flex: 0 0 auto;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .action__icon {

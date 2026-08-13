@@ -70,12 +70,21 @@
           </button>
         </td>
         <td class="admin-table__cell tasks__cell--completion">
-          <span class="tasks__completion">
-            <span class="tasks__completion-circle" aria-hidden="true" />
-            <span class="tasks__completion-label">
-              {{ task.status === 'done' ? 'Выполнена' : 'Не выполнено' }}
-            </span>
-          </span>
+          <button
+            type="button"
+            class="tasks__completion"
+            :class="{ 'tasks__completion--active': task._completed }"
+            :aria-pressed="task._completed"
+            aria-label="Выполнена"
+            @click="toggleCompleted(task)"
+          >
+            <Radio
+              :filled="task._completed"
+              :color="task._completed ? 'var(--dvijok-success)' : 'var(--dvijok-tab-inactive)'"
+              :size="20"
+            />
+            <span class="tasks__completion-label">Выполнена</span>
+          </button>
         </td>
       </tr>
 
@@ -153,6 +162,7 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseField from '@/components/ui/BaseField.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import SuccessModal from '@/components/ui/SuccessModal.vue'
+import Radio from '@/components/ui/Radio.vue'
 import { tasksApi } from '@/api/index.js'
 import { useAuthStore } from '@/stores/auth.js'
 import { pluralize } from '@/utils/pluralize.js'
@@ -334,7 +344,10 @@ async function saveCreate() {
       status: draft.status || 'new',
       employee: resolveEmployee(draft.employeeId)
     })
-    tasks.value = [{ ...created, _selected: false }, ...tasks.value]
+    tasks.value = [
+      { ...created, _selected: false, _completed: created.status === 'done' },
+      ...tasks.value
+    ]
     savedTitle.value = created.title
     createOpen.value = false
     savedOpen.value = true
@@ -355,7 +368,20 @@ async function cycleStatus(task) {
   const currentIndex = statusOptions.findIndex(option => option.value === task.status)
   const next = statusOptions[(currentIndex + 1) % statusOptions.length]
   const updated = await tasksApi.updateStatus(task.id, next.value)
-  Object.assign(task, updated, { _selected: task._selected })
+  Object.assign(task, updated, {
+    _selected: task._selected,
+    _completed: updated.status === 'done'
+  })
+  summary.value = await tasksApi.summary()
+}
+
+async function toggleCompleted(task) {
+  const updated = await tasksApi.updateStatus(task.id, task.status === 'done' ? 'new' : 'done')
+  Object.assign(task, updated, {
+    _selected: task._selected,
+    _completed: updated.status === 'done'
+  })
+  summary.value = await tasksApi.summary()
 }
 
 onMounted(async () => {
@@ -367,7 +393,11 @@ onMounted(async () => {
     ])
     summary.value = summaryData
     employees.value = employeesData
-    tasks.value = tasksData.map(task => ({ ...task, _selected: false }))
+    tasks.value = tasksData.map(task => ({
+      ...task,
+      _selected: false,
+      _completed: task.status === 'done'
+    }))
   } finally {
     loading.value = false
   }
@@ -407,16 +437,19 @@ onMounted(async () => {
   padding: 7px 9px;
   border: 1px solid var(--dvijok-tab-inactive);
   border-radius: 50px;
+  background: transparent;
   box-sizing: border-box;
+  cursor: pointer;
+  font: inherit;
 }
 
-.tasks__completion-circle {
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--dvijok-tab-inactive);
-  border-radius: 50%;
-  box-sizing: border-box;
-  flex-shrink: 0;
+.tasks__completion--active {
+  border-color: var(--dvijok-success);
+  background-color: var(--dvijok-success-bg);
+}
+
+.tasks__completion--active .tasks__completion-label {
+  color: var(--dvijok-success);
 }
 
 .tasks__completion-label {

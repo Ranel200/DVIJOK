@@ -422,13 +422,13 @@ function onSave() {
 }
 
 .staff-form__col--main {
-  flex: 0 1 420px;
-  max-width: 420px;
+  flex: 0 1 35%;
+  max-width: 35%;
 }
 
 .staff-form__col--access {
-  flex: 0 1 400px;
-  max-width: 400px;
+  flex: 0 1 35%;
+  max-width: 35%;
   margin-left: auto;
 }
 
@@ -586,7 +586,7 @@ function onSave() {
 .staff-form__access {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 5px;
   width: 100%;
 }
 

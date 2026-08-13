@@ -593,6 +593,7 @@ defineExpose({ reload: loadEmployees })
   align-items: center;
   justify-content: center;
   gap: 3px;
+  margin-top: 16px;
 }
 
 .schedule-staff__day-num {

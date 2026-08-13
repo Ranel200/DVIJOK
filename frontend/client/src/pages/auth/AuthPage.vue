@@ -117,7 +117,7 @@
     </AppBlock>
 
     <AppBlock variant="dark" :title="toggleTitle">
-      <BaseButton color="blue2" size="sm" @click="goToggle">
+      <BaseButton color="blue2" size="sm" block @click="goToggle">
         {{ toggleLabel }}
       </BaseButton>
     </AppBlock>
@@ -128,6 +128,11 @@
         <p class="auth-promo__text">Здесь могла бы быть ваша реклама</p>
       </div>
     </AppBlock>
+
+    <div class="auth-page__status-tests">
+      <BaseButton color="blue1" text @click="overlay.toggle('loading')">Загрузка</BaseButton>
+      <BaseButton color="blue1" text @click="overlay.toggle('error')">Ошибка</BaseButton>
+    </div>
   </q-page>
 </template>
 
@@ -141,11 +146,13 @@ import BaseCheckbox from '@/components/ui/BaseCheckbox.vue'
 import BaseField from '@/components/ui/BaseField.vue'
 import CodeInputs from '@/components/ui/CodeInputs.vue'
 import { useAuthStore } from '@/stores/auth.js'
+import { useStatusOverlayStore } from '@/stores/statusOverlay.js'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const REFERRAL_STORAGE_KEY = 'dvijok_client_referral'
+const overlay = useStatusOverlayStore()
 
 const form = reactive({
   name: '',
@@ -336,5 +343,12 @@ async function onSubmit() {
   line-height: 16px;
   color: var(--dvijok-text-secondary);
   text-align: center;
+}
+
+.auth-page__status-tests {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  padding-top: 4px;
 }
 </style>
