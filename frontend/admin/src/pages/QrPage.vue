@@ -21,11 +21,11 @@
           </p>
         </div>
         <div v-if="referral?.url" class="qr__link-row">
-          <a
-            :href="referral.url"
+          <button
+            type="button"
             class="qr__link"
-            target="_blank"
-            rel="noopener noreferrer"
+            title="Скопировать ссылку"
+            @click="copyReferralUrl"
           >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path
@@ -33,7 +33,7 @@
               />
             </svg>
             <span>{{ referral.url }}</span>
-          </a>
+          </button>
           <span class="qr__link-label">Ссылка на регистрацию</span>
         </div>
       </div>
@@ -52,6 +52,24 @@ const referral = ref(null)
 
 function withBrandColor(svg) {
   return svg?.replace('fill="#000000"', 'fill="#051b54"')
+}
+
+async function copyReferralUrl() {
+  const url = referral.value?.url
+  if (!url) return
+
+  try {
+    await navigator.clipboard.writeText(url)
+  } catch {
+    const textarea = document.createElement('textarea')
+    textarea.value = url
+    textarea.style.position = 'fixed'
+    textarea.style.opacity = '0'
+    document.body.appendChild(textarea)
+    textarea.select()
+    document.execCommand('copy')
+    textarea.remove()
+  }
 }
 
 function onAction() {
@@ -165,7 +183,14 @@ onMounted(async () => {
   gap: 16px;
   flex: 1;
   min-width: 0;
+  margin: 0;
+  padding: 0;
   overflow: hidden;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
   color: var(--dvijok-link);
   font-size: 18px;
   line-height: 22px;
