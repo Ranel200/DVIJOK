@@ -4,7 +4,10 @@
       <template #below>
         <SummaryCards :cards="cards" :loading="loading" :count="5" />
         <div class="tasks-filters">
-          <div class="tasks-filters__field tasks-filters__field--employees">
+          <div
+            v-if="isOwner"
+            class="tasks-filters__field tasks-filters__field--employees"
+          >
             <span class="tasks-filters__label">Отсортируйте по сотрудникам</span>
             <BaseSelect
               v-model="employee"
@@ -144,6 +147,7 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import AdminHeader from '@/components/layout/AdminHeader.vue'
 import AdminTable from '@/components/ui/AdminTable.vue'
 import SummaryCards from '@/components/ui/SummaryCards.vue'
@@ -156,8 +160,12 @@ import BaseModal from '@/components/ui/BaseModal.vue'
 import SuccessModal from '@/components/ui/SuccessModal.vue'
 import Radio from '@/components/ui/Radio.vue'
 import { tasksApi } from '@/api/index.js'
+import { useAuthStore } from '@/stores/auth.js'
 import { pluralize } from '@/utils/pluralize.js'
 import { formatDeadlineUntil } from '@/utils/formatDateRu.js'
+
+const authStore = useAuthStore()
+const { isOwner } = storeToRefs(authStore)
 
 const action = { label: '+ Новая задача' }
 

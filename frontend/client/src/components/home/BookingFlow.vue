@@ -35,7 +35,13 @@
 
         <div class="booking-flow__field">
           <label class="booking-flow__label">Выберите машину</label>
-          <BaseSelect v-model="form.carId" :options="carOptions" placeholder="Машина" block />
+          <BaseSelect
+            :model-value="form.carId"
+            :options="carSelectOptions"
+            placeholder="Машина"
+            block
+            @update:model-value="onCarChange"
+          />
         </div>
 
         <div class="booking-flow__actions">
@@ -183,6 +189,7 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { bookingApi } from '@/api/index.js'
 import AppBlock from '@/components/ui/AppBlock.vue'
 import ArrowIcon from '@/components/ui/ArrowIcon.vue'
@@ -190,6 +197,8 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
 import ChevronIcon from '@/components/ui/ChevronIcon.vue'
+
+const router = useRouter()
 
 const props = defineProps({
   serviceId: {
@@ -246,6 +255,8 @@ const MONTH_NAMES_GEN = [
   'Декабря'
 ]
 
+const ADD_CAR_VALUE = '__add_car__'
+
 const serviceOptions = ref([])
 const carOptions = ref([])
 const masters = ref([])
@@ -271,6 +282,11 @@ const form = reactive({
 const stepTitle = computed(() => STEP_TITLES[step.value - 1])
 
 const monthLabel = computed(() => MONTH_NAMES[monthCursor.value.getMonth()])
+
+const carSelectOptions = computed(() => [
+  { value: ADD_CAR_VALUE, label: '+ Добавить машину' },
+  ...carOptions.value
+])
 
 const serviceLabel = computed(
   () => serviceOptions.value.find(item => item.value === form.serviceId)?.label || '—'
@@ -357,6 +373,18 @@ function onBack() {
     return
   }
   step.value -= 1
+}
+
+function onAddCar() {
+  router.push({ name: 'car-create' })
+}
+
+function onCarChange(value) {
+  if (value === ADD_CAR_VALUE) {
+    onAddCar()
+    return
+  }
+  form.carId = value
 }
 
 function goNext() {

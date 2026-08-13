@@ -22,6 +22,13 @@
             и отслеживать состояние автомобиля
           </p>
         </div>
+        <div class="qr__link-row">
+          <div class="qr__link">
+            <img src="/admin/icons/qr/link.svg" alt="" class="qr__link-icon" />
+            <a href="https://dvojok_link" class="qr__link-url">https://dvojok_link</a>
+          </div>
+          <div class="qr__link-label">Ссылка на запись</div>
+        </div>
       </div>
     </div>
   </div>
@@ -88,5 +95,42 @@ function onAction() {
   font-size: 20px;
   line-height: 24px;
   color: var(--dvijok-text-secondary);
+}
+
+.qr__link-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.qr__link {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-width: 0;
+}
+
+.qr__link-icon {
+  display: block;
+  flex-shrink: 0;
+  width: 25px;
+  height: 25px;
+}
+
+.qr__link-url {
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 17px;
+  text-decoration: underline;
+  color: #2a4ec4;
+}
+
+.qr__link-label {
+  flex-shrink: 0;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 17px;
+  color: #7a82a0;
 }
 </style>
