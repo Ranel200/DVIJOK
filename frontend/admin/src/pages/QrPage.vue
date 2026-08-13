@@ -6,9 +6,7 @@
   </AdminHeader>
   <div class="qr">
     <div class="qr__card">
-      <div class="qr__code">
-        <img v-if="qrImageSrc" :src="qrImageSrc" alt="QR-код" width="415" height="415" />
-      </div>
+      <div class="qr__code" v-html="referral?.qr_svg"></div>
       <div class="qr__info">
         <img
           src="/admin/icons/qr/logo-client.png"
@@ -28,7 +26,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import AdminHeader from '@/components/layout/AdminHeader.vue'
 import PrinterIcon from '@/components/ui/PrinterIcon.vue'
 import { referralsApi } from '@/api/index.js'
@@ -36,12 +34,9 @@ import { referralsApi } from '@/api/index.js'
 const action = { label: 'Напечатать QR-код' }
 const referral = ref(null)
 
-const qrImageSrc = computed(() => {
-  const svg = referral.value?.qr_svg
-  return svg
-    ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
-    : null
-})
+function withBrandColor(svg) {
+  return svg?.replace('fill="#000000"', 'fill="#051b54"')
+}
 
 function onAction() {
   const svg = referral.value?.qr_svg
@@ -72,7 +67,8 @@ function onAction() {
 }
 
 onMounted(async () => {
-  referral.value = await referralsApi.getOrCreate()
+  const result = await referralsApi.getOrCreate()
+  referral.value = { ...result, qr_svg: withBrandColor(result.qr_svg) }
 })
 </script>
 
@@ -89,6 +85,18 @@ onMounted(async () => {
   padding: 100px 80px;
   background-color: var(--dvijok-white);
   border-radius: 15px;
+}
+
+.qr__code {
+  width: 415px;
+  height: 415px;
+  flex: 0 0 415px;
+}
+
+.qr__code :deep(svg) {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .qr__info {
