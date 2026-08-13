@@ -20,6 +20,22 @@
             и отслеживать состояние автомобиля
           </p>
         </div>
+        <div v-if="referral?.url" class="qr__link-row">
+          <a
+            :href="referral.url"
+            class="qr__link"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M10.6 13.4a1 1 0 0 1 0-1.4l3.4-3.4a3 3 0 1 1 4.2 4.2l-2.4 2.4a3 3 0 0 1-4.2 0 1 1 0 0 1 1.4-1.4 1 1 0 0 0 1.4 0l2.4-2.4a1 1 0 0 0-1.4-1.4L12 13.4a1 1 0 0 1-1.4 0Zm2.8-2.8a1 1 0 0 1 0 1.4L10 15.4a3 3 0 1 1-4.2-4.2l2.4-2.4a3 3 0 0 1 4.2 0 1 1 0 0 1-1.4 1.4 1 1 0 0 0-1.4 0l-2.4 2.4A1 1 0 0 0 8.6 14l3.4-3.4a1 1 0 0 1 1.4 0Z"
+              />
+            </svg>
+            <span>{{ referral.url }}</span>
+          </a>
+          <span class="qr__link-label">Ссылка на регистрацию</span>
+        </div>
       </div>
     </div>
   </div>
@@ -134,5 +150,46 @@ onMounted(async () => {
   font-size: 20px;
   line-height: 24px;
   color: var(--dvijok-text-secondary);
+}
+
+.qr__link-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+}
+
+.qr__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--dvijok-link);
+  font-size: 18px;
+  line-height: 22px;
+}
+
+.qr__link svg {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  fill: currentColor;
+}
+
+.qr__link span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-decoration: underline;
+}
+
+.qr__link-label {
+  flex: 0 0 auto;
+  color: var(--dvijok-text-secondary);
+  font-size: 16px;
+  line-height: 20px;
 }
 </style>
