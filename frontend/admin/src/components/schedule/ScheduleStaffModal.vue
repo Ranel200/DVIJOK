@@ -152,6 +152,7 @@
                 :aria-label="item.label"
               />
             </div>
+            <BaseFormError :validate="accessRule" />
           </div>
         </BaseFormBlock>
 
@@ -162,6 +163,8 @@
             label="Логин"
             placeholder="Логин"
             :readonly="isView"
+            required
+            required-message="Придумайте логин сотрудника"
             block
           />
           <BaseField
@@ -171,6 +174,8 @@
             label="Пароль"
             placeholder="Пароль"
             :readonly="isView"
+            :required="!isEdit"
+            required-message="Придумайте пароль сотрудника"
             block
           >
             <template #append>
@@ -216,9 +221,11 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseChoice from '@/components/ui/BaseChoice.vue'
 import BaseField from '@/components/ui/BaseField.vue'
 import BaseFormBlock from '@/components/ui/BaseFormBlock.vue'
+import BaseFormError from '@/components/ui/BaseFormError.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import BaseSwitcher from '@/components/ui/BaseSwitcher.vue'
 import EyeIcon from '@/components/ui/EyeIcon.vue'
+import { createFormValidation } from '@/composables/useFormValidation.js'
 import {
   STAFF_ROLE_LABELS,
   STAFF_ROLE_OPTIONS,
@@ -252,6 +259,8 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:modelValue', 'save', 'edit', 'delete'])
+
+const form = createFormValidation()
 
 const documentFields = [
   { key: 'passport', label: 'Паспорт*' },
@@ -294,6 +303,7 @@ watch(
   ([open]) => {
     if (!open) return
     showPassword.value = false
+    form.reset()
     Object.assign(draft, props.employee ? draftFromEmployee(props.employee) : createEmptyDraft())
   }
 )
@@ -375,7 +385,16 @@ function onFileChange(event) {
   draft.documents[key] = { name: file.name, fileName: file.name }
 }
 
+function accessRule() {
+  if (isView.value) return ''
+  return Object.values(draft.access).some(Boolean)
+    ? ''
+    : 'Выберите разделы, к которым сотрудник получит доступ'
+}
+
 function onSave() {
+  if (!form.validate()) return
+
   emit('save', {
     role: draft.role,
     name: draft.name.trim(),

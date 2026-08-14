@@ -23,8 +23,8 @@
         :readonly="readonly"
         :block="block"
         :dense="dense"
-        :error="error"
-        :error-message="errorMessage"
+        :error="shownError"
+        :error-message="shownMessage"
         :rules="rules"
         :mask="mask"
         :fill-mask="fillMask"
@@ -45,9 +45,10 @@
 
 <script setup>
 import { useId } from 'vue'
+import { useFieldError } from '@/composables/useFormValidation.js'
 import BaseInput from '@/components/ui/BaseInput.vue'
 
-defineProps({
+const props = defineProps({
   modelValue: {
     type: [String, Number],
     default: ''
@@ -97,6 +98,18 @@ defineProps({
     type: String,
     default: ''
   },
+  required: {
+    type: Boolean,
+    default: false
+  },
+  requiredMessage: {
+    type: String,
+    default: ''
+  },
+  validate: {
+    type: Function,
+    default: null
+  },
   rules: {
     type: Array,
     default: () => []
@@ -118,6 +131,7 @@ defineProps({
 const emit = defineEmits(['update:modelValue'])
 
 const fieldId = useId()
+const { error: shownError, errorMessage: shownMessage } = useFieldError(props)
 
 function onUpdate(value) {
   emit('update:modelValue', value)

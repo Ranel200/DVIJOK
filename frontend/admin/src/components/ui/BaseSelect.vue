@@ -9,7 +9,8 @@
         'base-select--block': block,
         'base-select--center': align === 'center',
         'base-select--no-chevron': hideChevron,
-        'base-select--disabled': disable
+        'base-select--disabled': disable,
+        'base-select--error': shownError
       }
     ]"
   >
@@ -18,6 +19,7 @@
       type="button"
       class="base-select__trigger"
       :aria-expanded="open"
+      :aria-invalid="shownError || undefined"
       :aria-disabled="disable || undefined"
       :tabindex="disable ? -1 : undefined"
       @click="toggle"
@@ -25,6 +27,7 @@
       <span class="base-select__value">{{ currentLabel }}</span>
       <ChevronIcon v-if="!hideChevron" :direction="open ? 'up' : 'down'" />
     </button>
+    <p v-if="shownError && shownMessage" class="base-select__error">{{ shownMessage }}</p>
 
     <Teleport to="body">
       <Transition name="base-select-list" @after-leave="listVisible = false">
@@ -54,6 +57,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { useFieldError } from '@/composables/useFormValidation.js'
 import ChevronIcon from '@/components/ui/ChevronIcon.vue'
 
 const props = defineProps({
@@ -90,10 +94,32 @@ const props = defineProps({
   disable: {
     type: Boolean,
     default: false
+  },
+  error: {
+    type: Boolean,
+    default: false
+  },
+  errorMessage: {
+    type: String,
+    default: ''
+  },
+  required: {
+    type: Boolean,
+    default: false
+  },
+  requiredMessage: {
+    type: String,
+    default: ''
+  },
+  validate: {
+    type: Function,
+    default: null
   }
 })
 
 const emit = defineEmits(['update:modelValue'])
+
+const { error: shownError, errorMessage: shownMessage } = useFieldError(props)
 
 const rootRef = ref(null)
 const triggerRef = ref(null)
@@ -217,6 +243,17 @@ onBeforeUnmount(() => {
 .base-select--disabled .base-select__trigger {
   cursor: default;
   pointer-events: none;
+}
+
+.base-select--error .base-select__trigger {
+  border-color: var(--dvijok-danger, #c10015);
+}
+
+.base-select__error {
+  margin: 5px 0 0;
+  color: var(--dvijok-danger, #c10015);
+  font-size: 12px;
+  line-height: 15px;
 }
 
 .base-select--open .base-select__trigger {

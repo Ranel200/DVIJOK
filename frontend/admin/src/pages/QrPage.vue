@@ -27,12 +27,8 @@
             title="Скопировать ссылку"
             @click="copyReferralUrl"
           >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M10.6 13.4a1 1 0 0 1 0-1.4l3.4-3.4a3 3 0 1 1 4.2 4.2l-2.4 2.4a3 3 0 0 1-4.2 0 1 1 0 0 1 1.4-1.4 1 1 0 0 0 1.4 0l2.4-2.4a1 1 0 0 0-1.4-1.4L12 13.4a1 1 0 0 1-1.4 0Zm2.8-2.8a1 1 0 0 1 0 1.4L10 15.4a3 3 0 1 1-4.2-4.2l2.4-2.4a3 3 0 0 1 4.2 0 1 1 0 0 1-1.4 1.4 1 1 0 0 0-1.4 0l-2.4 2.4A1 1 0 0 0 8.6 14l3.4-3.4a1 1 0 0 1 1.4 0Z"
-              />
-            </svg>
-            <span>{{ referral.url }}</span>
+            <img src="/admin/icons/qr/link.svg" alt="" class="qr__link-icon" />
+            <span class="qr__link-url">{{ referral.url }}</span>
           </button>
           <span class="qr__link-label">Ссылка на регистрацию</span>
         </div>
@@ -174,13 +170,13 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 30px;
+  gap: 20px;
 }
 
 .qr__link {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
   flex: 1;
   min-width: 0;
   margin: 0;
@@ -191,30 +187,32 @@ onMounted(async () => {
   cursor: pointer;
   font-family: inherit;
   text-align: left;
-  color: var(--dvijok-link);
-  font-size: 18px;
-  line-height: 22px;
 }
 
-.qr__link svg {
-  width: 36px;
-  height: 36px;
-  flex: 0 0 36px;
-  fill: currentColor;
+.qr__link-icon {
+  display: block;
+  flex-shrink: 0;
+  width: 25px;
+  height: 25px;
 }
 
-.qr__link span {
+.qr__link-url {
   min-width: 0;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 17px;
   text-decoration: underline;
+  color: #2a4ec4;
 }
 
 .qr__link-label {
-  flex: 0 0 auto;
-  color: var(--dvijok-text-secondary);
-  font-size: 16px;
-  line-height: 20px;
+  flex-shrink: 0;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 17px;
+  color: #7a82a0;
 }
 </style>

@@ -35,7 +35,13 @@
 
         <div class="booking-flow__field">
           <label class="booking-flow__label">Выберите машину</label>
-          <BaseSelect v-model="form.carId" :options="carOptions" placeholder="Машина" block />
+          <BaseSelect
+            :model-value="form.carId"
+            :options="carSelectOptions"
+            placeholder="Машина"
+            block
+            @update:model-value="onCarChange"
+          />
         </div>
 
         <div class="booking-flow__actions">
@@ -204,8 +210,6 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'complete', 'go-to-car', 'add-car'])
 
-const ADD_CAR_VALUE = '__add_car__'
-
 const STEP_TITLES = ['Выберите параметры', 'Выберите мастера', 'Выберите дату и время']
 
 const WEEKDAYS = [
@@ -248,6 +252,8 @@ const MONTH_NAMES_GEN = [
   'Декабря'
 ]
 
+const ADD_CAR_VALUE = '__add_car__'
+
 const serviceOptions = ref([])
 const carOptions = ref([])
 const masters = ref([])
@@ -274,6 +280,11 @@ const form = reactive({
 const stepTitle = computed(() => STEP_TITLES[step.value - 1])
 
 const monthLabel = computed(() => MONTH_NAMES[monthCursor.value.getMonth()])
+
+const carSelectOptions = computed(() => [
+  { value: ADD_CAR_VALUE, label: '+ Добавить машину' },
+  ...carOptions.value
+])
 
 const serviceLabel = computed(
   () => serviceOptions.value.find(item => item.value === form.serviceId)?.label || '—'
@@ -377,6 +388,14 @@ function onBack() {
   step.value -= 1
 }
 
+function onCarChange(value) {
+  if (value === ADD_CAR_VALUE) {
+    emit('add-car', { shopId: props.serviceId })
+    return
+  }
+  form.carId = value
+}
+
 function goNext() {
   if (step.value < 3) step.value += 1
 }
@@ -404,9 +423,7 @@ function onGoToCar() {
 async function loadOptions() {
   const data = await bookingApi.options({ shopId: props.serviceId })
   serviceOptions.value = data.serviceOptions
-  carOptions.value = data.carOptions?.length
-    ? data.carOptions
-    : [{ value: ADD_CAR_VALUE, label: '+ Добавить автомобиль' }]
+  carOptions.value = data.carOptions || []
   masters.value = data.masters
   timeSlots.value = data.timeSlots
   if (!form.masterId && data.masters[0]) {
@@ -432,15 +449,6 @@ watch(monthCursor, () => {
 })
 
 watch(() => form.date, syncTimeSlotsForDate)
-
-watch(
-  () => form.carId,
-  value => {
-    if (value !== ADD_CAR_VALUE) return
-    form.carId = ''
-    emit('add-car', { shopId: props.serviceId })
-  }
-)
 
 watch([() => form.serviceId, () => form.masterId], () => {
   loadAvailability()

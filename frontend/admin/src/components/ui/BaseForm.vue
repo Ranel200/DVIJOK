@@ -44,6 +44,9 @@
               :layout="layout"
               :error="Boolean(errors[field.key])"
               :error-message="errors[field.key]"
+              :required="Boolean(field.required)"
+              :required-message="field.requiredMessage"
+              :validate="field.validate"
               :disable="isDisabled(field)"
               block
               @update:model-value="updateField(field, $event)"
@@ -95,6 +98,12 @@
                 :hide-chevron="field.hideChevron"
                 :align="field.align"
                 :block="field.block !== false"
+                :error="Boolean(errors[field.key])"
+                :error-message="errors[field.key]"
+                :required="Boolean(field.required)"
+                :required-message="field.requiredMessage"
+                :validate="field.validate"
+                :disable="isDisabled(field)"
                 @update:model-value="updateField(field, $event)"
               />
             </div>
@@ -123,6 +132,7 @@
 
 <script setup>
 import { computed, nextTick, onUpdated, reactive, ref } from 'vue'
+import { createFormValidation } from '@/composables/useFormValidation.js'
 import BaseCheckbox from '@/components/ui/BaseCheckbox.vue'
 import BaseChoice from '@/components/ui/BaseChoice.vue'
 import BaseField from '@/components/ui/BaseField.vue'
@@ -166,6 +176,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
+const form = createFormValidation()
 const visible = reactive({})
 const scrollbarRef = ref(null)
 
@@ -281,7 +292,7 @@ async function focusField(key, { offset = 24 } = {}) {
   }
 }
 
-defineExpose({ focusField })
+defineExpose({ focusField, validate: form.validate, reset: form.reset })
 </script>
 
 <style scoped lang="scss">
