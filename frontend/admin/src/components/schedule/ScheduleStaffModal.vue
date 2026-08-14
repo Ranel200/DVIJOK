@@ -32,6 +32,8 @@
             label="ФИО"
             placeholder="Фамилия Имя Отчество"
             :readonly="isView"
+            required
+            required-message="Напишите ФИО сотрудника"
             block
           />
           <BaseField
@@ -41,6 +43,7 @@
             placeholder="+7 000 000-00-00"
             mask="+7 ### ###-##-##"
             :readonly="isView"
+            :validate="phoneRule"
             block
           />
           <BaseField
@@ -225,7 +228,7 @@ import BaseFormError from '@/components/ui/BaseFormError.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import BaseSwitcher from '@/components/ui/BaseSwitcher.vue'
 import EyeIcon from '@/components/ui/EyeIcon.vue'
-import { createFormValidation } from '@/composables/useFormValidation.js'
+import { createFormValidation, requiredPhone } from '@/composables/useFormValidation.js'
 import {
   STAFF_ROLE_LABELS,
   STAFF_ROLE_OPTIONS,
@@ -261,6 +264,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'save', 'edit', 'delete'])
 
 const form = createFormValidation()
+const phoneRule = requiredPhone('Введите номер телефона сотрудника')
 
 const documentFields = [
   { key: 'passport', label: 'Паспорт*' },
