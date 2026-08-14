@@ -49,6 +49,7 @@
           <OrderClientFields
             :draft="draft"
             :source-options="sourceOptions"
+            :required="!isEdit"
             block-class="order-form__block--client"
           />
 
@@ -202,7 +203,7 @@
           </template>
         </div>
 
-        <OrderCarFields v-else :draft="draft" />
+        <OrderCarFields v-else :draft="draft" :required="!isEdit" />
 
         <div class="order-form__actions">
           <template v-if="isView">
