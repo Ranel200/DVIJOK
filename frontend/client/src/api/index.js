@@ -228,6 +228,12 @@ export const authApi = {
     return { token, user: clientUser(profile) }
   },
 
+  async updateProfile({ name }) {
+    if (USE_MOCK) return mockOk({ name })
+    const profile = await http.patch('/client-auth/me', { full_name: name })
+    return clientUser(profile)
+  },
+
   async logout() {
     if (USE_MOCK) return mockOk({ success: true })
     return http.post('/client-auth/logout')

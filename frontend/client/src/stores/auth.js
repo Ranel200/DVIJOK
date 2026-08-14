@@ -52,10 +52,12 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function updateProfile(payload = {}) {
     if (!user.value) return null
+    const savedUser = await authApi.updateProfile({
+      name: payload.name ?? user.value.name
+    })
     user.value = {
       ...user.value,
-      name: payload.name ?? user.value.name,
-      phone: payload.phone ?? user.value.phone,
+      ...savedUser,
       email: payload.email ?? user.value.email
     }
     return user.value
