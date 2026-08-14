@@ -10,6 +10,8 @@
       label="ФИО"
       placeholder="Фамилия Имя Отчество"
       :readonly="readonly"
+      required
+      required-message="Напишите ФИО клиента"
       block
     />
     <BaseField
@@ -19,6 +21,7 @@
       placeholder="+7 000 000-00-00"
       mask="+7 ### ###-##-##"
       :readonly="readonly"
+      :validate="phoneRule"
       block
     />
     <BaseField
@@ -67,16 +70,21 @@
         block
         :disable="readonly"
         :hide-chevron="readonly"
+        required
+        required-message="Выберите вид источника"
       />
     </div>
   </BaseFormBlock>
 </template>
 
 <script setup>
+import { requiredPhone } from '@/composables/useFormValidation.js'
 import BaseField from '@/components/ui/BaseField.vue'
 import BaseFormBlock from '@/components/ui/BaseFormBlock.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
+
+const phoneRule = requiredPhone('Введите номер телефона клиента')
 
 defineProps({
   draft: {

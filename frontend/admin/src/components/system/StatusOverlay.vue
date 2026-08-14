@@ -16,21 +16,9 @@
       :aria-label="ariaLabel"
     >
       <div class="status-overlay__rounds" aria-hidden="true">
-        <img
-          class="status-overlay__round status-overlay__round--1"
-          src="/admin/round.svg"
-          alt=""
-        />
-        <img
-          class="status-overlay__round status-overlay__round--2"
-          src="/admin/round.svg"
-          alt=""
-        />
-        <img
-          class="status-overlay__round status-overlay__round--3"
-          src="/admin/round.svg"
-          alt=""
-        />
+        <img class="status-overlay__round status-overlay__round--1" src="/admin/round.svg" alt="" />
+        <img class="status-overlay__round status-overlay__round--2" src="/admin/round.svg" alt="" />
+        <img class="status-overlay__round status-overlay__round--3" src="/admin/round.svg" alt="" />
       </div>
 
       <div class="status-overlay__content">

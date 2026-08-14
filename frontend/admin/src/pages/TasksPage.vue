@@ -4,10 +4,7 @@
       <template #below>
         <SummaryCards :cards="cards" :loading="loading" :count="5" />
         <div class="tasks-filters">
-          <div
-            v-if="isOwner"
-            class="tasks-filters__field tasks-filters__field--employees"
-          >
+          <div v-if="isOwner" class="tasks-filters__field tasks-filters__field--employees">
             <span class="tasks-filters__label">Отсортируйте по сотрудникам</span>
             <BaseSelect
               v-model="employee"

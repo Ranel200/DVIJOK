@@ -32,8 +32,8 @@
             label="ФИО"
             placeholder="Фамилия Имя Отчество"
             :readonly="isView"
-            :error="Boolean(errors.name)"
-            :error-message="errors.name"
+            required
+            required-message="Напишите ФИО сотрудника"
             block
           />
           <BaseField
@@ -43,8 +43,7 @@
             placeholder="+7 000 000-00-00"
             mask="+7 ### ###-##-##"
             :readonly="isView"
-            :error="Boolean(errors.phone)"
-            :error-message="errors.phone"
+            :validate="phoneRule"
             block
           />
           <BaseField
@@ -156,7 +155,7 @@
                 :aria-label="item.label"
               />
             </div>
-            <p v-if="errors.access" class="staff-form__error">{{ errors.access }}</p>
+            <BaseFormError :validate="accessRule" />
           </div>
         </BaseFormBlock>
 
@@ -167,8 +166,8 @@
             label="Логин"
             placeholder="Логин"
             :readonly="isView"
-            :error="Boolean(errors.login)"
-            :error-message="errors.login"
+            required
+            required-message="Придумайте логин сотрудника"
             block
           />
           <BaseField
@@ -178,8 +177,8 @@
             label="Пароль"
             placeholder="Пароль"
             :readonly="isView"
-            :error="Boolean(errors.password)"
-            :error-message="errors.password"
+            required
+            required-message="Придумайте пароль сотрудника"
             block
           >
             <template #append>
@@ -225,9 +224,11 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseChoice from '@/components/ui/BaseChoice.vue'
 import BaseField from '@/components/ui/BaseField.vue'
 import BaseFormBlock from '@/components/ui/BaseFormBlock.vue'
+import BaseFormError from '@/components/ui/BaseFormError.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import BaseSwitcher from '@/components/ui/BaseSwitcher.vue'
 import EyeIcon from '@/components/ui/EyeIcon.vue'
+import { createFormValidation, requiredPhone } from '@/composables/useFormValidation.js'
 import {
   STAFF_ACCESS_OPTIONS,
   STAFF_ROLE_LABELS,
@@ -261,6 +262,9 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'save', 'edit', 'delete'])
 
+const form = createFormValidation()
+const phoneRule = requiredPhone('Введите номер телефона сотрудника')
+
 const documentFields = [
   { key: 'passport', label: 'Паспорт*' },
   { key: 'inn', label: 'ИНН*' },
@@ -268,7 +272,6 @@ const documentFields = [
 ]
 
 const draft = reactive(createEmptyDraft())
-const errors = reactive(createEmptyErrors())
 const colorOpen = ref(false)
 const showPassword = ref(false)
 const fileInputRef = ref(null)
@@ -302,43 +305,10 @@ watch(
   ([open]) => {
     if (!open) return
     showPassword.value = false
-    clearErrors()
+    form.reset()
     Object.assign(draft, props.employee ? draftFromEmployee(props.employee) : createEmptyDraft())
   }
 )
-
-watch(
-  () => ({
-    name: draft.name,
-    phone: draft.phone,
-    login: draft.login,
-    password: draft.password,
-    access: { ...draft.access }
-  }),
-  (val, old = {}) => {
-    if (errors.name && val.name !== old.name) errors.name = ''
-    if (errors.phone && val.phone !== old.phone) errors.phone = ''
-    if (errors.login && val.login !== old.login) errors.login = ''
-    if (errors.password && val.password !== old.password) errors.password = ''
-    if (errors.access && JSON.stringify(val.access) !== JSON.stringify(old.access)) {
-      errors.access = ''
-    }
-  }
-)
-
-function createEmptyErrors() {
-  return {
-    name: '',
-    phone: '',
-    login: '',
-    password: '',
-    access: ''
-  }
-}
-
-function clearErrors() {
-  Object.assign(errors, createEmptyErrors())
-}
 
 function emptyAccess() {
   return emptyStaffAccess()
@@ -417,40 +387,15 @@ function onFileChange(event) {
   draft.documents[key] = { name: file.name, fileName: file.name }
 }
 
-function validate() {
-  clearErrors()
-  let valid = true
-
-  if (!draft.name.trim()) {
-    errors.name = 'Напишите ФИО сотрудника'
-    valid = false
-  }
-
-  if (String(draft.phone).replace(/\D/g, '').length !== 11) {
-    errors.phone = 'Введите номер телефона сотрудника'
-    valid = false
-  }
-
-  if (!draft.login.trim()) {
-    errors.login = 'Придумайте логин сотрудника'
-    valid = false
-  }
-
-  if (!String(draft.password).trim()) {
-    errors.password = 'Придумайте пароль сотрудника'
-    valid = false
-  }
-
-  if (!Object.values(draft.access).some(Boolean)) {
-    errors.access = 'Выберите разделы, к которым сотрудник получит доступ'
-    valid = false
-  }
-
-  return valid
+function accessRule() {
+  if (isView.value) return ''
+  return Object.values(draft.access).some(Boolean)
+    ? ''
+    : 'Выберите разделы, к которым сотрудник получит доступ'
 }
 
 function onSave() {
-  if (!validate()) return
+  if (!form.validate()) return
 
   emit('save', {
     role: draft.role,
@@ -687,12 +632,5 @@ function onSave() {
   :deep(.q-btn__content) {
     padding: 0;
   }
-}
-
-.staff-form__error {
-  margin: 0;
-  color: var(--dvijok-danger);
-  font-size: 12px;
-  line-height: 15px;
 }
 </style>

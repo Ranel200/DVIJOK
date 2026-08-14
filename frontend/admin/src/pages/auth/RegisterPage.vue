@@ -11,7 +11,7 @@
           </div>
 
           <div class="register__form-wrap">
-            <BaseForm v-model="form" :blocks="blocks" :errors="errors" />
+            <BaseForm ref="formRef" v-model="form" :blocks="blocks" />
           </div>
         </div>
 
@@ -71,13 +71,14 @@
 </template>
 
 <script setup>
-import { reactive, ref, watch } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AuthSidebar from '@/components/auth/AuthSidebar.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseCheckbox from '@/components/ui/BaseCheckbox.vue'
 import BaseForm from '@/components/ui/BaseForm.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
+import { requiredPhone } from '@/composables/useFormValidation.js'
 import { PLATFORM_DOCUMENTS } from '@/constants/platformDocuments.js'
 import { useAuthStore } from '@/stores/auth.js'
 
@@ -108,7 +109,7 @@ const form = ref({
   consent: false
 })
 
-const errors = reactive({})
+const formRef = ref(null)
 
 function formatPhone(raw) {
   let d = String(raw || '').replace(/\D/g, '')
@@ -128,8 +129,20 @@ const blocks = [
   {
     title: 'Об организации',
     fields: [
-      { key: 'name', label: 'Название автосервиса', placeholder: 'Введите название' },
-      { key: 'headName', label: 'ФИО руководителя', placeholder: 'Введите ФИО' }
+      {
+        key: 'name',
+        label: 'Название автосервиса',
+        placeholder: 'Введите название',
+        required: true,
+        requiredMessage: 'Введите название автосервиса'
+      },
+      {
+        key: 'headName',
+        label: 'ФИО руководителя',
+        placeholder: 'Введите ФИО',
+        required: true,
+        requiredMessage: 'Введите ФИО руководителя'
+      }
     ]
   },
   {
@@ -152,7 +165,13 @@ const blocks = [
         key: 'inn',
         label: 'ИНН',
         placeholder: '123456789123',
-        row: 'legal'
+        row: 'legal',
+        required: true,
+        requiredMessage: 'Введите ИНН',
+        validate: value => {
+          const innDigits = String(value || '').replace(/\D/g, '')
+          return innDigits.length < 10 ? 'ИНН должен содержать минимум 10 цифр' : ''
+        }
       },
       {
         key: 'taxSystem',
@@ -173,13 +192,45 @@ const blocks = [
         key: 'phone',
         label: 'Номер телефона',
         placeholder: '+7 999 999 99 99',
-        transform: formatPhone
+        transform: formatPhone,
+        validate: requiredPhone('Введите телефон в формате +7 999 999 99 99')
       },
-      { key: 'email', label: 'Адрес электронной почты', placeholder: 'Введите почту' },
-      { key: 'contactName', label: 'ФИО контактного лица', placeholder: 'Введите ФИО' },
-      { key: 'address', label: 'Фактический адрес', placeholder: 'Введите адрес' },
-      { key: 'password', label: 'Придумайте пароль', placeholder: 'Пароль', type: 'password' },
-      { key: 'passwordConfirm', label: 'Повторите пароль', placeholder: 'Пароль', type: 'password' }
+      {
+        key: 'email',
+        label: 'Адрес электронной почты',
+        placeholder: 'Введите почту',
+        validate: value =>
+          /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '')) ? '' : 'Введите корректный email'
+      },
+      {
+        key: 'contactName',
+        label: 'ФИО контактного лица',
+        placeholder: 'Введите ФИО',
+        required: true,
+        requiredMessage: 'Введите ФИО контактного лица'
+      },
+      {
+        key: 'address',
+        label: 'Фактический адрес',
+        placeholder: 'Введите адрес',
+        required: true,
+        requiredMessage: 'Введите адрес'
+      },
+      {
+        key: 'password',
+        label: 'Придумайте пароль',
+        placeholder: 'Пароль',
+        type: 'password',
+        validate: value =>
+          String(value || '').length < 6 ? 'Пароль должен быть не менее 6 символов' : ''
+      },
+      {
+        key: 'passwordConfirm',
+        label: 'Повторите пароль',
+        placeholder: 'Пароль',
+        type: 'password',
+        validate: value => (value !== form.value.password ? 'Пароли не совпадают' : '')
+      }
     ]
   }
 ]
@@ -197,43 +248,8 @@ function goToSystem() {
   router.push(authStore.homeRoute)
 }
 
-function validate() {
-  const e = {}
-  const v = form.value
-  if (!v.name.trim()) e.name = 'Введите название автосервиса'
-  if (!v.headName.trim()) e.headName = 'Введите ФИО руководителя'
-  const innDigits = v.inn.replace(/\D/g, '')
-  if (!innDigits) e.inn = 'Введите ИНН'
-  else if (innDigits.length < 10) e.inn = 'ИНН должен содержать минимум 10 цифр'
-  if (v.phone.replace(/\D/g, '').length !== 11)
-    e.phone = 'Введите телефон в формате +7 999 999 99 99'
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.email)) e.email = 'Введите корректный email'
-  if (!v.contactName.trim()) e.contactName = 'Введите ФИО контактного лица'
-  if (!v.address.trim()) e.address = 'Введите адрес'
-  if (v.password.length < 6) e.password = 'Пароль должен быть не менее 6 символов'
-  if (v.passwordConfirm !== v.password) e.passwordConfirm = 'Пароли не совпадают'
-  return e
-}
-
-function setErrors(e) {
-  for (const k of Object.keys(errors)) delete errors[k]
-  Object.assign(errors, e)
-}
-
-watch(
-  () => ({ ...form.value }),
-  (val, old = {}) => {
-    for (const k of Object.keys(errors)) {
-      if (errors[k] && val[k] !== old[k]) delete errors[k]
-    }
-  },
-  { deep: true }
-)
-
 async function onSubmit() {
-  const e = validate()
-  setErrors(e)
-  if (Object.keys(e).length) return
+  if (formRef.value?.validate() === false) return
   loading.value = true
   errorMessage.value = ''
   try {

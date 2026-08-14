@@ -18,6 +18,8 @@
       label="Марка"
       placeholder="Марка"
       :readonly="readonly"
+      required
+      required-message="Укажите марку автомобиля"
       block
     />
     <BaseField
@@ -26,6 +28,8 @@
       label="Модель"
       placeholder="Модель"
       :readonly="readonly"
+      required
+      required-message="Укажите модель автомобиля"
       block
     />
     <div class="order-car-fields__h-field">

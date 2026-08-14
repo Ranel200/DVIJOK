@@ -423,6 +423,7 @@ function openEdit(focusKey) {
 }
 
 async function onEditShow() {
+  editFormRef.value?.reset()
   const key = pendingFocusKey.value
   pendingFocusKey.value = null
   if (!key) return
@@ -431,6 +432,7 @@ async function onEditShow() {
 }
 
 async function saveEdit() {
+  if (editFormRef.value?.validate() === false) return
   saving.value = true
   try {
     const payload = { ...draft.value }

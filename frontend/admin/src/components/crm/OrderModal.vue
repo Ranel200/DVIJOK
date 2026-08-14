@@ -229,6 +229,7 @@
 
 <script setup>
 import { computed, nextTick, reactive, ref, watch } from 'vue'
+import { createFormValidation } from '@/composables/useFormValidation.js'
 import OrderCarFields from '@/components/crm/OrderCarFields.vue'
 import OrderClientFields from '@/components/crm/OrderClientFields.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -275,6 +276,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'save', 'edit', 'delete'])
 
+const form = createFormValidation()
 const draft = reactive(createEmptyDraft())
 const lineDraft = reactive(emptyLine())
 const serviceOptions = ref([])
@@ -319,6 +321,8 @@ watch(
   () => [props.modelValue, props.mode, props.order],
   async ([open]) => {
     if (!open) return
+
+    form.reset()
 
     if (props.mode === 'create') {
       Object.assign(draft, createEmptyDraft())
@@ -467,6 +471,8 @@ function formatLineTotal(line) {
 }
 
 function onSave() {
+  if (!form.validate()) return
+
   const lines = draft.lines.map(line => ({
     serviceId: line.serviceId,
     price: line.price === '' ? 0 : Number(line.price),
