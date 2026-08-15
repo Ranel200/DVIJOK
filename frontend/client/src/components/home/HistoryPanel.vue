@@ -61,7 +61,33 @@ function sectionKey(section, index) {
   return section.label || `active-${index}`
 }
 
-function onOpenOrder() {}
+async function onOpenOrder(item) {
+  if (!item.orderReady) return
+
+  const preview = window.open('about:blank', '_blank')
+  if (preview) preview.opener = null
+
+  try {
+    const response = await historyApi.document(item.id)
+    const documentBlob = await response.blob()
+    const documentUrl = URL.createObjectURL(documentBlob)
+
+    if (preview) {
+      preview.location.replace(documentUrl)
+    } else {
+      const link = document.createElement('a')
+      link.href = documentUrl
+      link.target = '_blank'
+      link.rel = 'noopener noreferrer'
+      link.click()
+    }
+
+    window.setTimeout(() => URL.revokeObjectURL(documentUrl), 60_000)
+  } catch (error) {
+    preview?.close()
+    throw error
+  }
+}
 
 onMounted(async () => {
   const data = await historyApi.list()

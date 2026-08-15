@@ -198,7 +198,12 @@ const repairSubtitle = computed(() => {
   return `Заказ-наряд №${car.repair.orderNumber} · ${car.repair.carLabel}`
 })
 
-const repairStatuses = computed(() => buildRepairStatuses(activeCar.value?.repair))
+const repairStatuses = computed(() => {
+  const repair = activeCar.value?.repair
+  if (!repair) return []
+  if (Array.isArray(repair.statuses)) return repair.statuses
+  return buildRepairStatuses(repair)
+})
 
 function stopPageSwipe(event) {
   event.stopPropagation()
