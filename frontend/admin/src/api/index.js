@@ -492,6 +492,45 @@ function emptyStaffDocuments() {
   return { passport: null, inn: null, medicalBook: null }
 }
 
+function serializeStaffDocuments(documents = {}) {
+  return Object.fromEntries(
+    Object.entries({ ...emptyStaffDocuments(), ...documents }).map(([key, document]) => [
+      key,
+      document
+        ? {
+            name: document.name || document.fileName || '',
+            fileName: document.fileName || document.name || ''
+          }
+        : null
+    ])
+  )
+}
+
+async function uploadStaffDocuments(employeeId, documentFiles = {}) {
+  for (const [kind, file] of Object.entries(documentFiles)) {
+    if (!(file instanceof File)) continue
+    const form = new FormData()
+    form.append('file', file, file.name)
+    await http.postForm(`/employees/${employeeId}/documents/${kind}`, form)
+  }
+}
+
+async function loadStaffDocuments(employeeId) {
+  const documents = await http.get(`/employees/${employeeId}/documents`)
+  return Object.fromEntries((documents || []).map(document => [document.kind, document]))
+}
+
+function staffPayload(payload) {
+  const { documentFiles = {}, ...body } = payload
+  return {
+    body: {
+      ...body,
+      documents: serializeStaffDocuments(body.documents)
+    },
+    documentFiles
+  }
+}
+
 function toEmployeeDetail(staff) {
   return {
     id: staff.id,
@@ -775,7 +814,16 @@ export const scheduleApi = {
       }
       return mockOk(toEmployeeDetail(employee))
     }
-    return http.get(`/schedule/employees/${id}`)
+    const [employee, documents] = await Promise.all([
+      http.get(`/schedule/employees/${id}`),
+      loadStaffDocuments(id)
+    ])
+    employee.documents = {
+      ...emptyStaffDocuments(),
+      ...employee.documents,
+      ...documents
+    }
+    return employee
   },
 
   async createEmployee(payload) {
@@ -811,7 +859,10 @@ export const scheduleApi = {
       mockEmployees.push(employee)
       return mockOk(toEmployeeDetail(employee))
     }
-    return http.post('/schedule/employees', payload)
+    const prepared = staffPayload(payload)
+    const employee = await http.post('/schedule/employees', prepared.body)
+    await uploadStaffDocuments(employee.id, prepared.documentFiles)
+    return scheduleApi.getEmployee(employee.id)
   },
 
   async updateEmployee(id, payload) {
@@ -828,7 +879,10 @@ export const scheduleApi = {
       applyEmployeePayload(employee, nextPayload)
       return mockOk(toEmployeeDetail(employee))
     }
-    return http.put(`/schedule/employees/${id}`, payload)
+    const prepared = staffPayload(payload)
+    await http.put(`/schedule/employees/${id}`, prepared.body)
+    await uploadStaffDocuments(id, prepared.documentFiles)
+    return scheduleApi.getEmployee(id)
   },
 
   async saveSettings(payload) {
@@ -1161,6 +1215,14 @@ export const crmApi = {
     return http.get('/crm/deals')
   },
 
+  async getOrder(id) {
+    if (USE_MOCK) {
+      const order = mockCrmDeals.find(item => item.id === id)
+      return mockOk(order ? { ...order } : null)
+    }
+    return http.get(`/crm/orders/${id}`)
+  },
+
   async createOrder(payload) {
     if (USE_MOCK) {
       const nextNumber =
@@ -1248,6 +1310,26 @@ export const crmApi = {
   async removeOrders(ids) {
     if (USE_MOCK) return mockOk(null)
     return http.delete('/crm/orders/bulk', { body: { ids } })
+  },
+
+  async uploadDocuments(orderId, files) {
+    if (USE_MOCK) return mockOk([])
+    const form = new FormData()
+    for (const file of files) form.append('files', file, file.name)
+    return http.postForm(`/orders/${orderId}/documents/upload`, form)
+  },
+
+  async generateDocuments(orderId) {
+    if (USE_MOCK) return mockOk([])
+    return http.post(`/orders/${orderId}/documents/generate`)
+  },
+
+  async downloadDocument(orderId, documentId) {
+    return http.raw(`/orders/${orderId}/documents/${documentId}/content`)
+  },
+
+  async downloadDocumentsArchive(orderId) {
+    return http.raw(`/orders/${orderId}/documents/archive`)
   }
 }
 
@@ -2020,5 +2102,12 @@ export const settingsApi = {
   async update(payload) {
     if (USE_MOCK) return mockOk(payload)
     return http.put('/settings', payload)
+  },
+
+  async uploadLogo(file) {
+    if (USE_MOCK) return mockOk(null)
+    const form = new FormData()
+    form.append('file', file, file.name)
+    return http.postForm('/settings/logo', form)
   }
 }

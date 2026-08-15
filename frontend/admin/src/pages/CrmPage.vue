@@ -59,6 +59,7 @@
       @save="onSaveOrder"
       @edit="onStartEditOrder"
       @delete="onRequestDeleteFromModal"
+      @documents-changed="onDocumentsChanged"
     />
 
     <BaseModal v-model="deleteConfirmOpen">
@@ -260,6 +261,11 @@ async function reloadCrm() {
       _selected: false
     }))
   }
+}
+
+async function onDocumentsChanged(order) {
+  if (order) activeOrder.value = order
+  await reloadCrm()
 }
 
 async function onSaveOrder(draft) {

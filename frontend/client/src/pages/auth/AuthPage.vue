@@ -158,10 +158,10 @@ const form = reactive({
   name: '',
   phone: '',
   code: '',
-  acceptTerms: true,
-  consentPersonal: true,
-  consentTransfer: true,
-  consentMarketing: true
+  acceptTerms: false,
+  consentPersonal: false,
+  consentTransfer: false,
+  consentMarketing: false
 })
 const loading = ref(false)
 const step = ref('phone')
@@ -202,10 +202,10 @@ function resetForm() {
   form.name = ''
   form.phone = ''
   form.code = ''
-  form.acceptTerms = true
-  form.consentPersonal = true
-  form.consentTransfer = true
-  form.consentMarketing = true
+  form.acceptTerms = false
+  form.consentPersonal = false
+  form.consentTransfer = false
+  form.consentMarketing = false
   step.value = isLogin.value ? 'phone' : 'name'
 }
 

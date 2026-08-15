@@ -174,11 +174,62 @@ async function requestRaw(method, path, { params, body, headers } = {}) {
   return response
 }
 
+async function requestForm(method, path, formData, { params, headers } = {}) {
+  const url = new URL(`${baseURL}${path}`, window.location.origin)
+
+  if (params) {
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined && value !== null) url.searchParams.set(key, value)
+    }
+  }
+
+  const options = {
+    method,
+    credentials: 'include',
+    headers: {
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      ...headers
+    },
+    body: formData
+  }
+
+  let response = await fetch(url, options)
+  if (response.status === 401 && !publicAuthPaths.has(path)) {
+    try {
+      const token = await refreshAuthToken()
+      options.headers.Authorization = `Bearer ${token}`
+      response = await fetch(url, options)
+    } catch {
+      setAuthToken(null)
+      authFailureHandler?.()
+    }
+  }
+
+  const responseText = response.status === 204 ? '' : await response.text()
+  const isJson = response.headers.get('content-type')?.includes('application/json')
+  let data = responseText
+  if (isJson && responseText) {
+    try {
+      data = JSON.parse(responseText)
+    } catch {
+      data = responseText
+    }
+  }
+  if (!response.ok) {
+    throw new ApiError(`Request failed: ${response.status}`, {
+      status: response.status,
+      data
+    })
+  }
+  return data
+}
+
 export const http = {
   get: (path, options) => request('GET', path, options),
   post: (path, body, options) => request('POST', path, { ...options, body }),
   put: (path, body, options) => request('PUT', path, { ...options, body }),
   patch: (path, body, options) => request('PATCH', path, { ...options, body }),
   delete: (path, options) => request('DELETE', path, options),
-  raw: (path, options) => requestRaw('GET', path, options)
+  raw: (path, options) => requestRaw('GET', path, options),
+  postForm: (path, formData, options) => requestForm('POST', path, formData, options)
 }

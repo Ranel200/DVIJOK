@@ -132,7 +132,7 @@
             ref="fileInputRef"
             type="file"
             class="staff-form__file-input"
-            accept=".pdf,image/*"
+            accept=".pdf,.jpg,.jpeg,.png,.webp,.gif"
             @change="onFileChange"
           />
         </BaseFormBlock>
@@ -277,6 +277,7 @@ const colorOpen = ref(false)
 const showPassword = ref(false)
 const fileInputRef = ref(null)
 const pendingDocKey = ref(null)
+const pendingDocumentFiles = ref({})
 
 const isView = computed(() => props.mode === 'view')
 const isEdit = computed(() => props.mode === 'edit')
@@ -308,6 +309,7 @@ watch(
     if (!open) return
     showPassword.value = false
     form.reset()
+    pendingDocumentFiles.value = {}
     Object.assign(draft, props.employee ? draftFromEmployee(props.employee) : createEmptyDraft())
   }
 )
@@ -387,6 +389,10 @@ function onFileChange(event) {
   pendingDocKey.value = null
   if (!key || !file) return
   draft.documents[key] = { name: file.name, fileName: file.name }
+  pendingDocumentFiles.value = {
+    ...pendingDocumentFiles.value,
+    [key]: file
+  }
 }
 
 function accessRule() {
@@ -408,6 +414,7 @@ function onSave() {
     rate: draft.rate === '' ? null : Number(draft.rate),
     color: draft.color || null,
     documents: { ...draft.documents },
+    documentFiles: { ...pendingDocumentFiles.value },
     access: sanitizeStaffAccess(draft.role, draft.access),
     login: draft.login.trim(),
     password: draft.password

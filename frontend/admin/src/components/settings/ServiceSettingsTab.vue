@@ -151,7 +151,7 @@
               <label class="branding-edit__drop">
                 <input
                   type="file"
-                  accept="image/*"
+                  accept=".jpg,.jpeg,.png,.webp,.gif"
                   class="branding-edit__file"
                   @change="onLogoPick"
                 />
@@ -276,6 +276,7 @@ const brandingDraft = ref({
   logo: '',
   description: ''
 })
+const brandingLogoFile = ref(null)
 
 const STATUS_MAP = {
   active: {
@@ -448,6 +449,7 @@ async function saveEdit() {
 }
 
 function openBrandingEdit() {
+  brandingLogoFile.value = null
   brandingDraft.value = {
     logo: '',
     description: form.value.description || ''
@@ -458,6 +460,7 @@ function openBrandingEdit() {
 function onLogoPick(event) {
   const file = event.target.files?.[0]
   if (!file) return
+  brandingLogoFile.value = file
   const reader = new FileReader()
   reader.onload = () => {
     brandingDraft.value.logo = String(reader.result || '')
@@ -469,15 +472,25 @@ function onLogoPick(event) {
 async function saveBranding() {
   brandingSaving.value = true
   try {
-    const payload = {
-      logo: brandingDraft.value.logo || form.value.logo || '',
-      description: brandingDraft.value.description
+    let logo = form.value.logo || ''
+    let uploaded = null
+    if (brandingLogoFile.value) {
+      uploaded = await settingsApi.uploadLogo(brandingLogoFile.value)
+      logo = uploaded?.service?.logo || brandingDraft.value.logo || logo
     }
-    await settingsApi.update({ service: payload })
-    form.value = { ...form.value, ...payload }
+
+    const servicePayload = { description: brandingDraft.value.description }
+    if (brandingLogoFile.value && !uploaded?.service) servicePayload.logo = logo
+    const updated = await settingsApi.update({ service: servicePayload })
+    form.value = {
+      ...form.value,
+      ...(updated?.service || servicePayload),
+      logo
+    }
     brandingEditOpen.value = false
+    brandingLogoFile.value = null
     savedOpen.value = true
-    emit('saved', payload)
+    emit('saved', form.value)
   } finally {
     brandingSaving.value = false
   }

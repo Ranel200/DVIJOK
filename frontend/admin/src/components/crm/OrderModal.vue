@@ -164,10 +164,22 @@
                   </div>
                 </div>
                 <div class="order-docs__card-actions">
-                  <button type="button" class="order-docs__icon-btn" aria-label="Скачать">
+                  <button
+                    type="button"
+                    class="order-docs__icon-btn"
+                    aria-label="Скачать"
+                    :disabled="documentsBusy"
+                    @click="downloadDocument(doc)"
+                  >
                     <img src="/admin/icons/crm/docs/download.svg" alt="" width="18" height="19" />
                   </button>
-                  <button type="button" class="order-docs__icon-btn" aria-label="Печать">
+                  <button
+                    type="button"
+                    class="order-docs__icon-btn"
+                    aria-label="Печать"
+                    :disabled="documentsBusy"
+                    @click="printDocument(doc)"
+                  >
                     <PrinterIcon :size="22" />
                   </button>
                 </div>
@@ -175,11 +187,21 @@
             </div>
 
             <div class="order-docs__footer">
-              <button type="button" class="order-docs__action order-docs__glass">
+              <button
+                type="button"
+                class="order-docs__action order-docs__glass"
+                :disabled="documentsBusy"
+                @click="printAllDocuments"
+              >
                 <PrinterIcon :size="22" />
                 <span>Напечатать все</span>
               </button>
-              <button type="button" class="order-docs__action order-docs__glass">
+              <button
+                type="button"
+                class="order-docs__action order-docs__glass"
+                :disabled="documentsBusy"
+                @click="downloadDocumentsArchive"
+              >
                 <img src="/admin/icons/crm/docs/archive.svg" alt="" width="18" height="18" />
                 <span>Скачать пакетом</span>
               </button>
@@ -187,9 +209,23 @@
           </template>
 
           <template v-else>
-            <button type="button" class="order-docs__upload order-docs__glass">
+            <button
+              type="button"
+              class="order-docs__upload order-docs__glass"
+              :disabled="documentsBusy"
+              @click="pickDocuments"
+            >
               Загрузить документы
             </button>
+
+            <input
+              ref="documentsInputRef"
+              type="file"
+              class="order-docs__file-input"
+              accept=".pdf,.html,.htm,.jpg,.jpeg,.png,.webp,.gif"
+              multiple
+              @change="onDocumentsPicked"
+            />
 
             <div class="order-docs__divider">
               <span class="order-docs__divider-line" />
@@ -197,7 +233,12 @@
               <span class="order-docs__divider-line" />
             </div>
 
-            <button type="button" class="order-docs__generate order-docs__glass">
+            <button
+              type="button"
+              class="order-docs__generate order-docs__glass"
+              :disabled="documentsBusy"
+              @click="generateDocuments"
+            >
               Сгенерировать документы
             </button>
           </template>
@@ -275,13 +316,16 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update:modelValue', 'save', 'edit', 'delete'])
+const emit = defineEmits(['update:modelValue', 'save', 'edit', 'delete', 'documents-changed'])
 
 const form = createFormValidation()
 const draft = reactive(createEmptyDraft())
 const lineDraft = reactive(emptyLine())
 const serviceOptions = ref([])
 const masterOptions = ref([])
+const localDocuments = ref([])
+const documentsInputRef = ref(null)
+const documentsBusy = ref(false)
 
 const viewScrollbarRef = ref(null)
 
@@ -289,9 +333,7 @@ const isView = computed(() => props.mode === 'view')
 const isEdit = computed(() => props.mode === 'edit')
 const isDoneStatus = computed(() => draft.status === 'done')
 
-const viewDocuments = computed(() =>
-  Array.isArray(props.order?.documents) ? props.order.documents : []
-)
+const viewDocuments = computed(() => localDocuments.value)
 
 const modalTitle = computed(() =>
   formatCrmOrderNumber(props.order?.number || props.orderNumber || 0)
@@ -324,6 +366,7 @@ watch(
     if (!open) return
 
     form.reset()
+    localDocuments.value = Array.isArray(props.order?.documents) ? [...props.order.documents] : []
 
     if (props.mode === 'create') {
       Object.assign(draft, createEmptyDraft())
@@ -480,6 +523,151 @@ function formatLineTotal(line) {
   return formatCrmMoney(lineTotal(line))
 }
 
+async function refreshOrderDocuments() {
+  if (!props.order?.id) return
+  const order = await crmApi.getOrder(props.order.id)
+  localDocuments.value = Array.isArray(order?.documents) ? order.documents : []
+  emit('documents-changed', order)
+}
+
+function pickDocuments() {
+  const input = documentsInputRef.value
+  if (!input) return
+  input.value = ''
+  input.click()
+}
+
+async function onDocumentsPicked(event) {
+  const files = Array.from(event.target?.files || [])
+  if (!props.order?.id || !files.length) return
+  documentsBusy.value = true
+  try {
+    await crmApi.uploadDocuments(props.order.id, files)
+    await refreshOrderDocuments()
+  } finally {
+    documentsBusy.value = false
+    event.target.value = ''
+  }
+}
+
+async function generateDocuments() {
+  if (!props.order?.id) return
+  documentsBusy.value = true
+  try {
+    await crmApi.generateDocuments(props.order.id)
+    await refreshOrderDocuments()
+  } finally {
+    documentsBusy.value = false
+  }
+}
+
+function responseFilename(response, fallback) {
+  const disposition = response.headers.get('content-disposition') || ''
+  const encoded = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1]
+  if (encoded) {
+    try {
+      return decodeURIComponent(encoded)
+    } catch {}
+  }
+  return fallback
+}
+
+async function downloadDocument(doc) {
+  if (!props.order?.id || !doc?.id) return
+  documentsBusy.value = true
+  try {
+    const response = await crmApi.downloadDocument(props.order.id, doc.id)
+    const url = URL.createObjectURL(await response.blob())
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = responseFilename(response, doc.title || `document-${doc.id}`)
+    document.body.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
+    URL.revokeObjectURL(url)
+  } finally {
+    documentsBusy.value = false
+  }
+}
+
+async function downloadDocumentsArchive() {
+  if (!props.order?.id) return
+  documentsBusy.value = true
+  try {
+    const response = await crmApi.downloadDocumentsArchive(props.order.id)
+    const url = URL.createObjectURL(await response.blob())
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = responseFilename(response, `order-${props.order.id}-documents.zip`)
+    document.body.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
+    URL.revokeObjectURL(url)
+  } finally {
+    documentsBusy.value = false
+  }
+}
+
+async function printDocument(doc) {
+  if (!props.order?.id || !doc?.id) return
+  const popup = window.open('', '_blank')
+  if (!popup) return
+  documentsBusy.value = true
+  try {
+    const response = await crmApi.downloadDocument(props.order.id, doc.id)
+    const url = URL.createObjectURL(await response.blob())
+    popup.location.href = url
+    window.setTimeout(() => {
+      popup.print()
+      window.setTimeout(() => URL.revokeObjectURL(url), 30_000)
+    }, 700)
+  } catch (error) {
+    popup.close()
+    throw error
+  } finally {
+    documentsBusy.value = false
+  }
+}
+
+async function printAllDocuments() {
+  if (!props.order?.id || !viewDocuments.value.length) return
+  const popup = window.open('', '_blank')
+  if (!popup) return
+  documentsBusy.value = true
+  const urls = []
+  try {
+    for (const doc of viewDocuments.value) {
+      const response = await crmApi.downloadDocument(props.order.id, doc.id)
+      urls.push({
+        url: URL.createObjectURL(await response.blob()),
+        type: response.headers.get('content-type') || ''
+      })
+    }
+    const pages = urls
+      .map(item =>
+        item.type.startsWith('image/')
+          ? `<img src="${item.url}" style="display:block;max-width:100%;page-break-after:always">`
+          : `<iframe src="${item.url}" style="display:block;width:100%;height:100vh;border:0;page-break-after:always"></iframe>`
+      )
+      .join('')
+    popup.document.open()
+    popup.document.write(
+      `<!doctype html><html><head><title>Документы заказа</title></head><body>${pages}</body></html>`
+    )
+    popup.document.close()
+    window.setTimeout(() => {
+      popup.print()
+      window.setTimeout(() => urls.forEach(item => URL.revokeObjectURL(item.url)), 30_000)
+    }, 1000)
+  } catch (error) {
+    popup.close()
+    urls.forEach(item => URL.revokeObjectURL(item.url))
+    throw error
+  } finally {
+    documentsBusy.value = false
+  }
+}
+
 function onSave() {
   if (!form.validate()) return
 
@@ -622,6 +810,10 @@ function onSave() {
   gap: 15px;
   width: 100%;
   min-height: 0;
+}
+
+.order-docs__file-input {
+  display: none;
 }
 
 .order-docs__title {
