@@ -36,6 +36,7 @@
         <ServiceCard
           v-for="item in yourServices"
           :key="item.id"
+          :logo="item.logo"
           :name="item.name"
           :address="item.address"
           :hours="item.hours"
@@ -57,6 +58,7 @@
         <ServiceCard
           v-for="item in allServices"
           :key="item.id"
+          :logo="item.logo"
           :name="item.name"
           :address="item.address"
           :hours="item.hours"

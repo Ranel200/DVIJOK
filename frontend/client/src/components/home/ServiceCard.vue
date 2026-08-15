@@ -1,7 +1,10 @@
 <template>
   <AppBlock compact>
     <div class="service-card__top">
-      <div class="service-card__logo" aria-hidden="true">Лого 110х60</div>
+      <div class="service-card__logo" aria-hidden="true">
+        <img v-if="logo" class="service-card__logo-image" :src="logo" alt="" />
+        <span v-else>Лого 110х60</span>
+      </div>
       <div class="service-card__meta">
         <p class="service-card__name">Автосервис “{{ name }}”</p>
         <p class="service-card__address">{{ address }}</p>
@@ -40,6 +43,10 @@ import AppBlock from '@/components/ui/AppBlock.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 
 const props = defineProps({
+  logo: {
+    type: String,
+    default: ''
+  },
   name: {
     type: String,
     required: true
@@ -104,6 +111,14 @@ const reviewsLabel = computed(() => {
   line-height: 15px;
   color: var(--dvijok-white);
   text-align: center;
+}
+
+.service-card__logo-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: contain;
 }
 
 .service-card__meta {
