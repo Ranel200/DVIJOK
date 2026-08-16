@@ -204,12 +204,7 @@ async function syncQuery() {
 }
 
 function applyQuery(query) {
-  let nextStep = BOOKING_STEPS.has(query.step)
-    ? query.step
-    : isPublicBooking.value
-      ? 'menu'
-      : 'branches'
-  if (isPublicBooking.value && nextStep === 'branches') nextStep = 'menu'
+  const nextStep = BOOKING_STEPS.has(query.step) ? query.step : 'branches'
   step.value = nextStep
   if (!isPublicBooking.value) {
     selectedBranchId.value = typeof query.branch === 'string' ? query.branch : ''
