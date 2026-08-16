@@ -20,17 +20,17 @@
             и отслеживать состояние автомобиля
           </p>
         </div>
-        <div v-if="referral?.url" class="qr__link-row">
+        <div v-if="referral?.booking_url" class="qr__link-row">
           <button
             type="button"
             class="qr__link"
             title="Скопировать ссылку"
-            @click="copyReferralUrl"
+            @click="copyBookingUrl"
           >
             <img src="/admin/icons/qr/link.svg" alt="" class="qr__link-icon" />
-            <span class="qr__link-url">{{ referral.url }}</span>
+            <span class="qr__link-url">{{ referral.booking_url }}</span>
           </button>
-          <span class="qr__link-label">Ссылка на регистрацию</span>
+          <span class="qr__link-label">Ссылка на запись</span>
         </div>
       </div>
     </div>
@@ -50,8 +50,8 @@ function withBrandColor(svg) {
   return svg?.replace('fill="#000000"', 'fill="#051b54"')
 }
 
-async function copyReferralUrl() {
-  const url = referral.value?.url
+async function copyBookingUrl() {
+  const url = referral.value?.booking_url
   if (!url) return
 
   try {
