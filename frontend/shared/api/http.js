@@ -6,9 +6,10 @@ const runtimeEnv = import.meta.env
 // Quasar CLI exposes dotenv values with the QCLI_ prefix. Keep the VITE_
 // fallback so this shared module also works in plain Vite applications.
 export const USE_MOCK =
-  String(runtimeEnv.QCLI_USE_MOCK ?? runtimeEnv.VITE_USE_MOCK).toLowerCase() !== 'false'
+  import.meta.env.DEV &&
+  String(runtimeEnv.QCLI_USE_MOCK ?? runtimeEnv.VITE_USE_MOCK ?? 'false').toLowerCase() === 'true'
 
-const baseURL = runtimeEnv.QCLI_API_BASE_URL ?? runtimeEnv.VITE_API_BASE_URL ?? '/api'
+const baseURL = runtimeEnv.QCLI_API_BASE_URL ?? runtimeEnv.VITE_API_BASE_URL ?? '/api/v1'
 
 export class ApiError extends Error {
   constructor(message, { status, data } = {}) {

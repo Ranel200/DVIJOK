@@ -81,7 +81,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import AdminHeader from '@/components/layout/AdminHeader.vue'
 import ScheduleCalendarTable from '@/components/schedule/ScheduleCalendarTable.vue'
 import OrderModal from '@/components/crm/OrderModal.vue'
@@ -142,6 +142,9 @@ const settingsEmployees = ref([])
 const staffTableRef = ref(null)
 const calendarTableRef = ref(null)
 
+const SCHEDULE_POLL_INTERVAL_MS = 5000
+let schedulePollTimer = null
+
 watch(settingsOpen, async open => {
   if (!open) return
   const data = await scheduleApi.employees({
@@ -180,6 +183,7 @@ async function onSaveOrder(draft) {
   try {
     const created = await crmApi.createOrder(draft)
     orderOpen.value = false
+    await refreshCalendar()
     savedMessage.value = `Заказ ${formatCrmOrderNumber(created.number)} создан!`
     savedOpen.value = true
   } finally {
@@ -197,7 +201,26 @@ async function onEmployeesChanged() {
   await calendarTableRef.value?.reload?.()
 }
 
-onMounted(() => scheduleFilter.resetToCurrent())
+async function refreshCalendar() {
+  try {
+    await calendarTableRef.value?.reload?.()
+  } catch {
+    // A transient polling failure should not interrupt the open admin page.
+  }
+}
+
+onMounted(() => {
+  scheduleFilter.resetToCurrent()
+  schedulePollTimer = window.setInterval(() => {
+    if (activeTab.value !== 'calendar' || orderOpen.value || settingsOpen.value) return
+    void refreshCalendar()
+  }, SCHEDULE_POLL_INTERVAL_MS)
+})
+
+onUnmounted(() => {
+  if (schedulePollTimer) window.clearInterval(schedulePollTimer)
+  schedulePollTimer = null
+})
 </script>
 
 <style scoped lang="scss">

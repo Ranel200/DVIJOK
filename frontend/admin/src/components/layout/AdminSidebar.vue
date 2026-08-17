@@ -28,6 +28,15 @@
         </ul>
       </nav>
 
+      <button
+        type="button"
+        class="admin-sidebar__logout"
+        :disabled="logoutLoading"
+        @click="onLogout"
+      >
+        {{ logoutLoading ? 'Выход...' : 'Выйти' }}
+      </button>
+
       <div class="admin-sidebar__user">
         <div class="admin-sidebar__avatar">{{ initials }}</div>
         <p class="admin-sidebar__user-text">{{ userText }}</p>
@@ -38,7 +47,7 @@
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@/stores/auth.js'
 import { adminNavigation } from '@/constants/navigation.js'
@@ -47,8 +56,10 @@ import { getInitials, getShortName } from '@/utils/name.js'
 
 const authStore = useAuthStore()
 const route = useRoute()
+const router = useRouter()
 
 const { user } = storeToRefs(authStore)
+const logoutLoading = ref(false)
 
 const visibleNavigation = computed(() =>
   adminNavigation.filter(item => {
@@ -94,6 +105,17 @@ const indicatorStyle = computed(() => ({
   height: `${indicator.h}px`,
   opacity: indicator.ready ? 1 : 0
 }))
+
+async function onLogout() {
+  if (logoutLoading.value) return
+  logoutLoading.value = true
+  try {
+    await authStore.logout()
+  } finally {
+    logoutLoading.value = false
+    await router.replace({ name: 'login' })
+  }
+}
 
 watch(
   () => [route.name, visibleNavigation.value],
@@ -252,5 +274,34 @@ onBeforeUnmount(() => {
   font-size: 12px;
   font-weight: 400;
   line-height: 16px;
+}
+
+.admin-sidebar__logout {
+  width: 100%;
+  padding: 9px 15px;
+  border: none;
+  border-radius: 8px;
+  background: #e5242a;
+  color: var(--dvijok-white);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 15px;
+  cursor: pointer;
+  transition: filter 0.18s ease;
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.08);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--dvijok-white);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    cursor: wait;
+    opacity: 0.7;
+  }
 }
 </style>

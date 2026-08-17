@@ -152,6 +152,7 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const REFERRAL_STORAGE_KEY = 'dvijok_client_referral'
+const GUEST_PHONE_STORAGE_KEY = 'dvijok_guest_phone'
 const overlay = useStatusOverlayStore()
 
 const form = reactive({
@@ -200,7 +201,7 @@ const canProceedPhone = computed(() => {
 
 function resetForm() {
   form.name = ''
-  form.phone = ''
+  form.phone = isLogin.value ? sessionStorage.getItem(GUEST_PHONE_STORAGE_KEY) || '' : ''
   form.code = ''
   form.acceptTerms = false
   form.consentPersonal = false
@@ -269,6 +270,7 @@ async function onSubmit() {
         : {})
     })
     sessionStorage.removeItem(REFERRAL_STORAGE_KEY)
+    sessionStorage.removeItem(GUEST_PHONE_STORAGE_KEY)
     await router.push({ name: 'home' })
   } finally {
     loading.value = false

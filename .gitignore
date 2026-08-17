@@ -1,5 +1,15 @@
 .DS_Store
 .thumbs.db
+
+# Локальные AI-агенты и их настройки
+.codex/
+.claude/
+.cursor/
+.windsurf/
+.aider/
+.continue/
+.vscode/
+
 node_modules
 
 # .env files

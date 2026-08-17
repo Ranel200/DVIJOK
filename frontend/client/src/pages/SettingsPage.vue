@@ -97,6 +97,17 @@
           </div>
         </section>
 
+        <BaseButton
+          color="red"
+          size="sm"
+          block
+          class="settings__logout"
+          :loading="logoutLoading"
+          @click="onLogout"
+        >
+          Выйти
+        </BaseButton>
+
         <section class="settings__section" aria-labelledby="settings-docs-title">
           <h2 id="settings-docs-title" class="settings__section-title">Документы</h2>
           <div class="settings__list">
@@ -170,6 +181,7 @@ const tab = ''
 const isEditing = ref(false)
 const saving = ref(false)
 const successOpen = ref(false)
+const logoutLoading = ref(false)
 
 const form = reactive({
   name: '',
@@ -276,6 +288,17 @@ function onSuccessContinue() {
 
 function openDocument(href) {
   window.open(href, '_blank', 'noopener,noreferrer')
+}
+
+async function onLogout() {
+  if (logoutLoading.value) return
+  logoutLoading.value = true
+  try {
+    await authStore.logout()
+  } finally {
+    logoutLoading.value = false
+    await router.replace({ name: 'login' })
+  }
 }
 </script>
 
@@ -385,6 +408,14 @@ function openDocument(href) {
 
 .settings__list :deep(.settings-doc) {
   padding: 15px;
+}
+
+.settings__logout {
+  margin-top: 0;
+  --btn-solid: #e52626;
+  --btn-light: #e52626;
+  --btn-accent: #e52626;
+  --btn-accent-fill: #e52626;
 }
 
 .settings-doc :deep(.glass-action-row__main) {

@@ -77,7 +77,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import AdminHeader from '@/components/layout/AdminHeader.vue'
 import CrmDealsList from '@/components/crm/CrmDealsList.vue'
 import CrmKanbanBoard from '@/components/crm/CrmKanbanBoard.vue'
@@ -117,6 +117,11 @@ const deleteConfirmOpen = ref(false)
 const deleteMode = ref('single')
 const pendingDeleteId = ref(null)
 const pendingDeleteNumber = ref(0)
+
+const CRM_POLL_INTERVAL_MS = 5000
+let crmPollTimer = null
+let crmReloadInFlight = null
+let crmMounted = false
 
 const statusOptions = CRM_STATUS_LIST.filter(({ value }) => value !== 'primary').map(
   ({ value, label, color, bg }) => ({
@@ -246,20 +251,30 @@ function onRequestDeleteFromModal(order) {
 }
 
 async function reloadCrm() {
-  const [columnsResult, dealsResult] = await Promise.allSettled([
-    crmApi.listColumns(),
-    crmApi.listDeals()
-  ])
+  if (crmReloadInFlight) return crmReloadInFlight
 
-  if (columnsResult.status === 'fulfilled') {
-    columns.value = Array.isArray(columnsResult.value) ? columnsResult.value : []
-  }
+  crmReloadInFlight = (async () => {
+    const [columnsResult, dealsResult] = await Promise.allSettled([
+      crmApi.listColumns(),
+      crmApi.listDeals()
+    ])
 
-  if (dealsResult.status === 'fulfilled') {
-    deals.value = (Array.isArray(dealsResult.value) ? dealsResult.value : []).map(deal => ({
-      ...deal,
-      _selected: false
-    }))
+    if (columnsResult.status === 'fulfilled') {
+      columns.value = Array.isArray(columnsResult.value) ? columnsResult.value : []
+    }
+
+    if (dealsResult.status === 'fulfilled') {
+      deals.value = (Array.isArray(dealsResult.value) ? dealsResult.value : []).map(deal => ({
+        ...deal,
+        _selected: false
+      }))
+    }
+  })()
+
+  try {
+    await crmReloadInFlight
+  } finally {
+    crmReloadInFlight = null
   }
 }
 
@@ -295,9 +310,21 @@ async function onSaveOrder(draft) {
 }
 
 onMounted(async () => {
+  crmMounted = true
   await reloadCrm()
+  if (!crmMounted) return
   loading.value = false
   listLoading.value = false
+  crmPollTimer = window.setInterval(() => {
+    if (orderOpen.value || deleteConfirmOpen.value) return
+    void reloadCrm()
+  }, CRM_POLL_INTERVAL_MS)
+})
+
+onUnmounted(() => {
+  crmMounted = false
+  if (crmPollTimer) window.clearInterval(crmPollTimer)
+  crmPollTimer = null
 })
 </script>
 

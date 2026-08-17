@@ -119,6 +119,7 @@ const selectedDate = ref('')
 const selectedTime = ref('')
 const successOpen = ref(false)
 const backTarget = ref(null)
+const GUEST_PHONE_STORAGE_KEY = 'dvijok_guest_phone'
 let syncingQuery = false
 
 const today = new Date()
@@ -263,6 +264,9 @@ async function onSubmitBooking(client) {
   }
   if (isPublicBooking.value) {
     await bookingApi.publicCreate(publicCode.value, payload)
+    if (client.phone) {
+      sessionStorage.setItem(GUEST_PHONE_STORAGE_KEY, client.phone)
+    }
   } else {
     await bookingApi.create({
       branchId: selectedBranchId.value,

@@ -21,12 +21,7 @@
           </p>
         </div>
         <div v-if="referral?.booking_url" class="qr__link-row">
-          <button
-            type="button"
-            class="qr__link"
-            title="Скопировать ссылку"
-            @click="copyBookingUrl"
-          >
+          <button type="button" class="qr__link" title="Скопировать ссылку" @click="copyBookingUrl">
             <img src="/admin/icons/qr/link.svg" alt="" class="qr__link-icon" />
             <span class="qr__link-url">{{ referral.booking_url }}</span>
           </button>
