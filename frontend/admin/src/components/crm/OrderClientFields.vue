@@ -42,7 +42,7 @@
       :readonly="readonly"
       block
     />
-    <div class="order-client-fields__h-field">
+    <div v-if="!hideAppointment" class="order-client-fields__h-field">
       <span class="order-client-fields__label">Запись</span>
       <div class="order-client-fields__pair">
         <BaseInput
@@ -104,6 +104,10 @@ defineProps({
   blockClass: {
     type: String,
     default: ''
+  },
+  hideAppointment: {
+    type: Boolean,
+    default: false
   }
 })
 

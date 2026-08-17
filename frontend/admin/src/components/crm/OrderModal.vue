@@ -29,20 +29,30 @@
       />
     </template>
 
-    <div class="order-form" :class="{ 'order-form--readonly': isView }">
+    <div
+      class="order-form"
+      :class="{ 'order-form--readonly': isView, 'order-form--schedule': isSchedule }"
+    >
       <div
         class="order-form__col order-form__col--main"
-        :class="{ 'order-form__col--view': isView }"
+        :class="{ 'order-form__col--view': isView || isSchedule }"
       >
         <BaseScrollbar
-          v-if="isView"
+          v-if="isView || isSchedule"
           ref="viewScrollbarRef"
           track-position="start"
           class="order-form__view-body"
           content-class="order-form__view-scroll"
         >
-          <OrderClientFields :draft="draft" :source-options="sourceOptions" readonly />
-          <OrderCarFields :draft="draft" readonly />
+          <OrderClientFields
+            :draft="draft"
+            :source-options="sourceOptions"
+            :readonly="isView"
+            :required="!isView && !isEdit"
+            :hide-appointment="isSchedule"
+            block-class="order-form__block--client"
+          />
+          <OrderCarFields :draft="draft" :readonly="isView" :required="!isView && !isEdit" />
         </BaseScrollbar>
 
         <template v-else>
@@ -53,94 +63,18 @@
             block-class="order-form__block--client"
           />
 
-          <BaseFormBlock title="Детали заказа" stack-fields>
-            <div class="order-form__lines">
-              <div class="order-form__line">
-                <div class="order-form__line-service">
-                  <BaseSelect
-                    v-model="lineDraft.serviceId"
-                    :options="serviceOptions"
-                    placeholder="Виды услуг"
-                    block
-                  />
-                </div>
-                <div class="order-form__line-price">
-                  <BaseInput v-model="lineDraft.price" placeholder="Цена" block />
-                </div>
-                <div class="order-form__line-discount">
-                  <BaseInput v-model="lineDraft.discount" placeholder="Скидка" block />
-                </div>
-                <div class="order-form__line-master">
-                  <BaseSelect
-                    v-model="lineDraft.masterId"
-                    :options="masterOptions"
-                    placeholder="Мастер"
-                    block
-                  />
-                </div>
-                <BaseButton color="blue2" size="sm" class="order-form__line-btn" @click="addLine">
-                  Добавить
-                </BaseButton>
-              </div>
-
-              <div v-if="draft.lines.length" class="order-lines">
-                <div class="order-lines__head">
-                  <div class="order-lines__head-cols">
-                    <span class="order-lines__th">№</span>
-                    <span class="order-lines__th">Услуга</span>
-                    <span class="order-lines__th">Сумма</span>
-                    <span class="order-lines__th">Мастер</span>
-                    <span class="order-lines__th">Скидка</span>
-                    <span class="order-lines__th">Итого</span>
-                  </div>
-                  <span class="order-lines__th-spacer" aria-hidden="true" />
-                </div>
-
-                <div class="order-lines__body">
-                  <div v-for="(line, index) in draft.lines" :key="index" class="order-lines__row">
-                    <div class="order-lines__cells">
-                      <div class="order-lines__cell order-lines__cell--num">
-                        {{ formatLineIndex(index) }}
-                      </div>
-                      <div class="order-lines__cell order-lines__cell--service">
-                        {{ lineServiceLabel(line) }}
-                      </div>
-                      <div class="order-lines__cell order-lines__cell--sum">
-                        <span>{{ formatLineMoney(line.price) }}</span>
-                        <span class="order-lines__unit">₽</span>
-                      </div>
-                      <div class="order-lines__cell order-lines__cell--master">
-                        {{ lineMasterLabel(line) }}
-                      </div>
-                      <div class="order-lines__cell order-lines__cell--discount">
-                        <span>{{ line.discount || '0' }}</span>
-                        <span class="order-lines__unit">%</span>
-                      </div>
-                      <div class="order-lines__cell order-lines__cell--total">
-                        <span class="order-lines__total-value">{{ formatLineTotal(line) }}</span>
-                        <span class="order-lines__unit">₽</span>
-                      </div>
-                    </div>
-                    <BaseButton
-                      color="red"
-                      size="sm"
-                      class="order-lines__remove"
-                      @click="removeLine(index)"
-                    >
-                      Удалить
-                    </BaseButton>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </BaseFormBlock>
+          <OrderLinesFields
+            :draft="draft"
+            :line-draft="lineDraft"
+            :service-options="serviceOptions"
+            :master-options="masterOptions"
+            @add="addLine"
+            @remove="removeLine"
+          />
         </template>
       </div>
 
-      <div
-        class="order-form__col"
-        :class="isView ? 'order-form__col--side' : 'order-form__col--car'"
-      >
+      <div class="order-form__col" :class="rightColClass">
         <div v-if="isView" class="order-docs">
           <h2 class="order-docs__title">Документы клиента</h2>
 
@@ -255,6 +189,63 @@
           </template>
         </div>
 
+        <template v-else-if="isSchedule">
+          <div class="order-form__week-nav">
+            <button
+              type="button"
+              class="order-form__week-btn order-docs__glass"
+              @click="scheduleFilter.prevWeek()"
+            >
+              <ArrowIcon direction="left" :size="14" />
+              <span>Пред. Неделя</span>
+            </button>
+
+            <div class="order-form__week-period order-docs__glass">
+              {{ scheduleFilter.weekLabel }}
+            </div>
+
+            <button
+              type="button"
+              class="order-form__week-btn order-docs__glass"
+              @click="scheduleFilter.nextWeek()"
+            >
+              <span>След. Неделя</span>
+              <ArrowIcon direction="right" :size="14" />
+            </button>
+
+            <div class="order-form__week-legend">
+              <span class="order-form__week-legend-label">Сегодня</span>
+              <span class="order-form__week-legend-square" />
+            </div>
+          </div>
+
+          <ScheduleCalendarTable v-if="modelValue" compact class="order-form__calendar" />
+
+          <div class="order-form__appointment">
+            <span class="order-form__appointment-label">Запись</span>
+            <div class="order-form__appointment-fields">
+              <BaseInput v-model="draft.date" mask="##.##.####" placeholder="Дата" block />
+              <BaseInput v-model="draft.time" mask="##:##" placeholder="Время" block />
+              <BaseSelect
+                v-model="lineDraft.masterId"
+                :options="masterOptions"
+                placeholder="Мастер"
+                block
+              />
+            </div>
+          </div>
+
+          <OrderLinesFields
+            :draft="draft"
+            :line-draft="lineDraft"
+            :service-options="serviceOptions"
+            :master-options="masterOptions"
+            wide
+            @add="addLine"
+            @remove="removeLine"
+          />
+        </template>
+
         <OrderCarFields v-else :draft="draft" :required="!isEdit" />
 
         <div class="order-form__actions">
@@ -285,9 +276,11 @@ import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { createFormValidation } from '@/composables/useFormValidation.js'
 import OrderCarFields from '@/components/crm/OrderCarFields.vue'
 import OrderClientFields from '@/components/crm/OrderClientFields.vue'
+import OrderLinesFields from '@/components/crm/OrderLinesFields.vue'
+import ScheduleCalendarTable from '@/components/schedule/ScheduleCalendarTable.vue'
+import ArrowIcon from '@/components/ui/ArrowIcon.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseChoice from '@/components/ui/BaseChoice.vue'
-import BaseFormBlock from '@/components/ui/BaseFormBlock.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import BaseScrollbar from '@/components/ui/BaseScrollbar.vue'
@@ -295,13 +288,8 @@ import BaseSelect from '@/components/ui/BaseSelect.vue'
 import PdfIcon from '@/components/ui/PdfIcon.vue'
 import PrinterIcon from '@/components/ui/PrinterIcon.vue'
 import { crmApi } from '@/api/index.js'
-import {
-  CRM_STATUS_LIST,
-  ORDER_SOURCE_OPTIONS,
-  formatCrmMoney,
-  formatCrmOrderNumber
-} from '@/constants/crm.js'
-import { formatSurnameInitial } from '@/utils/name.js'
+import { CRM_STATUS_LIST, ORDER_SOURCE_OPTIONS, formatCrmOrderNumber } from '@/constants/crm.js'
+import { useScheduleFilterStore } from '@/stores/scheduleFilter.js'
 
 const props = defineProps({
   modelValue: {
@@ -324,11 +312,17 @@ const props = defineProps({
   saving: {
     type: Boolean,
     default: false
+  },
+  variant: {
+    type: String,
+    default: 'default',
+    validator: value => ['default', 'schedule'].includes(value)
   }
 })
 
 const emit = defineEmits(['update:modelValue', 'save', 'edit', 'delete', 'documents-changed'])
 
+const scheduleFilter = useScheduleFilterStore()
 const form = createFormValidation()
 const draft = reactive(createEmptyDraft())
 const lineDraft = reactive(emptyLine())
@@ -342,7 +336,14 @@ const viewScrollbarRef = ref(null)
 
 const isView = computed(() => props.mode === 'view')
 const isEdit = computed(() => props.mode === 'edit')
+const isSchedule = computed(() => props.variant === 'schedule' && !isView.value)
 const isDoneStatus = computed(() => draft.status === 'done')
+
+const rightColClass = computed(() => {
+  if (isView.value) return 'order-form__col--side'
+  if (isSchedule.value) return 'order-form__col--schedule'
+  return 'order-form__col--car'
+})
 
 const viewDocuments = computed(() => localDocuments.value)
 
@@ -504,34 +505,10 @@ function removeLine(index) {
   draft.lines.splice(index, 1)
 }
 
-function formatLineIndex(index) {
-  return String(index + 1).padStart(2, '0')
-}
-
-function optionLabel(options, value, fallback = '—') {
-  return options.find(item => item.value === value)?.label || fallback
-}
-
-function lineServiceLabel(line) {
-  return optionLabel(serviceOptions.value, line.serviceId)
-}
-
-function lineMasterLabel(line) {
-  return formatSurnameInitial(optionLabel(masterOptions.value, line.masterId, '')) || '—'
-}
-
 function lineTotal(line) {
   const price = Number(line.price) || 0
   const discount = Math.min(100, Math.max(0, Number(line.discount) || 0))
   return Math.max(0, Math.round(price * (1 - discount / 100)))
-}
-
-function formatLineMoney(value) {
-  return formatCrmMoney(Number(value) || 0)
-}
-
-function formatLineTotal(line) {
-  return formatCrmMoney(lineTotal(line))
 }
 
 async function refreshOrderDocuments() {
@@ -767,7 +744,7 @@ function onSave() {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 30px;
+  gap: 15px;
   overflow: auto;
   scrollbar-width: none;
 
@@ -804,6 +781,132 @@ function onSave() {
   max-width: 500px;
   margin-left: auto;
   align-items: flex-end;
+}
+
+.order-form--schedule .order-form__col--main {
+  flex: 0 1 430px;
+  max-width: 430px;
+}
+
+.order-form__col--schedule {
+  flex: 1 1 auto;
+  max-width: none;
+  min-width: 0;
+  overflow: hidden;
+  align-items: stretch;
+}
+
+.order-form__week-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.order-form__week-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 8px 15px;
+  border-radius: 10px;
+  color: var(--dvijok-white);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 15px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.order-form__week-period {
+  display: flex;
+  align-items: center;
+  padding: 8px 15px;
+  min-width: 196px;
+  border-radius: 10px;
+  color: var(--dvijok-white);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 15px;
+  text-align: left;
+  justify-content: flex-start;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+.order-form__week-legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.order-form__week-legend-label {
+  color: var(--dvijok-white);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 16px;
+}
+
+.order-form__week-legend-square {
+  width: 25px;
+  height: 25px;
+  border-radius: 5px;
+  border: 1px solid var(--dvijok-today);
+  background: var(--dvijok-today);
+}
+
+.order-form__col--schedule :deep(.order-form__calendar) {
+  flex: 1 1 auto;
+  min-height: 240px;
+  width: 100%;
+}
+
+.order-form__appointment {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.order-form__appointment-label {
+  color: var(--dvijok-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 15px;
+  white-space: nowrap;
+}
+
+.order-form__appointment-fields {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  min-width: 0;
+}
+
+.order-form__appointment-fields > * {
+  flex: 1;
+  min-width: 0;
+}
+
+.order-form__appointment-fields :deep(.base-input .q-field__control) {
+  padding: 10px 15px;
+}
+
+.order-form__col--schedule :deep(.order-form__details) {
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.order-form--schedule .order-form__view-body :deep(.order-client-fields),
+.order-form--schedule .order-form__view-body :deep(.order-car-fields) {
+  max-width: none;
 }
 
 .order-form__actions {
@@ -1036,201 +1139,5 @@ function onSave() {
 
 .order-docs__footer .order-docs__action {
   flex: 1;
-}
-
-.order-form__lines {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  width: 100%;
-  max-width: 600px;
-}
-
-.order-form__line {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-}
-
-.order-form__line-service,
-.order-form__line-master {
-  flex: 1 1 0;
-  min-width: 0;
-}
-
-.order-form__line-price,
-.order-form__line-discount {
-  flex: 0.5 1 0;
-  min-width: 80px;
-}
-
-.order-form__line-btn {
-  flex: 0 0 100px;
-  width: 100px;
-  min-width: 100px;
-  box-sizing: border-box;
-  justify-content: center;
-}
-
-.order-lines {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0;
-  width: 100%;
-}
-
-.order-lines__head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  height: 35px;
-}
-
-.order-lines__head-cols {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: grid;
-  grid-template-columns: 34px minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1.1fr) 64px minmax(
-      0,
-      1.1fr
-    );
-  align-items: center;
-}
-
-.order-lines__th {
-  padding: 10px 10px 10px 0;
-  box-sizing: border-box;
-  color: #7a82a0;
-  font-size: 12px;
-  font-weight: 600;
-  line-height: normal;
-  white-space: nowrap;
-}
-
-.order-lines__th-spacer {
-  flex: 0 0 100px;
-  width: 100px;
-}
-
-.order-lines__body {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  width: 100%;
-}
-
-.order-lines__row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-}
-
-.order-lines__cells {
-  position: relative;
-  isolation: isolate;
-  display: grid;
-  grid-template-columns: 34px minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1.1fr) 64px minmax(
-      0,
-      1.1fr
-    );
-  align-items: stretch;
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  background-color: transparent;
-  background-image: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.14) 0%,
-    rgba(255, 255, 255, 0.05) 35%,
-    rgba(255, 255, 255, 0.02) 65%,
-    rgba(255, 255, 255, 0.08) 100%
-  );
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-.order-lines__cells::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  padding: 1px;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.45) 0%,
-    rgba(255, 255, 255, 0) 22%,
-    rgba(255, 255, 255, 0) 78%,
-    rgba(255, 255, 255, 0.35) 100%
-  );
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.order-lines__cell {
-  position: relative;
-  z-index: 0;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 10px;
-  box-sizing: border-box;
-  min-width: 0;
-  min-height: 32px;
-  color: var(--dvijok-white);
-  font-size: 10px;
-  font-weight: 600;
-  line-height: normal;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.order-lines__cell + .order-lines__cell {
-  box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.22);
-}
-
-.order-lines__cell--sum,
-.order-lines__cell--discount,
-.order-lines__cell--total {
-  justify-content: space-between;
-}
-
-.order-lines__unit {
-  flex-shrink: 0;
-  width: 14px;
-  text-align: right;
-  font-size: 10px;
-  font-weight: 700;
-  line-height: normal;
-  color: var(--dvijok-white);
-}
-
-.order-lines__total-value {
-  min-width: 0;
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.order-lines__remove {
-  flex: 0 0 100px;
-  width: 100px;
-  min-width: 100px;
-  box-sizing: border-box;
-  justify-content: center;
 }
 </style>

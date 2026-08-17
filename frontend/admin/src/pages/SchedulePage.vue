@@ -74,7 +74,13 @@
       @saved="onSettingsSaved"
     />
 
-    <OrderModal v-model="orderOpen" :order-number="0" :saving="orderSaving" @save="onSaveOrder" />
+    <OrderModal
+      v-model="orderOpen"
+      variant="schedule"
+      :order-number="0"
+      :saving="orderSaving"
+      @save="onSaveOrder"
+    />
 
     <SuccessModal v-model="savedOpen" :message="savedMessage" />
   </div>

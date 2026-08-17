@@ -1,27 +1,37 @@
 <template>
-  <div class="schedule-calendar" :style="columnVars">
+  <div
+    class="schedule-calendar"
+    :class="{ 'schedule-calendar--compact': compact }"
+    :style="columnVars"
+  >
     <div class="schedule-calendar__panel">
-      <div class="schedule-calendar__table-wrap">
-        <div
-          v-if="todayIndex >= 0"
-          class="schedule-calendar__today-overlay"
-          :style="gridTemplateStyle"
-          aria-hidden="true"
-        >
-          <div class="schedule-calendar__today-bg" :style="{ gridColumn: todayIndex + 2 }" />
-        </div>
-
-        <div class="schedule-calendar__grid" :style="gridTemplateStyle">
+      <div class="schedule-calendar__head">
+        <div class="schedule-calendar__grid schedule-calendar__grid--head" :style="gridTemplateStyle">
           <div class="schedule-calendar__time-head" />
           <div
             v-for="day in weekDays"
             :key="`head-${day.date}`"
             class="schedule-calendar__day-head"
+            :class="{ 'schedule-calendar__day-head--today': day.isToday }"
           >
-            {{ day.label }}
+            <span class="schedule-calendar__day-head-label">{{ day.label }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="schedule-calendar__body">
+        <div class="schedule-calendar__table-wrap">
+          <div
+            v-if="todayIndex >= 0"
+            class="schedule-calendar__today-overlay"
+            :style="gridTemplateStyle"
+            aria-hidden="true"
+          >
+            <div class="schedule-calendar__today-bg" :style="{ gridColumn: todayIndex + 2 }" />
           </div>
 
-          <template v-for="(slot, timeIndex) in timeRows" :key="slot.time">
+          <div class="schedule-calendar__grid" :style="gridTemplateStyle">
+            <template v-for="(slot, timeIndex) in timeRows" :key="slot.time">
             <div class="schedule-calendar__time" :style="{ gridRow: `span ${slot.rows.length}` }">
               {{ slot.time }}
             </div>
@@ -48,6 +58,14 @@
                     class="schedule-calendar__icon schedule-calendar__icon--unlock"
                     aria-hidden="true"
                   />
+                  <template v-else-if="compact">
+                    <span class="schedule-calendar__brand">{{ block.brand }}</span>
+                    <span class="schedule-calendar__plate">{{ block.plate }}</span>
+                    <span class="schedule-calendar__meta">{{ block.serviceName }}</span>
+                    <span class="schedule-calendar__meta">
+                      {{ formatSurnameInitial(block.clientName) }}
+                    </span>
+                  </template>
                   <template v-else>
                     <span class="schedule-calendar__brand">{{ block.brand }}</span>
                     <span class="schedule-calendar__plate">{{ block.plate }}</span>
@@ -65,7 +83,8 @@
               class="schedule-calendar__divider"
               aria-hidden="true"
             />
-          </template>
+            </template>
+          </div>
         </div>
       </div>
     </div>
@@ -78,6 +97,14 @@ import { storeToRefs } from 'pinia'
 import { scheduleApi } from '@/api/index.js'
 import { useScheduleFilterStore } from '@/stores/scheduleFilter.js'
 import { formatWeekdayDay } from '@/utils/formatDateRu.js'
+import { formatSurnameInitial } from '@/utils/name.js'
+
+const props = defineProps({
+  compact: {
+    type: Boolean,
+    default: false
+  }
+})
 
 const COL = {
   time: 48,
@@ -85,12 +112,20 @@ const COL = {
   dayPad: 5
 }
 
-// первая колонка: время + gap 20px минус padding первого дня
-const columnVars = {
-  '--schedule-cal-time': `${COL.time}px`,
-  '--schedule-cal-time-col': `${COL.time + COL.timeGap - COL.dayPad}px`,
-  '--schedule-cal-day-pad': `${COL.dayPad}px`
+const COMPACT_COL = {
+  time: 16,
+  timeGap: 8,
+  dayPad: 5
 }
+
+const columnVars = computed(() => {
+  const col = props.compact ? COMPACT_COL : COL
+  return {
+    '--schedule-cal-time': `${col.time}px`,
+    '--schedule-cal-time-col': `${col.time + col.timeGap - col.dayPad}px`,
+    '--schedule-cal-day-pad': `${col.dayPad}px`
+  }
+})
 
 const gridTemplateStyle = {
   gridTemplateColumns: 'var(--schedule-cal-time-col) repeat(7, minmax(0, 1fr))'
@@ -197,19 +232,114 @@ defineExpose({ reload: loadCalendar })
   padding: 0 20px 20px;
 }
 
+.schedule-calendar--compact {
+  padding: 0;
+  border-radius: 10px;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.5) 0%,
+      rgba(255, 255, 255, 0) 22%,
+      rgba(255, 255, 255, 0) 78%,
+      rgba(255, 255, 255, 0.4) 100%
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .schedule-calendar__panel {
+    background-color: transparent;
+  }
+
+  .schedule-calendar__time-head,
+  .schedule-calendar__day-head,
+  .schedule-calendar__time {
+    background-color: transparent;
+  }
+
+  .schedule-calendar__time {
+    box-shadow: none;
+    color: var(--dvijok-white);
+    justify-content: center;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    white-space: nowrap;
+  }
+
+  .schedule-calendar__day-head {
+    color: var(--dvijok-white);
+  }
+
+  .schedule-calendar__today-bg,
+  .schedule-calendar__day-head--today::before {
+    background-color: var(--dvijok-today);
+    border-color: var(--dvijok-today);
+  }
+
+  .schedule-calendar__day-cell {
+    padding: 5px var(--schedule-cal-day-pad);
+  }
+
+  .schedule-calendar__block {
+    min-height: 58px;
+    padding: 5px;
+  }
+
+  .schedule-calendar__brand,
+  .schedule-calendar__plate,
+  .schedule-calendar__meta {
+    font-size: 10px;
+    line-height: 12px;
+  }
+}
+
 .schedule-calendar__panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  background-color: var(--dvijok-white);
+  border-radius: 10px;
+}
+
+.schedule-calendar__head {
+  flex-shrink: 0;
+  padding: 0 10px;
+}
+
+.schedule-calendar__body {
   flex: 1;
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
-  box-sizing: border-box;
-  background-color: var(--dvijok-white);
-  border-radius: 10px;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
 
-.schedule-calendar__panel::-webkit-scrollbar {
+.schedule-calendar__body::-webkit-scrollbar {
   width: 0;
   height: 0;
   display: none;
@@ -218,7 +348,7 @@ defineExpose({ reload: loadCalendar })
 .schedule-calendar__table-wrap {
   position: relative;
   width: 100%;
-  padding: 5px 10px;
+  padding: 0 10px 5px;
   box-sizing: border-box;
 }
 
@@ -231,7 +361,7 @@ defineExpose({ reload: loadCalendar })
 
 .schedule-calendar__today-overlay {
   position: absolute;
-  top: 5px;
+  top: 0;
   bottom: 5px;
   left: 10px;
   right: 10px;
@@ -246,7 +376,8 @@ defineExpose({ reload: loadCalendar })
   box-sizing: border-box;
   background-color: var(--dvijok-choice-active);
   border: 1px solid var(--dvijok-today);
-  border-radius: 8px;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
 }
 
 .schedule-calendar__grid {
@@ -254,13 +385,41 @@ defineExpose({ reload: loadCalendar })
   z-index: 1;
 }
 
+.schedule-calendar__time-head,
 .schedule-calendar__day-head {
-  padding: 0 var(--schedule-cal-day-pad) 20px;
+  position: relative;
+  box-sizing: border-box;
+  background-color: var(--dvijok-white);
+}
+
+.schedule-calendar__day-head {
+  padding: 5px var(--schedule-cal-day-pad) 20px;
   font-weight: 600;
   font-size: 14px;
   line-height: 17px;
   color: var(--dvijok-link-hover);
   text-align: center;
+}
+
+.schedule-calendar__day-head--today::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  background-color: var(--dvijok-choice-active);
+  border: 1px solid var(--dvijok-today);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  pointer-events: none;
+}
+
+.schedule-calendar__day-head-label {
+  position: relative;
+  z-index: 1;
+}
+
+.schedule-calendar__time-head {
+  padding-top: 5px;
 }
 
 .schedule-calendar__time-head,
