@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Окружение
+.venv/
+venv/
+.env
+*.local
+
+# Тесты / кэши
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# IDE / ОС
+.idea/
+.vscode/
+.DS_Store
+
+# Локальные AI-агенты и их настройки
+.codex/
+.claude/
+.cursor/
+.windsurf/
+.aider/
+.continue/
+
+# Локальные данные
+*.sqlite3
+*.db
+*.md
+!README.md
+!docs/
+!docs/*.md
