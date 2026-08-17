@@ -182,6 +182,17 @@
                   >
                     <PrinterIcon :size="22" />
                   </button>
+                  <button
+                    type="button"
+                    class="order-docs__icon-btn"
+                    aria-label="Удалить"
+                    :disabled="documentsBusy"
+                    @click="deleteDocument(doc)"
+                  >
+                    <svg width="20" height="22" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M3.75 22C3.0625 22 2.47396 21.7606 1.98438 21.2819C1.49479 20.8032 1.25 20.2278 1.25 19.5556V3.66667H0V1.22222H6.25V0H13.75V1.22222H20V3.66667H18.75V19.5556C18.75 20.2278 18.5052 20.8032 18.0156 21.2819C17.526 21.7606 16.9375 22 16.25 22H3.75ZM16.25 3.66667H3.75V19.5556H16.25V3.66667ZM6.25 17.1111H8.75V6.11111H6.25V17.1111ZM11.25 17.1111H13.75V6.11111H11.25V17.1111Z" fill="#B60000" />
+                    </svg>
+                  </button>
                 </div>
               </div>
             </div>
@@ -607,6 +618,8 @@ async function downloadDocumentsArchive() {
     documentsBusy.value = false
   }
 }
+
+function deleteDocument(_doc) {}
 
 async function printDocument(doc) {
   if (!props.order?.id || !doc?.id) return

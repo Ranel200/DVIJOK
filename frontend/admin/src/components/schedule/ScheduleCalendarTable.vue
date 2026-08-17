@@ -119,42 +119,49 @@ const weekDays = computed(() =>
 
 const todayIndex = computed(() => weekDays.value.findIndex(day => day.isToday))
 
-// ряды сотрудников внутри часа: только если есть смысл (не все lock)
-const timeRows = computed(() =>
-  times.value
-    .map(time => {
-      const employeeIds = []
-      const seen = new Set()
+function emptyCell(dayDate, time, employeeId = '__empty__') {
+  return {
+    id: `${employeeId}-${dayDate}-${time}-empty`,
+    employeeId,
+    color: 'var(--dvijok-text-secondary)',
+    status: 'unavailable'
+  }
+}
 
-      for (const day of weekDays.value) {
-        for (const block of day.slots[time] || []) {
-          if (!seen.has(block.employeeId)) {
-            seen.add(block.employeeId)
-            employeeIds.push(block.employeeId)
-          }
+const timeRows = computed(() =>
+  times.value.map(time => {
+    const employeeIds = []
+    const seen = new Set()
+
+    for (const day of weekDays.value) {
+      for (const block of day.slots[time] || []) {
+        if (!seen.has(block.employeeId)) {
+          seen.add(block.employeeId)
+          employeeIds.push(block.employeeId)
         }
       }
+    }
 
-      const rows = employeeIds
-        .map(employeeId => ({
-          employeeId,
-          blocks: weekDays.value.map(day => {
-            const found = (day.slots[time] || []).find(block => block.employeeId === employeeId)
-            return (
-              found || {
-                id: `${employeeId}-${day.date}-${time}-empty`,
-                employeeId,
-                color: 'var(--dvijok-text-secondary)',
-                status: 'unavailable'
-              }
-            )
-          })
-        }))
-        .filter(row => row.blocks.some(block => block.status !== 'unavailable'))
+    const rows = employeeIds
+      .map(employeeId => ({
+        employeeId,
+        blocks: weekDays.value.map(
+          day =>
+            (day.slots[time] || []).find(block => block.employeeId === employeeId) ||
+            emptyCell(day.date, time, employeeId)
+        )
+      }))
+      .filter(row => row.blocks.some(block => block.status !== 'unavailable'))
 
-      return { time, rows }
-    })
-    .filter(slot => slot.rows.length > 0)
+    if (rows.length === 0) {
+      rows.push({
+        employeeId: '__empty__',
+        blocks: weekDays.value.map(day => emptyCell(day.date, time))
+      })
+    }
+
+    return { time, rows }
+  })
 )
 
 function blockStyle(block) {
