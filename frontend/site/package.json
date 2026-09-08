@@ -1,0 +1,43 @@
+{
+  "name": "@dvijok/site",
+  "version": "0.0.1",
+  "private": true,
+  "description": "DVIJOK — публичный сайт платформы автосервисов",
+  "keywords": [
+    "auto-service",
+    "dvijok",
+    "quasar",
+    "site",
+    "vite",
+    "vue"
+  ],
+  "type": "module",
+  "scripts": {
+    "lint": "oxfmt && oxlint --fix",
+    "lint:check": "oxfmt --check && oxlint",
+    "dev": "quasar dev",
+    "build": "quasar build",
+    "postinstall": "quasar prepare --silent"
+  },
+  "dependencies": {
+    "@dvijok/shared": "*",
+    "@fontsource/dela-gothic-one": "^5.3.0",
+    "@fontsource/inter": "^5.2.8",
+    "@quasar/extras": "^2.0.0",
+    "pinia": "^3.0.4",
+    "quasar": "^2.21.1",
+    "vue": "^3.5.22",
+    "vue-router": "^5.0.6"
+  },
+  "devDependencies": {
+    "@quasar/app-vite": "^3.0.0",
+    "autoprefixer": "^10.4.27",
+    "oxfmt": "^0.x",
+    "oxlint": "^1.x",
+    "postcss": "^8.5.8"
+  },
+  "engines": {
+    "node": ">= 26 || ^24 || ^22.12"
+  },
+  "productName": "DVIJOK"
+}
