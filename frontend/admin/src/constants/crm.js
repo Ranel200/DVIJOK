@@ -29,6 +29,13 @@ export const ORDER_SOURCE_OPTIONS = [
   { value: 'other', label: 'Другое' }
 ]
 
+/** Мок маркеров заказа (name + rgb/hex). Позже — с бэка. */
+export const ORDER_MARKER_OPTIONS = [
+  { id: '1', name: 'Сы мэра', color: 'rgb(67, 252, 30)' },
+  { id: '2', name: 'Постояшка', color: 'rgb(138, 65, 255)' },
+  { id: '3', name: 'Конфликтный', color: 'rgb(189, 35, 30)' }
+]
+
 export function crmStatusOption(value) {
   return (
     CRM_STATUS[value] || {

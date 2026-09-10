@@ -6,7 +6,10 @@
   >
     <div class="schedule-calendar__panel">
       <div class="schedule-calendar__head">
-        <div class="schedule-calendar__grid schedule-calendar__grid--head" :style="gridTemplateStyle">
+        <div
+          class="schedule-calendar__grid schedule-calendar__grid--head"
+          :style="gridTemplateStyle"
+        >
           <div class="schedule-calendar__time-head" />
           <div
             v-for="day in weekDays"
@@ -32,57 +35,60 @@
 
           <div class="schedule-calendar__grid" :style="gridTemplateStyle">
             <template v-for="(slot, timeIndex) in timeRows" :key="slot.time">
-            <div class="schedule-calendar__time" :style="{ gridRow: `span ${slot.rows.length}` }">
-              {{ slot.time }}
-            </div>
+              <div class="schedule-calendar__time" :style="{ gridRow: `span ${slot.rows.length}` }">
+                {{ slot.time }}
+              </div>
 
-            <template v-for="(row, rowIndex) in slot.rows" :key="`${slot.time}-${row.employeeId}`">
-              <div
-                v-for="block in row.blocks"
-                :key="block.id"
-                class="schedule-calendar__day-cell"
-                :class="{ 'schedule-calendar__day-cell--stacked': rowIndex > 0 }"
+              <template
+                v-for="(row, rowIndex) in slot.rows"
+                :key="`${slot.time}-${row.employeeId}`"
               >
                 <div
-                  class="schedule-calendar__block"
-                  :class="`schedule-calendar__block--${block.status}`"
-                  :style="blockStyle(block)"
+                  v-for="block in row.blocks"
+                  :key="block.id"
+                  class="schedule-calendar__day-cell"
+                  :class="{ 'schedule-calendar__day-cell--stacked': rowIndex > 0 }"
                 >
-                  <span
-                    v-if="block.status === 'unavailable'"
-                    class="schedule-calendar__icon schedule-calendar__icon--lock"
-                    aria-hidden="true"
-                  />
-                  <span
-                    v-else-if="block.status === 'available'"
-                    class="schedule-calendar__icon schedule-calendar__icon--unlock"
-                    aria-hidden="true"
-                  />
-                  <template v-else-if="compact">
-                    <span class="schedule-calendar__brand">{{ block.brand }}</span>
-                    <span class="schedule-calendar__plate">{{ block.plate }}</span>
-                    <span class="schedule-calendar__meta">{{ block.serviceName }}</span>
-                    <span class="schedule-calendar__meta">
-                      {{ formatSurnameInitial(block.clientName) }}
-                    </span>
-                  </template>
-                  <template v-else>
-                    <span class="schedule-calendar__brand">{{ block.brand }}</span>
-                    <span class="schedule-calendar__plate">{{ block.plate }}</span>
-                    <span class="schedule-calendar__meta">Клиент: {{ block.clientName }}</span>
-                    <span class="schedule-calendar__meta schedule-calendar__meta--service">
-                      Услуга: {{ block.serviceName }}
-                    </span>
-                  </template>
+                  <div
+                    class="schedule-calendar__block"
+                    :class="`schedule-calendar__block--${block.status}`"
+                    :style="blockStyle(block)"
+                  >
+                    <span
+                      v-if="block.status === 'unavailable'"
+                      class="schedule-calendar__icon schedule-calendar__icon--lock"
+                      aria-hidden="true"
+                    />
+                    <span
+                      v-else-if="block.status === 'available'"
+                      class="schedule-calendar__icon schedule-calendar__icon--unlock"
+                      aria-hidden="true"
+                    />
+                    <template v-else-if="compact">
+                      <span class="schedule-calendar__brand">{{ block.brand }}</span>
+                      <span class="schedule-calendar__plate">{{ block.plate }}</span>
+                      <span class="schedule-calendar__meta">{{ block.serviceName }}</span>
+                      <span class="schedule-calendar__meta">
+                        {{ formatSurnameInitial(block.clientName) }}
+                      </span>
+                    </template>
+                    <template v-else>
+                      <span class="schedule-calendar__brand">{{ block.brand }}</span>
+                      <span class="schedule-calendar__plate">{{ block.plate }}</span>
+                      <span class="schedule-calendar__meta">Клиент: {{ block.clientName }}</span>
+                      <span class="schedule-calendar__meta schedule-calendar__meta--service">
+                        Услуга: {{ block.serviceName }}
+                      </span>
+                    </template>
+                  </div>
                 </div>
-              </div>
-            </template>
+              </template>
 
-            <div
-              v-if="timeIndex < timeRows.length - 1"
-              class="schedule-calendar__divider"
-              aria-hidden="true"
-            />
+              <div
+                v-if="timeIndex < timeRows.length - 1"
+                class="schedule-calendar__divider"
+                aria-hidden="true"
+              />
             </template>
           </div>
         </div>
