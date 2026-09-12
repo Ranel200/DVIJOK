@@ -44,15 +44,42 @@
                 :key="`${slot.time}-${row.employeeId}`"
               >
                 <div
-                  v-for="block in row.blocks"
+                  v-for="(block, dayIndex) in row.blocks"
                   :key="block.id"
                   class="schedule-calendar__day-cell"
                   :class="{ 'schedule-calendar__day-cell--stacked': rowIndex > 0 }"
                 >
                   <div
                     class="schedule-calendar__block"
-                    :class="`schedule-calendar__block--${block.status}`"
-                    :style="blockStyle(block)"
+                    :class="[
+                      `schedule-calendar__block--${block.status}`,
+                      {
+                        'schedule-calendar__block--clickable':
+                          selectable && block.status === 'available'
+                      },
+                      {
+                        'schedule-calendar__block--selected': isSelected(
+                          block,
+                          weekDays[dayIndex]?.date,
+                          slot.time
+                        )
+                      }
+                    ]"
+                    :style="
+                      blockStyle(block, isSelected(block, weekDays[dayIndex]?.date, slot.time))
+                    "
+                    :role="isSelectableSlot(block) ? 'button' : undefined"
+                    :tabindex="isSelectableSlot(block) ? 0 : undefined"
+                    :aria-label="
+                      isSelectableSlot(block) ? 'Свободный слот — быстрая запись' : undefined
+                    "
+                    @click="onAvailableClick(block, weekDays[dayIndex]?.date, slot.time)"
+                    @keydown.enter.prevent="
+                      onAvailableClick(block, weekDays[dayIndex]?.date, slot.time)
+                    "
+                    @keydown.space.prevent="
+                      onAvailableClick(block, weekDays[dayIndex]?.date, slot.time)
+                    "
                   >
                     <span
                       v-if="block.status === 'unavailable'"
@@ -73,7 +100,14 @@
                       </span>
                     </template>
                     <template v-else>
-                      <span class="schedule-calendar__brand">{{ block.brand }}</span>
+                      <div class="schedule-calendar__head-row">
+                        <span class="schedule-calendar__brand">{{ block.brand }}</span>
+                        <span
+                          class="schedule-calendar__marker"
+                          :style="{ backgroundColor: block.markerColor || '#7A82A0' }"
+                          aria-hidden="true"
+                        />
+                      </div>
                       <span class="schedule-calendar__plate">{{ block.plate }}</span>
                       <span class="schedule-calendar__meta">Клиент: {{ block.clientName }}</span>
                       <span class="schedule-calendar__meta schedule-calendar__meta--service">
@@ -109,8 +143,15 @@ const props = defineProps({
   compact: {
     type: Boolean,
     default: false
+  },
+  /** Разрешает выбор свободного слота (клик / клавиатура) */
+  selectable: {
+    type: Boolean,
+    default: false
   }
 })
+
+const emit = defineEmits(['select-available'])
 
 const COL = {
   time: 48,
@@ -142,6 +183,7 @@ const { weekStart } = storeToRefs(scheduleFilter)
 
 const times = ref([])
 const daysData = ref([])
+const selectedSlot = ref(null)
 
 const today = new Date()
 today.setHours(0, 0, 0, 0)
@@ -205,12 +247,51 @@ const timeRows = computed(() =>
   })
 )
 
-function blockStyle(block) {
+function blockStyle(block, selected = false) {
   if (block.status === 'unavailable') return null
+  if (selected) {
+    return {
+      backgroundColor: `color-mix(in srgb, ${block.color} 45%, black)`,
+      color: block.color
+    }
+  }
   return {
     backgroundColor: `color-mix(in srgb, ${block.color} 22%, white)`,
     color: block.color
   }
+}
+
+function isSelectableSlot(block) {
+  return props.selectable && block.status === 'available'
+}
+
+function isSelected(block, date, time) {
+  if (!props.selectable || !props.compact || block.status !== 'available' || !selectedSlot.value) {
+    return false
+  }
+  return (
+    selectedSlot.value.date === date &&
+    selectedSlot.value.time === time &&
+    selectedSlot.value.employeeId === block.employeeId
+  )
+}
+
+function onAvailableClick(block, date, time) {
+  if (!isSelectableSlot(block) || !date || !time) return
+  if (props.compact) {
+    selectedSlot.value = {
+      date,
+      time,
+      employeeId: block.employeeId
+    }
+  }
+  emit('select-available', {
+    date,
+    time,
+    employeeId: block.employeeId,
+    employeeName: block.employeeName || '',
+    color: block.color
+  })
 }
 
 function toWeekStartIso(date) {
@@ -222,6 +303,7 @@ async function loadCalendar() {
   const data = await scheduleApi.calendar({ weekStart: toWeekStartIso(weekStart.value) })
   times.value = data.times || []
   daysData.value = data.days || []
+  selectedSlot.value = null
 }
 
 watch(weekStart, loadCalendar, { immediate: true })
@@ -488,6 +570,48 @@ defineExpose({ reload: loadCalendar })
   align-items: center;
 }
 
+.schedule-calendar__block--clickable {
+  cursor: pointer;
+
+  &:hover {
+    filter: brightness(0.97);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--dvijok-blue-primary);
+    outline-offset: 2px;
+  }
+}
+
+.schedule-calendar--compact .schedule-calendar__block--selected {
+  .schedule-calendar__icon--unlock {
+    background-color: #fff;
+  }
+}
+
+.schedule-calendar__head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.schedule-calendar__head-row .schedule-calendar__brand {
+  min-width: 0;
+  flex: 1;
+}
+
+.schedule-calendar__marker {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid #fff;
+  box-sizing: border-box;
+}
+
 .schedule-calendar__icon {
   display: block;
   flex-shrink: 0;
@@ -518,11 +642,19 @@ defineExpose({ reload: loadCalendar })
 .schedule-calendar__brand,
 .schedule-calendar__plate {
   font-weight: 700;
-  font-size: 11px;
-  line-height: 13px;
   color: inherit;
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+.schedule-calendar__brand {
+  font-size: 14px;
+  line-height: 17px;
+}
+
+.schedule-calendar__plate {
+  font-size: 11px;
+  line-height: 13px;
 }
 
 .schedule-calendar__meta {

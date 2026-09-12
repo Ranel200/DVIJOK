@@ -228,7 +228,13 @@
             </div>
           </div>
 
-          <ScheduleCalendarTable v-if="modelValue" compact class="order-form__calendar" />
+          <ScheduleCalendarTable
+            v-if="modelValue"
+            compact
+            selectable
+            class="order-form__calendar"
+            @select-available="onSelectAvailable"
+          />
 
           <div class="order-form__appointment">
             <span class="order-form__appointment-label">Запись</span>
@@ -299,6 +305,7 @@ import PrinterIcon from '@/components/ui/PrinterIcon.vue'
 import { crmApi } from '@/api/index.js'
 import { CRM_STATUS_LIST, ORDER_SOURCE_OPTIONS, formatCrmOrderNumber } from '@/constants/crm.js'
 import { useScheduleFilterStore } from '@/stores/scheduleFilter.js'
+import { formatRuDateNumeric } from '@/utils/formatDateRu.js'
 
 const props = defineProps({
   modelValue: {
@@ -428,6 +435,15 @@ function emptyLine() {
     price: '',
     discount: '',
     masterId: ''
+  }
+}
+
+function onSelectAvailable({ date, time, employeeId }) {
+  if (!date || !time) return
+  draft.date = formatRuDateNumeric(date)
+  draft.time = time
+  if (employeeId != null && employeeId !== '' && employeeId !== '__empty__') {
+    lineDraft.masterId = employeeId
   }
 }
 

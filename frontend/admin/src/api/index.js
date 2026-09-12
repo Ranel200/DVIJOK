@@ -9,6 +9,7 @@ import {
   mapLegacyRole,
   normalizeStaffAccess
 } from '@/constants/staff.js'
+import { ORDER_MARKER_OPTIONS } from '@/constants/crm.js'
 import { startOfWeek } from '@/utils/formatDateRu.js'
 
 const SUBSCRIPTION_PLANS = ['none', 'standard', 'pro', 'premium']
@@ -723,6 +724,7 @@ function buildCalendarWeek(weekStartIso) {
         }
 
         const booking = MOCK_BOOKINGS[seed % MOCK_BOOKINGS.length]
+        const marker = ORDER_MARKER_OPTIONS[seed % ORDER_MARKER_OPTIONS.length]
         return {
           id: `${staff.id}-${dateKey}-${time}-busy`,
           employeeId: staff.id,
@@ -732,7 +734,8 @@ function buildCalendarWeek(weekStartIso) {
           brand: booking.brand,
           plate: booking.plate,
           clientName: booking.clientName,
-          serviceName: booking.serviceName
+          serviceName: booking.serviceName,
+          markerColor: marker.color
         }
       })
 

@@ -57,7 +57,12 @@
     </AdminHeader>
 
     <div class="schedule">
-      <ScheduleCalendarTable ref="calendarTableRef" v-show="activeTab === 'calendar'" />
+      <ScheduleCalendarTable
+        ref="calendarTableRef"
+        v-show="activeTab === 'calendar'"
+        :selectable="authStore.canAccess('crm')"
+        @select-available="onSelectAvailable"
+      />
       <ScheduleStaffTable
         ref="staffTableRef"
         v-show="activeTab === 'staff'"
@@ -72,6 +77,13 @@
       v-model="settingsOpen"
       :employees="settingsEmployees"
       @saved="onSettingsSaved"
+    />
+
+    <QuickBookingModal
+      v-model="quickBookingOpen"
+      :appointment="quickBookingAppointment"
+      :saving="quickBookingSaving"
+      @add="onQuickBookingAdd"
     />
 
     <OrderModal
@@ -90,6 +102,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import AdminHeader from '@/components/layout/AdminHeader.vue'
 import ScheduleCalendarTable from '@/components/schedule/ScheduleCalendarTable.vue'
+import QuickBookingModal from '@/components/schedule/QuickBookingModal.vue'
 import OrderModal from '@/components/crm/OrderModal.vue'
 import ScheduleSettingsModal from '@/components/schedule/ScheduleSettingsModal.vue'
 import ScheduleStaffTable from '@/components/schedule/ScheduleStaffTable.vue'
@@ -100,6 +113,7 @@ import { crmApi, scheduleApi } from '@/api/index.js'
 import { formatCrmOrderNumber } from '@/constants/crm.js'
 import { useAuthStore } from '@/stores/auth.js'
 import { useScheduleFilterStore } from '@/stores/scheduleFilter.js'
+import { formatRuDateNumeric } from '@/utils/formatDateRu.js'
 
 const authStore = useAuthStore()
 const scheduleFilter = useScheduleFilterStore()
@@ -142,6 +156,9 @@ const legendItems = computed(() => (isCalendar.value ? CALENDAR_LEGEND : STAFF_L
 const settingsOpen = ref(false)
 const orderOpen = ref(false)
 const orderSaving = ref(false)
+const quickBookingOpen = ref(false)
+const quickBookingAppointment = ref(null)
+const quickBookingSaving = ref(false)
 const savedOpen = ref(false)
 const savedMessage = ref('График сохранен!')
 const settingsEmployees = ref([])
@@ -184,6 +201,36 @@ function onAction() {
   settingsOpen.value = true
 }
 
+function onSelectAvailable(appointment) {
+  quickBookingAppointment.value = appointment
+  quickBookingOpen.value = true
+}
+
+async function onQuickBookingAdd(payload) {
+  quickBookingSaving.value = true
+  try {
+    const created = await crmApi.createOrder({
+      status: 'primary',
+      clientName: payload.clientName,
+      phone: payload.phone,
+      description: payload.description,
+      date: formatRuDateNumeric(payload.date),
+      time: payload.time,
+      // markerId: payload.markerId,
+      // lines: payload.employeeId
+      //   ? [{ serviceId: '', price: '', discount: '', masterId: payload.employeeId }]
+      //   : [],
+      lines: []
+    })
+    quickBookingOpen.value = false
+    await refreshCalendar()
+    savedMessage.value = `Заказ ${formatCrmOrderNumber(created.number)} создан!`
+    savedOpen.value = true
+  } finally {
+    quickBookingSaving.value = false
+  }
+}
+
 async function onSaveOrder(draft) {
   orderSaving.value = true
   try {
@@ -218,7 +265,13 @@ async function refreshCalendar() {
 onMounted(() => {
   scheduleFilter.resetToCurrent()
   schedulePollTimer = window.setInterval(() => {
-    if (activeTab.value !== 'calendar' || orderOpen.value || settingsOpen.value) return
+    if (
+      activeTab.value !== 'calendar' ||
+      orderOpen.value ||
+      settingsOpen.value ||
+      quickBookingOpen.value
+    )
+      return
     void refreshCalendar()
   }, SCHEDULE_POLL_INTERVAL_MS)
 })

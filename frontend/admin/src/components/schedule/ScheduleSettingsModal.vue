@@ -13,7 +13,10 @@
             shape="rounded"
             gap="10px"
           />
-          <div v-if="draft.slotStep === 'custom'" class="schedule-settings__field schedule-settings__field--nested">
+          <div
+            v-if="draft.slotStep === 'custom'"
+            class="schedule-settings__field schedule-settings__field--nested"
+          >
             <span class="schedule-settings__label">Введите свой вариант</span>
             <BaseInput
               v-model="draft.customSlotStep"

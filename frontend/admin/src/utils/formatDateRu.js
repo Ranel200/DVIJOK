@@ -35,6 +35,13 @@ export function formatRuDate(iso) {
   return `${d.getDate()} ${MONTHS_GENITIVE[d.getMonth()]} ${d.getFullYear()}`
 }
 
+export function formatRuDayMonth(iso) {
+  if (!iso) return ''
+  const d = new Date(`${iso}T00:00:00`)
+  if (Number.isNaN(d.getTime())) return ''
+  return `${d.getDate()} ${MONTHS_GENITIVE[d.getMonth()]}`
+}
+
 export function formatDeadlineUntil(date) {
   if (!date) return ''
   let iso = date
