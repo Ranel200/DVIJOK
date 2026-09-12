@@ -887,6 +887,27 @@ export const scheduleApi = {
 
   async saveSettings(payload) {
     if (USE_MOCK) {
+      // Новая структура:
+      // const employeeIds = Array.isArray(payload.employeeIds)
+      //   ? payload.employeeIds
+      //   : [payload.employeeId]
+      // const targets = employeeIds.includes('all')
+      //   ? mockEmployees
+      //   : mockEmployees.filter(item => employeeIds.includes(item.id))
+      // const workPeriods = Array.isArray(payload.workPeriods)
+      //   ? payload.workPeriods.map(item => ({ start: item.start, end: item.end }))
+      //   : []
+      // const firstPeriod = workPeriods[0] || {}
+      // for (const staff of targets) {
+      //   staff.workDays = [...(payload.workDays || [])]
+      //   staff.slotStep = payload.slotStep ?? staff.slotStep
+      //   staff.workPeriods = workPeriods
+      //   staff.start = firstPeriod.start || staff.start
+      //   staff.end = firstPeriod.end || staff.end
+      //   staff.breaks = Array.isArray(payload.breaks)
+      //     ? payload.breaks.map(item => ({ start: item.start, end: item.end }))
+      //     : []
+      // }
       const targets =
         payload.employeeId === 'all'
           ? mockEmployees

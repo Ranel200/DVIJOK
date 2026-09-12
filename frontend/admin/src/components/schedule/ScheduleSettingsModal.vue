@@ -1,36 +1,76 @@
 <template>
-  <BaseModal v-model="open" size="short" hide-close persistent>
+  <BaseModal v-model="open" size="drawer" padding="40px 15px 60px 30px" hide-close>
     <div class="schedule-settings">
       <h2 class="schedule-settings__title">Настройки графика</h2>
 
       <div class="schedule-settings__form">
         <div class="schedule-settings__field">
-          <span class="schedule-settings__label">Выберите тип</span>
-          <BaseSelect
-            v-model="draft.type"
-            :options="typeOptions"
-            placeholder="Выберите тип"
-            block
+          <span class="schedule-settings__label">Шаг записи</span>
+          <BaseChoice
+            v-model="draft.slotStep"
+            class="schedule-settings__choice schedule-settings__choice--step"
+            :options="slotStepOptions"
+            shape="rounded"
+            gap="10px"
           />
+          <div v-if="draft.slotStep === 'custom'" class="schedule-settings__field schedule-settings__field--nested">
+            <span class="schedule-settings__label">Введите свой вариант</span>
+            <BaseInput
+              v-model="draft.customSlotStep"
+              class="schedule-settings__custom-step"
+              placeholder="1 минута"
+              mask="###"
+              block
+            />
+          </div>
         </div>
 
         <div class="schedule-settings__field">
           <span class="schedule-settings__label">Рабочее время</span>
-          <div class="schedule-settings__time-row">
-            <BaseInput v-model="draft.start" mask="##:##" block />
-            <span class="schedule-settings__time-sep" aria-hidden="true" />
-            <BaseInput v-model="draft.end" mask="##:##" block />
+          <div
+            v-for="(period, index) in draft.workPeriods"
+            :key="`work-${index}`"
+            class="schedule-settings__row"
+          >
+            <div class="schedule-settings__time-row">
+              <BaseInput v-model="period.start" mask="##:##" block />
+              <span class="schedule-settings__time-sep" aria-hidden="true" />
+              <BaseInput v-model="period.end" mask="##:##" block />
+            </div>
+            <button
+              type="button"
+              class="schedule-settings__remove"
+              :class="{ 'schedule-settings__remove--active': index > 0 }"
+              :disabled="index === 0"
+              aria-label="Удалить рабочее время"
+              @click="removeWorkPeriod(index)"
+            />
           </div>
+          <button type="button" class="schedule-settings__add" @click="addWorkPeriod">
+            + Добавить рабочее время
+          </button>
+        </div>
+
+        <div class="schedule-settings__field">
+          <span class="schedule-settings__label">Перерывы</span>
           <div
             v-for="(breakItem, index) in draft.breaks"
-            :key="index"
-            class="schedule-settings__time-row"
+            :key="`break-${index}`"
+            class="schedule-settings__row"
           >
-            <BaseInput v-model="breakItem.start" mask="##:##" block />
-            <span class="schedule-settings__time-sep" aria-hidden="true" />
-            <BaseInput v-model="breakItem.end" mask="##:##" block />
+            <div class="schedule-settings__time-row">
+              <BaseInput v-model="breakItem.start" mask="##:##" block />
+              <span class="schedule-settings__time-sep" aria-hidden="true" />
+              <BaseInput v-model="breakItem.end" mask="##:##" block />
+            </div>
+            <button
+              type="button"
+              class="schedule-settings__remove schedule-settings__remove--active"
+              aria-label="Удалить перерыв"
+              @click="removeBreak(index)"
+            />
           </div>
-          <button type="button" class="schedule-settings__add-break" @click="addBreak">
+          <button type="button" class="schedule-settings__add" @click="addBreak">
             + Добавить перерыв
           </button>
         </div>
@@ -39,7 +79,7 @@
           <span class="schedule-settings__label">Дни недели</span>
           <BaseChoice
             v-model="draft.workDays"
-            class="schedule-settings__weekdays"
+            class="schedule-settings__choice schedule-settings__choice--weekdays schedule-settings__weekdays"
             :options="weekdayOptions"
             shape="rounded"
             multiple
@@ -49,12 +89,29 @@
 
         <div class="schedule-settings__field">
           <span class="schedule-settings__label">Применить к</span>
-          <BaseSelect
-            v-model="draft.employeeId"
-            :options="employeeOptions"
-            placeholder="Все сотрудники"
-            block
-          />
+          <div
+            v-for="(employeeId, index) in draft.employeeIds"
+            :key="`employee-${index}`"
+            class="schedule-settings__row"
+          >
+            <BaseSelect
+              v-model="draft.employeeIds[index]"
+              :options="employeeOptions"
+              placeholder="Все сотрудники"
+              block
+            />
+            <button
+              type="button"
+              class="schedule-settings__remove"
+              :class="{ 'schedule-settings__remove--active': index > 0 }"
+              :disabled="index === 0"
+              aria-label="Удалить сотрудника"
+              @click="removeEmployee(index)"
+            />
+          </div>
+          <button type="button" class="schedule-settings__add" @click="addEmployee">
+            + Добавить сотрудника
+          </button>
         </div>
       </div>
 
@@ -102,7 +159,13 @@ const emit = defineEmits(['update:modelValue', 'saved'])
 const saving = ref(false)
 const formError = ref('')
 
-const typeOptions = [{ value: 'workdays', label: 'Рабочие дни' }]
+const slotStepOptions = [
+  { value: 120, label: '120 мин' },
+  { value: 60, label: '60 мин' },
+  { value: 30, label: '30 мин' },
+  { value: 15, label: '15 мин' },
+  { value: 'custom', label: 'Другое значение' }
+]
 
 const weekdayOptions = [
   { label: 'Пн', value: 1 },
@@ -140,27 +203,58 @@ watch(
 
 function createEmptyDraft() {
   return {
-    type: 'workdays',
-    start: '09:00',
-    end: '18:00',
+    slotStep: 60,
+    customSlotStep: '',
+    workPeriods: [{ start: '09:00', end: '18:00' }],
     breaks: [],
     workDays: [1, 2, 3, 4, 5],
-    employeeId: 'all'
+    employeeIds: ['all']
   }
 }
 
 function resetDraft() {
   const next = createEmptyDraft()
-  draft.type = next.type
-  draft.start = next.start
-  draft.end = next.end
+  draft.slotStep = next.slotStep
+  draft.customSlotStep = next.customSlotStep
+  draft.workPeriods.splice(
+    0,
+    draft.workPeriods.length,
+    ...next.workPeriods.map(item => ({ ...item }))
+  )
   draft.breaks.splice(0, draft.breaks.length)
   draft.workDays.splice(0, draft.workDays.length, ...next.workDays)
-  draft.employeeId = next.employeeId
+  draft.employeeIds.splice(0, draft.employeeIds.length, ...next.employeeIds)
+}
+
+function addWorkPeriod() {
+  draft.workPeriods.push({ start: '', end: '' })
+  formError.value = ''
+}
+
+function removeWorkPeriod(index) {
+  if (index === 0) return
+  draft.workPeriods.splice(index, 1)
+  formError.value = ''
 }
 
 function addBreak() {
   draft.breaks.push({ start: '', end: '' })
+  formError.value = ''
+}
+
+function removeBreak(index) {
+  draft.breaks.splice(index, 1)
+  formError.value = ''
+}
+
+function addEmployee() {
+  draft.employeeIds.push('all')
+  formError.value = ''
+}
+
+function removeEmployee(index) {
+  if (index === 0) return
+  draft.employeeIds.splice(index, 1)
   formError.value = ''
 }
 
@@ -175,31 +269,62 @@ function parseTimeMinutes(value) {
   return hours * 60 + minutes
 }
 
-function validate() {
-  const start = parseTimeMinutes(draft.start)
-  const end = parseTimeMinutes(draft.end)
+function resolveSlotStep() {
+  if (draft.slotStep === 'custom') {
+    const minutes = Number(draft.customSlotStep)
+    if (!Number.isInteger(minutes) || minutes <= 0) return null
+    return minutes
+  }
+  return draft.slotStep
+}
+
+function validateTimeRange(item, { invalid, order }) {
+  const start = parseTimeMinutes(item.start)
+  const end = parseTimeMinutes(item.end)
   if (start == null || end == null) {
-    return 'Укажите корректное рабочее время (ЧЧ:ММ)'
+    return invalid
   }
   if (start >= end) {
-    return 'Время начала должно быть меньше времени окончания'
+    return order
   }
+  return { start, end }
+}
+
+function validate() {
+  if (resolveSlotStep() == null) {
+    return 'Укажите корректный шаг записи в минутах'
+  }
+
+  const periods = []
+  for (const item of draft.workPeriods) {
+    const result = validateTimeRange(item, {
+      invalid: 'Укажите корректное рабочее время (ЧЧ:ММ)',
+      order: 'В рабочем времени начало должно быть меньше окончания'
+    })
+    if (typeof result === 'string') return result
+    periods.push(result)
+  }
+
   if (!draft.workDays.length) {
     return 'Выберите хотя бы один рабочий день'
   }
+
   for (const item of draft.breaks) {
-    const breakStart = parseTimeMinutes(item.start)
-    const breakEnd = parseTimeMinutes(item.end)
-    if (breakStart == null || breakEnd == null) {
-      return 'Укажите корректное время перерывов (ЧЧ:ММ)'
-    }
-    if (breakStart >= breakEnd) {
-      return 'В перерыве время начала должно быть меньше окончания'
-    }
-    if (breakStart < start || breakEnd > end) {
+    const result = validateTimeRange(item, {
+      invalid: 'Укажите корректное время перерыва (ЧЧ:ММ)',
+      order: 'В перерыве время начала должно быть меньше окончания'
+    })
+    if (typeof result === 'string') return result
+    const inside = periods.some(period => result.start >= period.start && result.end <= period.end)
+    if (!inside) {
       return 'Перерыв должен быть внутри рабочего времени'
     }
   }
+
+  if (!draft.employeeIds.length) {
+    return 'Выберите хотя бы одного сотрудника'
+  }
+
   return ''
 }
 
@@ -213,13 +338,21 @@ async function onSave() {
   formError.value = ''
   saving.value = true
   try {
+    const firstPeriod = draft.workPeriods[0]
+    // Новая структура (пока без бэка):
+    // await scheduleApi.saveSettings({
+    //   slotStep: resolveSlotStep(),
+    //   workPeriods: draft.workPeriods.map(item => ({ start: item.start, end: item.end })),
+    //   breaks: draft.breaks.map(item => ({ start: item.start, end: item.end })),
+    //   workDays: [...draft.workDays],
+    //   employeeIds: [...draft.employeeIds]
+    // })
     await scheduleApi.saveSettings({
-      type: draft.type,
-      start: draft.start,
-      end: draft.end,
+      start: firstPeriod.start,
+      end: firstPeriod.end,
       breaks: draft.breaks.map(item => ({ start: item.start, end: item.end })),
       workDays: [...draft.workDays],
-      employeeId: draft.employeeId
+      employeeId: draft.employeeIds[0]
     })
     open.value = false
     emit('saved')
@@ -274,11 +407,71 @@ async function onSave() {
   text-align: left;
 }
 
+.schedule-settings__choice--step :deep(.base-choice__option) {
+  padding: 6px;
+}
+
+.schedule-settings__choice--weekdays :deep(.base-choice__option) {
+  padding: 6px 14px;
+}
+
+.schedule-settings__form :deep(.base-input .q-field__control) {
+  padding: 7px;
+}
+
+.schedule-settings__form :deep(.base-input .q-field__native) {
+  text-align: center;
+}
+
+.schedule-settings__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.schedule-settings__row > :deep(.base-select) {
+  flex: 1;
+  min-width: 0;
+}
+
+.schedule-settings__remove {
+  flex-shrink: 0;
+  width: 13px;
+  height: 15px;
+  padding: 0;
+  border: none;
+  background-color: var(--dvijok-tab-inactive);
+  cursor: default;
+  mask: url('/admin/icons/schedule/delete.svg') center / contain no-repeat;
+  -webkit-mask: url('/admin/icons/schedule/delete.svg') center / contain no-repeat;
+
+  &--active {
+    background-color: var(--dvijok-blue-primary);
+    cursor: pointer;
+
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+
+  &:disabled {
+    opacity: 1;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--dvijok-blue-primary);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+}
+
 .schedule-settings__time-row {
   display: flex;
   align-items: center;
   gap: 9px;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
 }
 
 .schedule-settings__time-row > :deep(.base-input) {
@@ -293,7 +486,7 @@ async function onSave() {
   background: var(--dvijok-text-secondary);
 }
 
-.schedule-settings__add-break {
+.schedule-settings__add {
   align-self: flex-start;
   padding: 0;
   border: none;

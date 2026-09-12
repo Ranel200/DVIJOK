@@ -2,9 +2,14 @@
   <q-dialog
     v-model="modelValueProxy"
     class="base-modal"
-    :class="{ 'base-modal--panel': isPanel }"
-    transition-show="fade"
-    transition-hide="fade"
+    :class="{
+      'base-modal--panel': isPanel,
+      'base-modal--drawer': isDrawer
+    }"
+    :position="isDrawer ? 'right' : undefined"
+    :full-height="isDrawer"
+    :transition-show="isDrawer ? 'slide-left' : 'fade'"
+    :transition-hide="isDrawer ? 'slide-right' : 'fade'"
     no-shake
     :persistent="persistent"
     @show="onShow"
@@ -15,15 +20,17 @@
       :class="{
         'base-modal__shell--short': size === 'short',
         'base-modal__shell--panel': isPanel,
+        'base-modal__shell--drawer': isDrawer,
         'base-modal__shell--compact': compact
       }"
     >
       <div
         class="base-modal__card"
         :class="{
-          'base-modal__card--fit': fit && !isPanel && size !== 'short',
+          'base-modal__card--fit': fit && !isPanel && !isDrawer && size !== 'short',
           'base-modal__card--short': size === 'short',
           'base-modal__card--panel': isPanel,
+          'base-modal__card--drawer': isDrawer,
           'base-modal__card--compact': compact
         }"
         :style="cardStyle"
@@ -79,8 +86,9 @@
           <div
             class="base-modal__content"
             :class="{
-              'base-modal__content--fit': fit && size !== 'short',
-              'base-modal__content--short': size === 'short'
+              'base-modal__content--fit': fit && size !== 'short' && size !== 'drawer',
+              'base-modal__content--short': size === 'short',
+              'base-modal__content--drawer': isDrawer
             }"
           >
             <slot />
@@ -123,7 +131,7 @@ const props = defineProps({
   size: {
     type: String,
     default: 'default',
-    validator: value => ['default', 'short', 'panel'].includes(value)
+    validator: value => ['default', 'short', 'panel', 'drawer'].includes(value)
   },
   padding: {
     type: String,
@@ -142,6 +150,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'close', 'show'])
 
 const isPanel = computed(() => props.size === 'panel')
+const isDrawer = computed(() => props.size === 'drawer')
 
 const modelValueProxy = computed({
   get: () => props.modelValue,
@@ -151,6 +160,9 @@ const modelValueProxy = computed({
 const cardStyle = computed(() => {
   if (isPanel.value) {
     return { padding: props.padding || '20px' }
+  }
+  if (isDrawer.value) {
+    return { padding: props.padding || '40px 30px 60px' }
   }
   const padding = props.padding || (props.size === 'short' ? '25px 15px' : '20px')
   return { padding }
@@ -177,6 +189,13 @@ function onHide() {
   --q-transition-duration: 40ms;
 }
 
+.base-modal--drawer .q-dialog__backdrop {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  --q-transition-duration: 280ms;
+}
+
 .base-modal .q-dialog__inner {
   align-items: center;
   justify-content: center;
@@ -188,6 +207,13 @@ function onHide() {
 .base-modal--panel .q-dialog__inner {
   padding: 30px 150px;
   height: 100%;
+}
+
+.base-modal--drawer .q-dialog__inner {
+  padding: 0;
+  align-items: stretch;
+  justify-content: flex-end;
+  --q-transition-duration: 280ms;
 }
 
 .base-modal .base-modal__card,
@@ -227,6 +253,14 @@ function onHide() {
 
 .base-modal__shell--panel {
   width: 100%;
+  height: 100%;
+  max-height: 100%;
+  gap: 0;
+}
+
+.base-modal__shell--drawer {
+  width: 480px;
+  max-width: 100vw;
   height: 100%;
   max-height: 100%;
   gap: 0;
@@ -274,6 +308,17 @@ function onHide() {
   justify-content: flex-start;
   gap: 20px;
   background: var(--dvijok-modal-panel);
+  overflow: hidden;
+}
+
+.base-modal__card--drawer {
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  border-radius: 0;
+  border: 1px solid var(--dvijok-text-secondary);
   overflow: hidden;
 }
 
@@ -395,6 +440,15 @@ function onHide() {
   align-items: stretch;
   justify-content: flex-start;
   overflow: visible;
+}
+
+.base-modal__content--drawer {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  align-items: stretch;
+  justify-content: flex-start;
+  overflow: hidden;
 }
 
 .base-modal__content--panel {
