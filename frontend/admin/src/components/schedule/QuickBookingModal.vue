@@ -41,7 +41,7 @@
 
         <div class="quick-booking__markers">
           <span class="quick-booking__markers-label">Маркер</span>
-          <OrderMarkerPicker v-model="draft.markerId" :active="modelValue" />
+          <OrderMarkerPicker v-model="draft.markerId" light :active="modelValue" />
         </div>
       </BaseFormBlock>
 

@@ -1,5 +1,5 @@
 <template>
-  <div class="order-marker-picker-wrap">
+  <div class="order-marker-picker-wrap" :class="{ 'order-marker-picker-wrap--light': light }">
     <div class="order-marker-picker">
       <div class="order-marker-picker__list" role="listbox" aria-label="Маркеры">
         <button
@@ -28,7 +28,7 @@
         aria-label="Добавить маркер"
         @click="markerModalOpen = true"
       >
-        <img src="/admin/icons/crm/plus.svg" alt="" width="14" height="14" />
+        <span class="order-marker-picker__plus" aria-hidden="true" />
       </button>
     </div>
 
@@ -54,6 +54,11 @@ const props = defineProps({
   active: {
     type: Boolean,
     default: true
+  },
+  /** На белой модалке — тёмно-синий плюс, на тёмной панели — белый */
+  light: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -133,6 +138,25 @@ function onMarkerAdd({ name, color }) {
     outline: 2px solid #093095;
     outline-offset: 2px;
   }
+}
+
+.order-marker-picker__plus {
+  display: block;
+  width: 14px;
+  height: 14px;
+  background-color: #fff;
+  mask-image: url('/admin/icons/crm/plus.svg');
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  -webkit-mask-image: url('/admin/icons/crm/plus.svg');
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+}
+
+.order-marker-picker-wrap--light .order-marker-picker__plus {
+  background-color: #182e5a;
 }
 
 .order-marker-chip {
