@@ -2,8 +2,8 @@ export const siteNavigation = [
   { label: 'Автосервисам', to: { name: 'for-services' } },
   { label: 'Автовладельцам', to: { name: 'for-owners' } },
   { label: 'Тарифы' },
-  { label: 'Блог' },
-  { label: 'FAQ', to: { name: 'faq' } }
+  { label: 'Блог', to: { name: 'blog' } },
+  { label: 'FAQ' }
 ]
 
 export const footerColumns = [
