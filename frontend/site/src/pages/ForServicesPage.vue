@@ -53,10 +53,7 @@
     </section>
 
     <section class="for-services__advantages">
-      <div class="for-services__advantages-headings">
-        <p class="for-services__advantages-eyebrow">Внутри ДВИЖКА</p>
-        <h2 class="for-services__advantages-title">Работа системы</h2>
-      </div>
+      <SiteSectionHeadings eyebrow="Внутри ДВИЖКА" title="Работа системы" />
 
       <div class="for-services__advantages-media">
         <div class="for-services__advantages-video">
@@ -78,40 +75,12 @@
 
     <ForServicesGoalsSection />
 
-    <section class="for-services__section for-services__section--plain">
-      <div class="for-services__advantages-headings">
-        <p class="for-services__advantages-eyebrow">Поддержка</p>
-        <h2 class="for-services__advantages-title">Наша команда всегда поможет</h2>
-      </div>
-
-      <div class="for-services__support-row">
-        <div class="for-services__support-info">
-          <div v-for="item in supportItems" :key="item.title" class="for-services__support-item">
-            <h3 class="for-services__support-item-title">{{ item.title }}</h3>
-            <p class="for-services__support-item-desc">{{ item.description }}</p>
-          </div>
-
-          <SiteTextLink>Написать техподдержке</SiteTextLink>
-        </div>
-
-        <div class="for-services__support-chat">
-          <SmsBubble
-            side="right"
-            color="blue"
-            class="for-services__support-sms for-services__support-sms--right"
-          >
-            <strong>Сервис «Папин гараж»</strong>{{ supportSmsClient }}
-          </SmsBubble>
-          <SmsBubble
-            side="left"
-            color="gray"
-            class="for-services__support-sms for-services__support-sms--left"
-          >
-            <strong>Специалист поддержки Алексей К.</strong>{{ supportSmsAgent }}
-          </SmsBubble>
-        </div>
-      </div>
-    </section>
+    <SiteSupportSection
+      :items="supportItems"
+      client-label="Сервис «Папин гараж»"
+      :client-message="supportSmsClient"
+      :agent-message="supportSmsAgent"
+    />
 
     <section class="for-services__section for-services__section--navy-row">
       <div class="for-services__income-copy">
@@ -135,165 +104,34 @@
 
     <ForServicesGrowthSection />
 
-    <section class="for-services__section for-services__section--mid">
-      <div class="for-services__advantages-headings">
-        <p class="for-services__advantages-eyebrow">Популярное</p>
-        <h2 class="for-services__advantages-title">Статьи</h2>
-      </div>
+    <SiteArticlesSection :articles="popularArticles" />
 
-      <div class="for-services__articles">
-        <div
-          class="for-services__articles-viewport"
-          :style="articlesHeight != null ? { '--articles-height': `${articlesHeight}px` } : undefined"
-        >
-          <div
-            ref="articlesTrackRef"
-            class="for-services__articles-track"
-            :style="{ '--article-index': articleIndex }"
-          >
-            <div
-              v-for="article in popularArticles"
-              :key="article.id"
-              class="for-services__articles-slide"
-            >
-              <article class="for-services__article-card">
-                <div class="for-services__article-photo">
-                  <img :src="article.photo" :alt="article.title" />
-                </div>
-
-                <h3 class="for-services__article-title">{{ article.title }}</h3>
-                <p class="for-services__article-desc">{{ article.description }}</p>
-
-                <SiteTextLink :to="{ name: 'blog-article', params: { id: String(article.id) } }">
-                  Читать всю статью
-                </SiteTextLink>
-              </article>
-            </div>
-          </div>
-        </div>
-
-        <div class="for-services__articles-nav">
-          <button
-            type="button"
-            class="for-services__articles-nav-btn"
-            aria-label="Предыдущая статья"
-            @click="prevArticle"
-          >
-            <ArrowIcon color="#2E68FF" direction="left" />
-          </button>
-          <button
-            type="button"
-            class="for-services__articles-nav-btn"
-            aria-label="Следующая статья"
-            @click="nextArticle"
-          >
-            <ArrowIcon color="#2E68FF" direction="right" />
-          </button>
-        </div>
-      </div>
-
-      <div class="for-services__articles-cta">
-        <SiteBtn :width="330" :to="{ name: 'blog' }">Посмотреть все статьи</SiteBtn>
-      </div>
-    </section>
-
-    <ForServicesFaqSection :items="faqItems" />
+    <SiteFaqSection :items="faqItems" />
   </q-page>
 </template>
 
 <script setup>
-import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { onMounted, ref } from 'vue'
 import { blogApi, faqApi } from '@/api/index.js'
-import ForServicesFaqSection from '@/components/for-services/ForServicesFaqSection.vue'
 import ForServicesGoalsSection from '@/components/for-services/ForServicesGoalsSection.vue'
 import ForServicesGrowthSection from '@/components/for-services/ForServicesGrowthSection.vue'
-import ArrowIcon from '@/components/ui/ArrowIcon.vue'
+import SiteArticlesSection from '@/components/ui/SiteArticlesSection.vue'
 import SiteBtn from '@/components/ui/SiteBtn.vue'
-import SiteTextLink from '@/components/ui/SiteTextLink.vue'
-import SmsBubble from '@/components/ui/SmsBubble.vue'
+import SiteFaqSection from '@/components/ui/SiteFaqSection.vue'
+import SiteSectionHeadings from '@/components/ui/SiteSectionHeadings.vue'
+import SiteSupportSection from '@/components/ui/SiteSupportSection.vue'
 
 const popularArticles = ref([])
 const faqItems = ref([])
-const articleIndex = ref(0)
-const articlesTrackRef = ref(null)
-const articlesHeight = ref(null)
-let articlesResizeRaf = 0
-
-async function syncArticlesHeight() {
-  await nextTick()
-  const track = articlesTrackRef.value
-  if (!track) {
-    articlesHeight.value = null
-    return
-  }
-
-  const cards = [...track.querySelectorAll('.for-services__article-card')]
-  if (!cards.length) return
-
-  const prev = articlesHeight.value
-  articlesHeight.value = null
-  await nextTick()
-
-  let max = 0
-  cards.forEach(card => {
-    max = Math.max(max, card.getBoundingClientRect().height)
-  })
-
-  articlesHeight.value = Math.ceil(max) || prev
-}
-
-function scheduleArticlesHeightSync() {
-  if (articlesResizeRaf) return
-  articlesResizeRaf = requestAnimationFrame(() => {
-    articlesResizeRaf = 0
-    syncArticlesHeight()
-  })
-}
-
-function bindArticleImageLoads() {
-  const track = articlesTrackRef.value
-  if (!track) return
-  track.querySelectorAll('img').forEach(img => {
-    if (!img.complete) {
-      img.addEventListener('load', syncArticlesHeight, { once: true })
-    }
-  })
-}
 
 onMounted(async () => {
   const [articles, faqs] = await Promise.all([
     blogApi.list({ limit: 3 }),
-    faqApi.list({ limit: 4 })
+    faqApi.list({ limit: 4, audience: 'services' })
   ])
   popularArticles.value = articles
   faqItems.value = faqs
-  window.addEventListener('resize', scheduleArticlesHeightSync)
 })
-
-onUnmounted(() => {
-  window.removeEventListener('resize', scheduleArticlesHeightSync)
-  if (articlesResizeRaf) {
-    cancelAnimationFrame(articlesResizeRaf)
-    articlesResizeRaf = 0
-  }
-})
-
-watch(popularArticles, async () => {
-  await syncArticlesHeight()
-  bindArticleImageLoads()
-})
-
-function prevArticle() {
-  const total = popularArticles.value.length
-  if (!total) return
-  articleIndex.value = (articleIndex.value - 1 + total) % total
-}
-
-function nextArticle() {
-  const total = popularArticles.value.length
-  if (!total) return
-  articleIndex.value = (articleIndex.value + 1) % total
-}
 
 const heroCards = [
   {
@@ -505,32 +343,6 @@ const supportSmsAgent =
   box-shadow: 0 0 40px 80px var(--dvijok-white);
 }
 
-.for-services__advantages-headings {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.for-services__advantages-eyebrow {
-  margin: 0;
-  font-weight: 500;
-  font-size: 20px;
-  line-height: 24px;
-  text-transform: uppercase;
-  color: var(--dvijok-blue-bright);
-}
-
-.for-services__advantages-title {
-  margin: 0;
-  font-family: var(--dvijok-font-display);
-  font-weight: 400;
-  font-size: 32px;
-  line-height: 48px;
-  text-transform: uppercase;
-  color: #000;
-}
-
 .for-services__advantages-media {
   display: flex;
   flex-direction: column;
@@ -565,76 +377,6 @@ const supportSmsAgent =
   position: relative;
   z-index: 1;
   box-sizing: border-box;
-}
-
-.for-services__section--plain {
-  display: flex;
-  flex-direction: column;
-  gap: 50px;
-  padding: 80px;
-  background: var(--dvijok-white);
-}
-
-.for-services__support-row {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: stretch;
-}
-
-.for-services__support-info {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  width: 33%;
-}
-
-.for-services__support-item {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.for-services__support-item-title {
-  margin: 0;
-  font-family: Inter, sans-serif;
-  font-weight: 600;
-  font-size: 24px;
-  line-height: 29px;
-  color: #000;
-}
-
-.for-services__support-item-desc {
-  margin: 0;
-  font-family: Inter, sans-serif;
-  font-weight: 400;
-  font-size: 16px;
-  line-height: 19px;
-  color: #7a82a0;
-}
-
-.for-services__support-chat {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 40px;
-  width: 50%;
-}
-
-.for-services__support-sms {
-  width: 60%;
-}
-
-.for-services__support-sms :deep(strong) {
-  font-weight: 700;
-}
-
-.for-services__support-sms--right {
-  align-self: flex-end;
-}
-
-.for-services__support-sms--left {
-  align-self: flex-start;
 }
 
 .for-services__section--navy-row {
@@ -683,88 +425,6 @@ const supportSmsAgent =
   width: auto;
 }
 
-.for-services__section--mid {
-  display: flex;
-  flex-direction: column;
-  gap: 50px;
-  padding: 40px 80px;
-  background: var(--dvijok-white);
-}
-
-.for-services__articles {
-  display: flex;
-  flex-direction: column;
-}
-
-.for-services__articles-track {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 50px;
-}
-
-.for-services__articles-slide {
-  display: flex;
-  min-width: 0;
-  height: var(--articles-height, auto);
-}
-
-.for-services__articles-nav {
-  display: none;
-}
-
-.for-services__article-card {
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  width: 100%;
-  height: 100%;
-  padding: 19px;
-  border: 1px solid #7a82a0;
-}
-
-.for-services__article-card > :last-child {
-  margin-top: auto;
-}
-
-.for-services__article-photo {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  overflow: hidden;
-  line-height: 0;
-}
-
-.for-services__article-photo img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.for-services__article-title {
-  margin: 0;
-  font-family: Inter, sans-serif;
-  font-weight: 600;
-  font-size: 24px;
-  line-height: 29px;
-  text-transform: uppercase;
-  color: #000;
-}
-
-.for-services__article-desc {
-  margin: 0;
-  font-family: Inter, sans-serif;
-  font-weight: 400;
-  font-size: 18px;
-  line-height: 22px;
-  color: #000;
-}
-
-.for-services__articles-cta {
-  display: flex;
-  justify-content: flex-end;
-}
-
 @media (max-width: 1023px) {
   .for-services__device {
     top: 100px;
@@ -773,6 +433,7 @@ const supportSmsAgent =
   }
 
   .for-services__hero {
+    gap: 50px;
     padding: 30px 20px 60px;
   }
 
@@ -812,29 +473,6 @@ const supportSmsAgent =
     display: none;
   }
 
-  .for-services__section--plain {
-    padding: 80px 20px;
-  }
-
-  .for-services__support-row {
-    flex-direction: column;
-    gap: 30px;
-  }
-
-  .for-services__support-info,
-  .for-services__support-chat {
-    width: 100%;
-  }
-
-  .for-services__support-item-title {
-    font-size: 20px;
-    line-height: 24px;
-  }
-
-  .for-services__support-sms {
-    width: 95%;
-  }
-
   .for-services__section--navy-row {
     flex-direction: column;
     gap: 30px;
@@ -858,79 +496,6 @@ const supportSmsAgent =
   .for-services__income-copy :deep(.site-btn) {
     width: 100% !important;
     flex: none;
-  }
-
-  .for-services__section--mid {
-    gap: 50px;
-    padding: 40px 0;
-  }
-
-  .for-services__section--mid > .for-services__advantages-headings,
-  .for-services__articles-cta {
-    padding: 0 20px;
-  }
-
-  .for-services__articles-cta :deep(.site-btn) {
-    width: 100% !important;
-    flex: none;
-  }
-
-  .for-services__articles {
-    gap: 10px;
-  }
-
-  .for-services__articles-viewport {
-    overflow: hidden;
-    width: 100%;
-    height: var(--articles-height, auto);
-  }
-
-  .for-services__articles-track {
-    display: flex;
-    align-items: stretch;
-    gap: 0;
-    height: 100%;
-    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
-    transform: translateX(calc(-100% * var(--article-index, 0)));
-  }
-
-  .for-services__articles-slide {
-    box-sizing: border-box;
-    display: flex;
-    flex: 0 0 100%;
-    width: 100%;
-    height: 100%;
-    padding: 0 20px;
-  }
-
-  .for-services__article-card {
-    width: 100%;
-    height: 100%;
-  }
-
-  .for-services__articles-nav {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 20px;
-  }
-
-  .for-services__articles-nav-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0;
-    padding: 8px;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .for-services__articles-track {
-      transition: none;
-    }
   }
 }
 </style>

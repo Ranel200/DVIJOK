@@ -1,10 +1,16 @@
 import { mockOk } from '@dvijok/shared/api/mock.js'
 import { mockBlogArticles } from '@/constants/blog.js'
-import { mockFaqItems } from '@/constants/faq.js'
+import { mockFaqItemsForOwners, mockFaqItemsForServices } from '@/constants/faq.js'
+
+const faqByAudience = {
+  services: mockFaqItemsForServices,
+  owners: mockFaqItemsForOwners
+}
 
 export const faqApi = {
-  async list({ limit } = {}) {
-    const items = mockFaqItems.map(item => ({ ...item }))
+  async list({ limit, audience = 'services' } = {}) {
+    const source = faqByAudience[audience] ?? mockFaqItemsForServices
+    const items = source.map(item => ({ ...item }))
     return mockOk(limit ? items.slice(0, limit) : items)
   }
 }

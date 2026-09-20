@@ -1,5 +1,5 @@
 <template>
-  <section class="faq-section">
+  <section class="faq-section" :class="`faq-section--${variant}`">
     <div class="faq-section__headings">
       <p class="faq-section__eyebrow">Ответы на ваши вопросы</p>
       <h2 class="faq-section__title">FAQ</h2>
@@ -7,13 +7,7 @@
 
     <div class="faq-section__list">
       <div v-for="item in items" :key="item.id" class="faq-section__item">
-        <img
-          class="faq-section__icon"
-          src="/site/icons/question.png"
-          alt=""
-          width="38"
-          height="57"
-        />
+        <img class="faq-section__icon" :src="iconSrc" alt="" width="38" height="57" />
 
         <span class="faq-section__line" aria-hidden="true" />
 
@@ -38,7 +32,7 @@
             @click="toggle(item.id)"
           >
             <ArrowDiagIcon
-              :color="isOpen(item.id) ? '#fff' : '#2E68FF'"
+              :color="isOpen(item.id) ? arrowOpenColor : '#2E68FF'"
               :direction="isOpen(item.id) ? 'up-left' : 'down-right'"
             />
           </button>
@@ -53,16 +47,29 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import ArrowDiagIcon from '@/components/ui/ArrowDiagIcon.vue'
 import SiteBtn from '@/components/ui/SiteBtn.vue'
 
-defineProps({
+const props = defineProps({
   items: {
     type: Array,
     default: () => []
+  },
+  variant: {
+    type: String,
+    default: 'dark',
+    validator: value => ['dark', 'light'].includes(value)
   }
 })
+
+const iconSrc = computed(() =>
+  props.variant === 'light'
+    ? '/site/icons/for-clients/question-blue.png'
+    : '/site/icons/question.png'
+)
+
+const arrowOpenColor = computed(() => (props.variant === 'light' ? '#7A82A0' : '#fff'))
 
 const openedIds = ref(new Set())
 
@@ -87,7 +94,14 @@ function isOpen(id) {
   flex-direction: column;
   gap: 50px;
   padding: 80px;
+}
+
+.faq-section--dark {
   background: var(--dvijok-navy);
+}
+
+.faq-section--light {
+  background: #fff;
 }
 
 .faq-section__headings {
@@ -103,7 +117,7 @@ function isOpen(id) {
   font-size: 20px;
   line-height: 24px;
   text-transform: uppercase;
-  color: var(--dvijok-blue-bright);
+  color: #2e68ff;
 }
 
 .faq-section__title {
@@ -113,7 +127,18 @@ function isOpen(id) {
   font-size: 64px;
   line-height: 93px;
   text-transform: uppercase;
+}
+
+.faq-section--dark .faq-section__title,
+.faq-section--dark .faq-section__question,
+.faq-section--dark .faq-section__answer {
   color: #fff;
+}
+
+.faq-section--light .faq-section__title,
+.faq-section--light .faq-section__question,
+.faq-section--light .faq-section__answer {
+  color: #000;
 }
 
 .faq-section__list {
@@ -124,7 +149,7 @@ function isOpen(id) {
 .faq-section__item {
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
+  align-items: center;
   gap: 40px;
   padding: 20px;
 }
@@ -135,14 +160,12 @@ function isOpen(id) {
   width: 48px;
   height: 48px;
   object-fit: contain;
-  align-self: flex-start;
 }
 
 .faq-section__line {
   flex: 1 1 auto;
   min-width: 40px;
   height: 2px;
-  margin-top: 23px;
   background: #2e68ff;
 }
 
@@ -172,7 +195,6 @@ function isOpen(id) {
   font-size: 20px;
   line-height: 29px;
   overflow-wrap: break-word;
-  color: #fff;
 }
 
 .faq-section__answer-wrap {
@@ -199,7 +221,6 @@ function isOpen(id) {
   font-weight: 400;
   font-size: 12px;
   line-height: 15px;
-  color: #fff;
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -248,8 +269,8 @@ function isOpen(id) {
 
   .faq-section__line {
     flex: 1 1 0;
+    max-width: none;
     min-width: 40px;
-    margin-top: 28px;
   }
 
   .faq-section__body {
@@ -266,15 +287,8 @@ function isOpen(id) {
   }
 
   .faq-section__question {
-    font-family: var(--dvijok-font-display);
-    font-weight: 400;
     font-size: 14px;
     line-height: 20px;
-    overflow-wrap: break-word;
-  }
-
-  .faq-section__toggle {
-    flex: none;
   }
 
   .faq-section__cta :deep(.site-btn) {
