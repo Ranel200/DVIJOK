@@ -1,4 +1,4 @@
-export const blogArticles = [
+export const mockBlogArticles = [
   {
     id: 1,
     date: '2026-09-12',
@@ -128,10 +128,4 @@ export function getBlogMonthLabel(isoDate, now = new Date()) {
 
 export function getBlogMonthKey(isoDate) {
   return isoDate.slice(0, 7)
-}
-
-export function getBlogArticleById(id) {
-  const articleId = Number(id)
-  if (!Number.isFinite(articleId)) return null
-  return blogArticles.find(article => article.id === articleId) ?? null
 }

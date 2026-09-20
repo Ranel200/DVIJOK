@@ -41,9 +41,9 @@
             </div>
           </div>
 
-          <router-link class="home-page__cta" :to="audience.to">
+          <SiteBtn class="home-page__cta" :to="audience.to">
             {{ audience.cta }}
-          </router-link>
+          </SiteBtn>
         </div>
       </div>
     </section>
@@ -80,6 +80,8 @@
 </template>
 
 <script setup>
+import SiteBtn from '@/components/ui/SiteBtn.vue'
+
 const ICONS = {
   today: '/site/icons/today.svg',
   car: '/site/icons/car.svg',
@@ -195,7 +197,6 @@ const audiences = [
   position: relative;
   box-sizing: border-box;
   padding: 0;
-  background: var(--dvijok-bg-light);
 }
 
 .home-page__device {
@@ -203,15 +204,34 @@ const audiences = [
   top: 270px;
   left: 50%;
   z-index: 0;
-  width: 60vw;
+  width: min(60vw, 864px);
   height: auto;
   pointer-events: none;
   transform: translateX(-50%);
+  animation: home-page-device-in 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes home-page-device-in {
+  from {
+    opacity: 0;
+    transform: translateX(calc(-50% - 55vw));
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-page__device {
+    animation: none;
+  }
 }
 
 .home-page__hero {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   gap: 30px;
@@ -320,21 +340,8 @@ const audiences = [
 }
 
 .home-page__cta {
-  box-sizing: border-box;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   width: 100%;
   max-width: 350px;
-  padding: 15px;
-  border: none;
-  background: var(--dvijok-blue-bright);
-  font-weight: 600;
-  font-size: 14px;
-  line-height: 17px;
-  text-align: center;
-  text-decoration: none;
-  color: var(--dvijok-white);
 }
 
 .home-page__advantages {
@@ -344,6 +351,9 @@ const audiences = [
   flex-direction: column;
   gap: 50px;
   padding: 120px 80px 80px;
+  background: var(--dvijok-white);
+  box-shadow: 0 0 40px 80px var(--dvijok-white);
+  clip-path: inset(-120px -120px 0 -120px);
 }
 
 .home-page__advantages-intro {

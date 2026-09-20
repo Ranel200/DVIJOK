@@ -2,84 +2,95 @@
   <q-page class="blog-page">
     <PageIntro title="Статьи" lead="Актуальный материал для автовладельцев и автосервисов" />
 
-    <div class="blog-page__feed">
-      <template v-for="group in articleGroups" :key="group.key">
-        <h2 class="blog-page__month">{{ group.label }}</h2>
-
-        <article v-for="article in group.articles" :key="article.id" class="blog-article-card">
-          <div class="blog-article-card__photo">
-            <img :src="article.photo" :alt="article.title" />
-          </div>
-
-          <div class="blog-article-card__body">
-            <div class="blog-article-card__texts">
-              <h3 class="blog-article-card__title">{{ article.title }}</h3>
-              <p class="blog-article-card__description">{{ article.description }}</p>
-            </div>
-
-            <router-link
-              class="blog-article-card__read"
-              :to="{ name: 'blog-article', params: { id: String(article.id) } }"
-            >
-              Читать всю статью
-              <ArrowIcon direction="right" />
-            </router-link>
-          </div>
-        </article>
-      </template>
+    <div v-if="loading" class="blog-page__loading" aria-busy="true" aria-live="polite">
+      <q-spinner color="primary" size="40px" />
+      <span>Загрузка статей…</span>
     </div>
 
-    <nav class="blog-page__pagination" aria-label="Пагинация статей">
-      <button
-        type="button"
-        class="blog-page__page-btn"
-        :class="{ 'blog-page__page-btn--active': canGoPrev }"
-        :disabled="!canGoPrev"
-        @click="goToPrevPage"
-      >
-        <ArrowIcon :color="prevColor" direction="left" />
-        Пред. стр.
-      </button>
+    <template v-else>
+      <div class="blog-page__feed">
+        <template v-for="group in articleGroups" :key="group.key">
+          <h2 class="blog-page__month">{{ group.label }}</h2>
 
-      <div class="blog-page__page-number" aria-current="page">{{ currentPage }}</div>
+          <article v-for="article in group.articles" :key="article.id" class="blog-article-card">
+            <div class="blog-article-card__photo">
+              <img :src="article.photo" :alt="article.title" />
+            </div>
 
-      <button
-        type="button"
-        class="blog-page__page-btn"
-        :class="{ 'blog-page__page-btn--active': canGoNext }"
-        :disabled="!canGoNext"
-        @click="goToNextPage"
-      >
-        След. стр.
-        <ArrowIcon :color="nextColor" direction="right" />
-      </button>
-    </nav>
+            <div class="blog-article-card__body">
+              <div class="blog-article-card__texts">
+                <h3 class="blog-article-card__title">{{ article.title }}</h3>
+                <p class="blog-article-card__description">{{ article.description }}</p>
+              </div>
+
+              <router-link
+                class="blog-article-card__read"
+                :to="{ name: 'blog-article', params: { id: String(article.id) } }"
+              >
+                Читать всю статью
+                <ArrowIcon direction="right" />
+              </router-link>
+            </div>
+          </article>
+        </template>
+      </div>
+
+      <nav class="blog-page__pagination" aria-label="Пагинация статей">
+        <button
+          type="button"
+          class="blog-page__page-btn"
+          :class="{ 'blog-page__page-btn--active': canGoPrev }"
+          :disabled="!canGoPrev"
+          @click="goToPrevPage"
+        >
+          <ArrowIcon :color="prevColor" direction="left" />
+          Пред. стр.
+        </button>
+
+        <div class="blog-page__page-number" aria-current="page">{{ currentPage }}</div>
+
+        <button
+          type="button"
+          class="blog-page__page-btn"
+          :class="{ 'blog-page__page-btn--active': canGoNext }"
+          :disabled="!canGoNext"
+          @click="goToNextPage"
+        >
+          След. стр.
+          <ArrowIcon :color="nextColor" direction="right" />
+        </button>
+      </nav>
+    </template>
   </q-page>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { blogApi } from '@/api/index.js'
 import ArrowIcon from '@/components/ui/ArrowIcon.vue'
 import PageIntro from '@/components/ui/PageIntro.vue'
-import { blogArticles, getBlogMonthKey, getBlogMonthLabel } from '@/constants/blog.js'
+import { getBlogMonthKey, getBlogMonthLabel } from '@/constants/blog.js'
 
 const ARTICLES_PER_PAGE = 4
 const ACTIVE_COLOR = '#2E68FF'
 const INACTIVE_COLOR = '#7A82A0'
 
 const currentPage = ref(1)
+const blogArticles = ref([])
+const loading = ref(true)
 
-const sortedArticles = computed(() =>
-  [...blogArticles].sort((a, b) => b.date.localeCompare(a.date))
-)
+onMounted(async () => {
+  blogArticles.value = await blogApi.list()
+  loading.value = false
+})
 
 const totalPages = computed(() =>
-  Math.max(1, Math.ceil(sortedArticles.value.length / ARTICLES_PER_PAGE))
+  Math.max(1, Math.ceil(blogArticles.value.length / ARTICLES_PER_PAGE))
 )
 
 const pageArticles = computed(() => {
   const start = (currentPage.value - 1) * ARTICLES_PER_PAGE
-  return sortedArticles.value.slice(start, start + ARTICLES_PER_PAGE)
+  return blogArticles.value.slice(start, start + ARTICLES_PER_PAGE)
 })
 
 const articleGroups = computed(() => {
@@ -127,6 +138,19 @@ function goToNextPage() {
   flex-direction: column;
   gap: 50px;
   padding: 30px 80px 50px;
+}
+
+.blog-page__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 240px;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 19px;
+  color: #7a82a0;
 }
 
 .blog-page__feed {

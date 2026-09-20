@@ -1,5 +1,16 @@
 <template>
-  <q-page v-if="article" class="blog-article-page">
+  <q-page v-if="loading" class="blog-article-page blog-article-page--loading">
+    <router-link class="blog-article-page__back" :to="{ name: 'blog' }">
+      <ArrowIcon color="#2E68FF" direction="left" />
+      Назад
+    </router-link>
+    <div class="blog-article-page__loading" aria-busy="true" aria-live="polite">
+      <q-spinner color="primary" size="40px" />
+      <span>Загрузка статьи…</span>
+    </div>
+  </q-page>
+
+  <q-page v-else-if="article" class="blog-article-page">
     <div class="blog-article-page__top">
       <router-link class="blog-article-page__back" :to="{ name: 'blog' }">
         <ArrowIcon color="#2E68FF" direction="left" />
@@ -53,15 +64,31 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { blogApi } from '@/api/index.js'
 import ArrowIcon from '@/components/ui/ArrowIcon.vue'
 import PageIntro from '@/components/ui/PageIntro.vue'
-import { getBlogArticleById } from '@/constants/blog.js'
 
 const route = useRoute()
 
-const article = computed(() => getBlogArticleById(route.params.id))
+const article = ref(null)
+const loading = ref(true)
+let loadSeq = 0
+
+async function loadArticle(id) {
+  const seq = ++loadSeq
+  loading.value = true
+  article.value = null
+
+  const next = await blogApi.getById(id)
+  if (seq !== loadSeq) return
+
+  article.value = next
+  loading.value = false
+}
+
+watch(() => route.params.id, loadArticle, { immediate: true })
 </script>
 
 <style scoped>
@@ -100,6 +127,19 @@ const article = computed(() => getBlogArticleById(route.params.id))
 
 .blog-article-page__back:active {
   color: #1a4fd9;
+}
+
+.blog-article-page__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 240px;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 19px;
+  color: #7a82a0;
 }
 
 .blog-article-page__photo {
