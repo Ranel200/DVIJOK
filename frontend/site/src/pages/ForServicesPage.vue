@@ -141,23 +141,55 @@
         <h2 class="for-services__advantages-title">Статьи</h2>
       </div>
 
-      <div class="for-services__articles-grid">
-        <article
-          v-for="article in popularArticles"
-          :key="article.id"
-          class="for-services__article-card"
+      <div class="for-services__articles">
+        <div
+          class="for-services__articles-viewport"
+          :style="articlesHeight != null ? { '--articles-height': `${articlesHeight}px` } : undefined"
         >
-          <div class="for-services__article-photo">
-            <img :src="article.photo" :alt="article.title" />
+          <div
+            ref="articlesTrackRef"
+            class="for-services__articles-track"
+            :style="{ '--article-index': articleIndex }"
+          >
+            <div
+              v-for="article in popularArticles"
+              :key="article.id"
+              class="for-services__articles-slide"
+            >
+              <article class="for-services__article-card">
+                <div class="for-services__article-photo">
+                  <img :src="article.photo" :alt="article.title" />
+                </div>
+
+                <h3 class="for-services__article-title">{{ article.title }}</h3>
+                <p class="for-services__article-desc">{{ article.description }}</p>
+
+                <SiteTextLink :to="{ name: 'blog-article', params: { id: String(article.id) } }">
+                  Читать всю статью
+                </SiteTextLink>
+              </article>
+            </div>
           </div>
+        </div>
 
-          <h3 class="for-services__article-title">{{ article.title }}</h3>
-          <p class="for-services__article-desc">{{ article.description }}</p>
-
-          <SiteTextLink :to="{ name: 'blog-article', params: { id: String(article.id) } }">
-            Читать всю статью
-          </SiteTextLink>
-        </article>
+        <div class="for-services__articles-nav">
+          <button
+            type="button"
+            class="for-services__articles-nav-btn"
+            aria-label="Предыдущая статья"
+            @click="prevArticle"
+          >
+            <ArrowIcon color="#2E68FF" direction="left" />
+          </button>
+          <button
+            type="button"
+            class="for-services__articles-nav-btn"
+            aria-label="Следующая статья"
+            @click="nextArticle"
+          >
+            <ArrowIcon color="#2E68FF" direction="right" />
+          </button>
+        </div>
       </div>
 
       <div class="for-services__articles-cta">
@@ -170,17 +202,63 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { blogApi, faqApi } from '@/api/index.js'
 import ForServicesFaqSection from '@/components/for-services/ForServicesFaqSection.vue'
 import ForServicesGoalsSection from '@/components/for-services/ForServicesGoalsSection.vue'
 import ForServicesGrowthSection from '@/components/for-services/ForServicesGrowthSection.vue'
+import ArrowIcon from '@/components/ui/ArrowIcon.vue'
 import SiteBtn from '@/components/ui/SiteBtn.vue'
 import SiteTextLink from '@/components/ui/SiteTextLink.vue'
 import SmsBubble from '@/components/ui/SmsBubble.vue'
 
 const popularArticles = ref([])
 const faqItems = ref([])
+const articleIndex = ref(0)
+const articlesTrackRef = ref(null)
+const articlesHeight = ref(null)
+let articlesResizeRaf = 0
+
+async function syncArticlesHeight() {
+  await nextTick()
+  const track = articlesTrackRef.value
+  if (!track) {
+    articlesHeight.value = null
+    return
+  }
+
+  const cards = [...track.querySelectorAll('.for-services__article-card')]
+  if (!cards.length) return
+
+  const prev = articlesHeight.value
+  articlesHeight.value = null
+  await nextTick()
+
+  let max = 0
+  cards.forEach(card => {
+    max = Math.max(max, card.getBoundingClientRect().height)
+  })
+
+  articlesHeight.value = Math.ceil(max) || prev
+}
+
+function scheduleArticlesHeightSync() {
+  if (articlesResizeRaf) return
+  articlesResizeRaf = requestAnimationFrame(() => {
+    articlesResizeRaf = 0
+    syncArticlesHeight()
+  })
+}
+
+function bindArticleImageLoads() {
+  const track = articlesTrackRef.value
+  if (!track) return
+  track.querySelectorAll('img').forEach(img => {
+    if (!img.complete) {
+      img.addEventListener('load', syncArticlesHeight, { once: true })
+    }
+  })
+}
 
 onMounted(async () => {
   const [articles, faqs] = await Promise.all([
@@ -189,7 +267,33 @@ onMounted(async () => {
   ])
   popularArticles.value = articles
   faqItems.value = faqs
+  window.addEventListener('resize', scheduleArticlesHeightSync)
 })
+
+onUnmounted(() => {
+  window.removeEventListener('resize', scheduleArticlesHeightSync)
+  if (articlesResizeRaf) {
+    cancelAnimationFrame(articlesResizeRaf)
+    articlesResizeRaf = 0
+  }
+})
+
+watch(popularArticles, async () => {
+  await syncArticlesHeight()
+  bindArticleImageLoads()
+})
+
+function prevArticle() {
+  const total = popularArticles.value.length
+  if (!total) return
+  articleIndex.value = (articleIndex.value - 1 + total) % total
+}
+
+function nextArticle() {
+  const total = popularArticles.value.length
+  if (!total) return
+  articleIndex.value = (articleIndex.value + 1) % total
+}
 
 const heroCards = [
   {
@@ -282,7 +386,9 @@ const supportSmsAgent =
   flex-direction: row;
   align-items: center;
   gap: 10px;
+  width: fit-content;
   padding: 8px 12px;
+  border: 1px solid #2e68ff;
 }
 
 .for-services__eyebrow-dot {
@@ -585,10 +691,25 @@ const supportSmsAgent =
   background: var(--dvijok-white);
 }
 
-.for-services__articles-grid {
+.for-services__articles {
+  display: flex;
+  flex-direction: column;
+}
+
+.for-services__articles-track {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 50px;
+}
+
+.for-services__articles-slide {
+  display: flex;
+  min-width: 0;
+  height: var(--articles-height, auto);
+}
+
+.for-services__articles-nav {
+  display: none;
 }
 
 .for-services__article-card {
@@ -596,8 +717,14 @@ const supportSmsAgent =
   display: flex;
   flex-direction: column;
   gap: 20px;
+  width: 100%;
+  height: 100%;
   padding: 19px;
   border: 1px solid #7a82a0;
+}
+
+.for-services__article-card > :last-child {
+  margin-top: auto;
 }
 
 .for-services__article-photo {
@@ -636,5 +763,174 @@ const supportSmsAgent =
 .for-services__articles-cta {
   display: flex;
   justify-content: flex-end;
+}
+
+@media (max-width: 1023px) {
+  .for-services__device {
+    top: 100px;
+    left: 5%;
+    width: 90%;
+  }
+
+  .for-services__hero {
+    padding: 30px 20px 60px;
+  }
+
+  .for-services__intro-main {
+    padding-top: calc(90vw * 900 / 1200);
+  }
+
+  .for-services__intro-copy {
+    width: 100%;
+  }
+
+  .for-services__title {
+    font-size: 24px;
+    line-height: 35px;
+  }
+
+  .for-services__actions {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .for-services__actions :deep(.site-btn--stretch) {
+    flex: none;
+    width: 100%;
+  }
+
+  .for-services__cards {
+    flex-direction: column;
+  }
+
+  .for-services__card {
+    flex: none;
+    width: 100%;
+  }
+
+  .for-services__advantages {
+    display: none;
+  }
+
+  .for-services__section--plain {
+    padding: 80px 20px;
+  }
+
+  .for-services__support-row {
+    flex-direction: column;
+    gap: 30px;
+  }
+
+  .for-services__support-info,
+  .for-services__support-chat {
+    width: 100%;
+  }
+
+  .for-services__support-item-title {
+    font-size: 20px;
+    line-height: 24px;
+  }
+
+  .for-services__support-sms {
+    width: 95%;
+  }
+
+  .for-services__section--navy-row {
+    flex-direction: column;
+    gap: 30px;
+    padding: 40px 20px;
+  }
+
+  .for-services__income-visual {
+    order: -1;
+    width: 90%;
+  }
+
+  .for-services__income-graph {
+    width: 100%;
+    height: auto;
+  }
+
+  .for-services__income-copy {
+    width: 100%;
+  }
+
+  .for-services__income-copy :deep(.site-btn) {
+    width: 100% !important;
+    flex: none;
+  }
+
+  .for-services__section--mid {
+    gap: 50px;
+    padding: 40px 0;
+  }
+
+  .for-services__section--mid > .for-services__advantages-headings,
+  .for-services__articles-cta {
+    padding: 0 20px;
+  }
+
+  .for-services__articles-cta :deep(.site-btn) {
+    width: 100% !important;
+    flex: none;
+  }
+
+  .for-services__articles {
+    gap: 10px;
+  }
+
+  .for-services__articles-viewport {
+    overflow: hidden;
+    width: 100%;
+    height: var(--articles-height, auto);
+  }
+
+  .for-services__articles-track {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    height: 100%;
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    transform: translateX(calc(-100% * var(--article-index, 0)));
+  }
+
+  .for-services__articles-slide {
+    box-sizing: border-box;
+    display: flex;
+    flex: 0 0 100%;
+    width: 100%;
+    height: 100%;
+    padding: 0 20px;
+  }
+
+  .for-services__article-card {
+    width: 100%;
+    height: 100%;
+  }
+
+  .for-services__articles-nav {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+  }
+
+  .for-services__articles-nav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 8px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .for-services__articles-track {
+      transition: none;
+    }
+  }
 }
 </style>

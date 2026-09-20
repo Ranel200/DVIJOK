@@ -396,4 +396,65 @@ const goalCards = [
   max-width: 100%;
   height: auto;
 }
+
+@media (max-width: 1023px) {
+  .goals-section {
+    position: relative;
+    z-index: 1;
+    padding: 40px 20px;
+    box-shadow: 0 0 40px 80px var(--dvijok-white);
+  }
+
+  .goals-section__title {
+    font-size: 20px;
+    line-height: 29px;
+  }
+
+  .goals-section__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .goals-section__card--span-3,
+  .goals-section__card--span-2 {
+    grid-column: span 1;
+    width: 100%;
+  }
+
+  .goals-section__card-title {
+    font-size: 20px;
+    line-height: 24px;
+  }
+
+  .goals-section__online-details {
+    align-items: center;
+  }
+
+  .goals-section__online-icon--ydx {
+    left: 5%;
+  }
+
+  .goals-section__online-icon--max {
+    left: 10%;
+  }
+
+  .goals-section__online-icon--vk {
+    right: 10%;
+  }
+
+  .goals-section__online-icon--2gis {
+    right: 5%;
+  }
+
+  .goals-section__routine-side,
+  .goals-section__routine-preview {
+    width: 50%;
+  }
+
+  .goals-section__routine-record {
+    top: 50%;
+    bottom: auto;
+    width: 100%;
+    transform: translate(-50%, -50%);
+  }
+}
 </style>

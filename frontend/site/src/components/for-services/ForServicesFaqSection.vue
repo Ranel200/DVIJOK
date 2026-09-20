@@ -1,8 +1,8 @@
 <template>
   <section class="faq-section">
     <div class="faq-section__headings">
-      <p class="faq-section__eyebrow">FAQ</p>
-      <h2 class="faq-section__title">Ответы на ваши вопросы</h2>
+      <p class="faq-section__eyebrow">Ответы на ваши вопросы</p>
+      <h2 class="faq-section__title">FAQ</h2>
     </div>
 
     <div class="faq-section__list">
@@ -11,8 +11,8 @@
           class="faq-section__icon"
           src="/site/icons/question.png"
           alt=""
-          width="48"
-          height="48"
+          width="38"
+          height="57"
         />
 
         <span class="faq-section__line" aria-hidden="true" />
@@ -110,8 +110,8 @@ function isOpen(id) {
   margin: 0;
   font-family: var(--dvijok-font-display);
   font-weight: 400;
-  font-size: 32px;
-  line-height: 48px;
+  font-size: 64px;
+  line-height: 93px;
   text-transform: uppercase;
   color: #fff;
 }
@@ -140,7 +140,7 @@ function isOpen(id) {
 
 .faq-section__line {
   flex: 1 1 auto;
-  min-width: 0;
+  min-width: 40px;
   height: 2px;
   margin-top: 23px;
   background: #2e68ff;
@@ -148,18 +148,20 @@ function isOpen(id) {
 
 .faq-section__body {
   display: flex;
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   flex-direction: row;
   align-items: flex-start;
   gap: 50px;
   min-width: 0;
+  max-width: 50%;
 }
 
 .faq-section__copy {
   display: flex;
-  flex: none;
+  flex: 1 1 auto;
   flex-direction: column;
-  width: fit-content;
+  width: auto;
+  min-width: 0;
   max-width: 100%;
 }
 
@@ -169,6 +171,7 @@ function isOpen(id) {
   font-weight: 400;
   font-size: 20px;
   line-height: 29px;
+  overflow-wrap: break-word;
   color: #fff;
 }
 
@@ -226,6 +229,56 @@ function isOpen(id) {
   .faq-section__answer-wrap,
   .faq-section__answer {
     transition: none;
+  }
+}
+
+@media (max-width: 1023px) {
+  .faq-section {
+    padding: 40px 20px;
+  }
+
+  .faq-section__item {
+    gap: 8px;
+  }
+
+  .faq-section__icon {
+    width: 38px;
+    height: 57px;
+  }
+
+  .faq-section__line {
+    flex: 1 1 0;
+    min-width: 40px;
+    margin-top: 28px;
+  }
+
+  .faq-section__body {
+    flex: 1 1 auto;
+    gap: 8px;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .faq-section__copy {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+  }
+
+  .faq-section__question {
+    font-family: var(--dvijok-font-display);
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 20px;
+    overflow-wrap: break-word;
+  }
+
+  .faq-section__toggle {
+    flex: none;
+  }
+
+  .faq-section__cta :deep(.site-btn) {
+    width: 100% !important;
   }
 }
 </style>
