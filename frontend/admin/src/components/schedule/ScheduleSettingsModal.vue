@@ -341,21 +341,12 @@ async function onSave() {
   formError.value = ''
   saving.value = true
   try {
-    const firstPeriod = draft.workPeriods[0]
-    // Новая структура (пока без бэка):
-    // await scheduleApi.saveSettings({
-    //   slotStep: resolveSlotStep(),
-    //   workPeriods: draft.workPeriods.map(item => ({ start: item.start, end: item.end })),
-    //   breaks: draft.breaks.map(item => ({ start: item.start, end: item.end })),
-    //   workDays: [...draft.workDays],
-    //   employeeIds: [...draft.employeeIds]
-    // })
     await scheduleApi.saveSettings({
-      start: firstPeriod.start,
-      end: firstPeriod.end,
+      slotStep: resolveSlotStep(),
+      workPeriods: draft.workPeriods.map(item => ({ start: item.start, end: item.end })),
       breaks: draft.breaks.map(item => ({ start: item.start, end: item.end })),
       workDays: [...draft.workDays],
-      employeeId: draft.employeeIds[0]
+      employeeIds: [...new Set(draft.employeeIds)]
     })
     open.value = false
     emit('saved')

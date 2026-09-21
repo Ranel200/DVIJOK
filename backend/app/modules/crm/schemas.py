@@ -18,6 +18,11 @@ class CrmOrderLine(CrmModel):
     discount: Decimal = Field(default=Decimal(0), ge=0, le=100)
     master_id: int | None = Field(default=None, alias="masterId")
 
+    @field_validator("master_id", mode="before")
+    @classmethod
+    def blank_master_is_none(cls, value: object) -> object:
+        return None if value == "" else value
+
 
 class CrmOrderWrite(CrmModel):
     status: OrderStatus = OrderStatus.NEW
@@ -27,6 +32,9 @@ class CrmOrderWrite(CrmModel):
     description: str = ""
     date: str = ""
     time: str = ""
+    reserve_slot: bool = Field(default=False, alias="reserveSlot")
+    appointment_master_id: int | None = Field(default=None, alias="appointmentMasterId")
+    marker_id: int | None = Field(default=None, alias="markerId")
     source: OrderSource = OrderSource.OTHER
     lines: list[CrmOrderLine] = Field(default_factory=list)
     plate: str = Field(default="", max_length=15)
@@ -59,6 +67,11 @@ class CrmOrderWrite(CrmModel):
     @classmethod
     def blank_year_is_none(cls, value: object) -> object:
         return None if value == "" else value
+
+    @field_validator("marker_id", mode="before")
+    @classmethod
+    def blank_marker_is_none(cls, value: object) -> object:
+        return None if value in (None, "") else value
 
     @model_validator(mode="after")
     def validate_frontend_stage(self) -> "CrmOrderWrite":
@@ -100,6 +113,9 @@ class CrmOrderRead(CrmModel):
     description: str
     date: str
     time: str
+    appointment_master_id: int | None = Field(alias="appointmentMasterId")
+    marker_id: int | None = Field(alias="markerId")
+    marker_color: str | None = Field(alias="markerColor")
     source: OrderSource
     plate: str
     brand: str
@@ -136,3 +152,12 @@ class CrmClientBrief(CrmModel):
 
 class CrmBulkDelete(CrmModel):
     ids: list[int] = Field(min_length=1, max_length=100)
+
+
+class CrmMarkerCreate(CrmModel):
+    name: str = Field(min_length=1, max_length=80)
+    color: str = Field(min_length=1, max_length=32)
+
+
+class CrmMarkerRead(CrmMarkerCreate):
+    id: int

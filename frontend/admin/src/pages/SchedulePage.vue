@@ -216,10 +216,9 @@ async function onQuickBookingAdd(payload) {
       description: payload.description,
       date: formatRuDateNumeric(payload.date),
       time: payload.time,
-      // markerId: payload.markerId,
-      // lines: payload.employeeId
-      //   ? [{ serviceId: '', price: '', discount: '', masterId: payload.employeeId }]
-      //   : [],
+      reserveSlot: true,
+      appointmentMasterId: payload.employeeUserId,
+      markerId: payload.markerId || null,
       lines: []
     })
     quickBookingOpen.value = false

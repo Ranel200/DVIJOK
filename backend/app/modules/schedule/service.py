@@ -294,7 +294,7 @@ class ScheduleService:
         if duration < 1 or duration > 1440:
             raise BusinessRuleError("Некорректная длительность записи")
 
-        mechanics_stmt = select(Mechanic).where(
+        mechanics_stmt = select(Mechanic).options(selectinload(Mechanic.user)).where(
             Mechanic.organization_id == self.organization_id,
             Mechanic.is_active.is_(True),
         )
@@ -344,7 +344,12 @@ class ScheduleService:
                                         duration_minutes=duration,
                                     )
                                 )
-                        cursor += dt.timedelta(minutes=settings.SCHEDULE_SLOT_STEP_MINUTES)
+                        step = (
+                            mechanic.user.schedule_slot_step
+                            if mechanic.user is not None
+                            else settings.SCHEDULE_SLOT_STEP_MINUTES
+                        )
+                        cursor += dt.timedelta(minutes=step)
             day += dt.timedelta(days=1)
         result.sort(key=lambda item: (item.start_time, item.mechanic_id))
         return AvailabilitySuggestions(
@@ -462,16 +467,29 @@ class ScheduleService:
 
         schedules = {mechanic.id: await self.working_hours(mechanic.id) for mechanic in mechanics}
         starts = [
-            item.start_time.hour for schedule in schedules.values() for item in schedule.intervals
-        ]
-        ends = [
-            item.end_time.hour + (1 if item.end_time.minute else 0)
+            item.start_time.hour * 60 + item.start_time.minute
             for schedule in schedules.values()
             for item in schedule.intervals
         ]
-        min_hour = min(starts, default=9)
-        max_hour = max(ends, default=18)
-        times = [f"{hour:02d}:00" for hour in range(min_hour, max_hour)]
+        ends = [
+            item.end_time.hour * 60 + item.end_time.minute
+            for schedule in schedules.values()
+            for item in schedule.intervals
+        ]
+        min_minute = min(starts, default=9 * 60)
+        max_minute = max(ends, default=18 * 60)
+        calendar_step = min(
+            (
+                mechanic.user.schedule_slot_step
+                for mechanic in mechanics
+                if mechanic.user is not None
+            ),
+            default=settings.SCHEDULE_SLOT_STEP_MINUTES,
+        )
+        times = [
+            f"{minute // 60:02d}:{minute % 60:02d}"
+            for minute in range(min_minute, max_minute, calendar_step)
+        ]
 
         days: list[CalendarDay] = []
 
@@ -487,9 +505,9 @@ class ScheduleService:
             day = monday + dt.timedelta(days=offset)
             by_time: dict[str, list[CalendarBlock]] = {time: [] for time in times}
             for time_label in times:
-                hour = int(time_label[:2])
-                cell_start = dt.datetime.combine(day, dt.time(hour), timezone)
-                cell_end = cell_start + dt.timedelta(hours=1)
+                hour, minute = (int(item) for item in time_label.split(":"))
+                cell_start = dt.datetime.combine(day, dt.time(hour, minute), timezone)
+                cell_end = cell_start + dt.timedelta(minutes=calendar_step)
                 for mechanic in mechanics:
                     color = (
                         mechanic.user.calendar_color
@@ -529,14 +547,15 @@ class ScheduleService:
                         order = matching_slot.order
                         services = (
                             ", ".join(item.description for item in order.items)
+                            or "Услуга не указана"
                             if order is not None
-                            else matching_slot.title
+                            else matching_slot.title or "Услуга не указана"
                         )
-                        services = services or matching_slot.title
                         by_time[time_label].append(
                             CalendarBlock(
                                 id=f"slot-{matching_slot.id}-{day}-{time_label}",
                                 employee_id=mechanic.id,
+                                employee_user_id=mechanic.user_id,
                                 employee_name=mechanic.full_name,
                                 color=color,
                                 status="busy",
@@ -550,13 +569,21 @@ class ScheduleService:
                                 ),
                                 service_name=services or None,
                                 order_status=order.status.value if order else None,
+                                marker_color=(
+                                    order.marker.color if order and order.marker else None
+                                ),
                             )
                         )
                     elif matching_block is not None or on_break:
                         by_time[time_label].append(
                             CalendarBlock(
-                                id=f"block-{matching_block.id}-{day}-{time_label}",
+                                id=(
+                                    f"block-{matching_block.id}-{day}-{time_label}"
+                                    if matching_block is not None
+                                    else f"break-{mechanic.id}-{day}-{time_label}"
+                                ),
                                 employee_id=mechanic.id,
+                                employee_user_id=mechanic.user_id,
                                 employee_name=mechanic.full_name,
                                 color=color,
                                 status="unavailable",
@@ -572,6 +599,7 @@ class ScheduleService:
                             CalendarBlock(
                                 id=f"free-{mechanic.id}-{day}-{time_label}",
                                 employee_id=mechanic.id,
+                                employee_user_id=mechanic.user_id,
                                 employee_name=mechanic.full_name,
                                 color=color,
                                 status="available" if works else "unavailable",

@@ -1206,6 +1206,18 @@ const mockCrmColumns = [
 ]
 
 export const crmApi = {
+  async markers() {
+    if (USE_MOCK) return mockOk(ORDER_MARKER_OPTIONS.map(marker => ({ ...marker })))
+    return http.get('/crm/markers')
+  },
+
+  async createMarker(payload) {
+    if (USE_MOCK) {
+      return mockOk({ id: `marker-${Date.now()}`, ...payload })
+    }
+    return http.post('/crm/markers', payload)
+  },
+
   async services() {
     if (USE_MOCK) return mockOk(mockServices.map(service => ({ ...service })))
     return http.get('/crm/services')
@@ -1346,6 +1358,11 @@ export const crmApi = {
   async generateDocuments(orderId) {
     if (USE_MOCK) return mockOk([])
     return http.post(`/orders/${orderId}/documents/generate`)
+  },
+
+  async deleteDocument(orderId, documentId) {
+    if (USE_MOCK) return mockOk(null)
+    return http.delete(`/orders/${orderId}/documents/${documentId}`)
   },
 
   async downloadDocument(orderId, documentId) {

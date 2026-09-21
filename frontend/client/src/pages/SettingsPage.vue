@@ -25,6 +25,7 @@
                 />
                 <BaseField
                   v-model="form.phone"
+                  type="tel"
                   label="Номер телефона"
                   placeholder="+7 999 999 99 99"
                   mask="+7 ### ### ## ##"
@@ -156,20 +157,38 @@
       title="Данные успешно изменены!"
       @continue="onSuccessContinue"
     />
+
+    <BaseModal v-model="logoutConfirmOpen">
+      <div class="logout-modal">
+        <h2 class="logout-modal__title">
+          Вы уверены, что хотите
+          <br />
+          выйти из аккаунта?
+        </h2>
+        <div class="logout-modal__actions">
+          <BaseButton color="green" size="lg" @click="logoutConfirmOpen = false">Отмена</BaseButton>
+          <BaseButton color="red" size="lg" :loading="logoutLoading" @click="confirmLogout">
+            Да, выйти
+          </BaseButton>
+        </div>
+      </div>
+    </BaseModal>
   </q-page>
 </template>
 
 <script setup>
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
+import { carsApi } from '@/api/index.js'
 import GlassActionRow from '@/components/booking/GlassActionRow.vue'
 import HomeTabs from '@/components/home/HomeTabs.vue'
 import ClientHeader from '@/components/layout/ClientHeader.vue'
 import ArrowIcon from '@/components/ui/ArrowIcon.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseField from '@/components/ui/BaseField.vue'
+import BaseModal from '@/components/ui/BaseModal.vue'
 import BaseSwitcher from '@/components/ui/BaseSwitcher.vue'
 import SuccessModal from '@/components/ui/SuccessModal.vue'
 
@@ -182,6 +201,7 @@ const isEditing = ref(false)
 const saving = ref(false)
 const successOpen = ref(false)
 const logoutLoading = ref(false)
+const logoutConfirmOpen = ref(false)
 
 const form = reactive({
   name: '',
@@ -249,7 +269,42 @@ function syncFormFromUser() {
   form.email = user.value?.email || ''
 }
 
-watch(user, syncFormFromUser, { immediate: true, deep: true })
+function syncConsentsFromUser() {
+  // Согласия выдаются при регистрации и приходят из backend вместе с
+  // профилем. Не перезаписываем состояние, если старый backend их ещё не
+  // возвращает.
+  if (user.value?.consentMarketing !== undefined) {
+    consents.marketing = Boolean(user.value.consentMarketing)
+  }
+  if (user.value?.consentTransfer !== undefined) {
+    consents.transfer = Boolean(user.value.consentTransfer)
+  }
+}
+
+async function syncBotConsents() {
+  try {
+    const data = await carsApi.list()
+    for (const bot of data.bots || []) {
+      if (bot.id === 'vk') consents.vk = Boolean(bot.connected)
+      if (bot.id === 'tg') consents.telegram = Boolean(bot.connected)
+      if (bot.id === 'max') consents.max = Boolean(bot.connected)
+    }
+  } catch {
+    // Состояние переключателей не должно ломать страницу настроек, если
+    // список автомобилей временно недоступен.
+  }
+}
+
+watch(
+  user,
+  value => {
+    syncFormFromUser(value)
+    syncConsentsFromUser()
+  },
+  { immediate: true, deep: true }
+)
+
+onMounted(syncBotConsents)
 
 function goToHomeTab(name) {
   router.push({ name: 'home', query: { tab: name } })
@@ -291,10 +346,15 @@ function openDocument(href) {
 }
 
 async function onLogout() {
+  logoutConfirmOpen.value = true
+}
+
+async function confirmLogout() {
   if (logoutLoading.value) return
   logoutLoading.value = true
   try {
     await authStore.logout()
+    logoutConfirmOpen.value = false
   } finally {
     logoutLoading.value = false
     await router.replace({ name: 'login' })
@@ -544,5 +604,30 @@ async function onLogout() {
   font-weight: 700;
   text-transform: uppercase;
   color: inherit;
+}
+
+.logout-modal {
+  width: min(100%, 640px);
+  padding: 34px 36px 28px;
+  text-align: center;
+  /* BaseModal fills the viewport; keep the confirmation content on a
+     readable card instead of letting it blend into the backdrop. */
+  box-sizing: border-box;
+  background: var(--dvijok-white, #fff);
+  border-radius: 24px;
+}
+
+.logout-modal__title {
+  margin: 0 0 34px;
+  color: var(--dvijok-blue-dark, #093095);
+  font-size: 28px;
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+.logout-modal__actions {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
 }
 </style>

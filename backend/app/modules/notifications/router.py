@@ -1,21 +1,24 @@
 """Публичные webhook-endpoint'ы Telegram, VK и MAX."""
 
+import logging
 import re
 from typing import Any
 
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Depends, Header, Request
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.exceptions import UnauthorizedError
+from app.modules.notifications.providers import BotProviders
 from app.modules.notifications.service import MessengerService
 from app.shared.enums import NotificationChannel
 
 router = APIRouter(prefix="/bot-gateway", tags=["bot-gateway"])
 
 _TOKEN_RE = re.compile(r"(?:^|\s)([A-Za-z0-9_-]{20,64})(?:\s|$)")
+logger = logging.getLogger(__name__)
 
 
 def get_messenger_service(
@@ -45,13 +48,20 @@ async def telegram_webhook(
     sender = message.get("from") or {}
     chat = message.get("chat") or {}
     if link_token and sender.get("id") is not None and chat.get("id") is not None:
-        await service.bind(
+        binding, created = await service.bind_with_status(
             channel=NotificationChannel.TELEGRAM,
             token=link_token,
             external_user_id=str(sender["id"]),
             external_chat_id=str(chat["id"]),
             username=sender.get("username"),
         )
+        if created:
+            try:
+                await BotProviders().send_welcome(
+                    NotificationChannel.TELEGRAM, binding.external_chat_id
+                )
+            except Exception:
+                logger.exception("Не удалось отправить приветствие Telegram")
     return {"ok": True}
 
 
@@ -75,34 +85,59 @@ async def vk_webhook(
         external_user_id = message.get("from_id")
         peer_id = message.get("peer_id")
         if link_token and external_user_id is not None and peer_id is not None:
-            await service.bind(
+            binding, created = await service.bind_with_status(
                 channel=NotificationChannel.VK,
                 token=link_token,
                 external_user_id=str(external_user_id),
                 external_chat_id=str(peer_id),
             )
+            if created:
+                try:
+                    await BotProviders().send_welcome(
+                        NotificationChannel.VK, binding.external_chat_id
+                    )
+                except Exception:
+                    logger.exception("Не удалось отправить приветствие VK")
     return "ok"
 
 
 @router.post("/max/webhook")
 async def max_webhook(
-    payload: dict[str, Any],
+    request: Request,
     secret: str | None = Header(default=None, alias="X-Max-Bot-Api-Secret"),
     service: MessengerService = Depends(get_messenger_service),
 ) -> dict[str, bool]:
     if settings.MAX_WEBHOOK_SECRET and secret != settings.MAX_WEBHOOK_SECRET:
         raise UnauthorizedError("Неверный секрет MAX webhook")
+    try:
+        payload = await request.json()
+    except ValueError:
+        # MAX retries every non-200 response. A malformed technical delivery
+        # must not block subsequent valid bot_started updates.
+        logger.warning("MAX webhook received a non-JSON payload")
+        return {"ok": True}
+    if not isinstance(payload, dict):
+        logger.warning("MAX webhook received a non-object JSON payload")
+        return {"ok": True}
+
     if payload.get("update_type") == "bot_started":
         sender = payload.get("user") or {}
         link_token = _token(payload.get("payload"))
         external_user_id = sender.get("user_id")
         chat_id = payload.get("chat_id")
         if link_token and external_user_id is not None and chat_id is not None:
-            await service.bind(
+            binding, created = await service.bind_with_status(
                 channel=NotificationChannel.MAX,
                 token=link_token,
                 external_user_id=str(external_user_id),
                 external_chat_id=str(chat_id),
                 username=sender.get("username"),
             )
+            if created:
+                try:
+                    await BotProviders().send_welcome(
+                        NotificationChannel.MAX, binding.external_chat_id
+                    )
+                except Exception:
+                    logger.exception("Не удалось отправить приветствие MAX")
     return {"ok": True}

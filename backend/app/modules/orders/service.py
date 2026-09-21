@@ -12,7 +12,7 @@ import re
 from decimal import Decimal
 from pathlib import Path
 
-from sqlalchemy import select
+from sqlalchemy import Integer, cast, delete, func, select
 
 from app.core.config import settings
 from app.core.exceptions import BusinessRuleError, NotFoundError
@@ -30,6 +30,7 @@ from app.modules.orders.schemas import (
     OrderUpdate,
 )
 from app.modules.organizations.models import Organization
+from app.modules.schedule.models import ScheduleSlot
 from app.modules.services.models import Service
 from app.modules.users.models import User
 from app.modules.vehicles.models import Vehicle
@@ -128,8 +129,19 @@ class OrderService:
         ).scalar_one_or_none()
         if organization is None:
             raise NotFoundError("Организация не найдена")
-        number = organization.next_order_number
-        organization.next_order_number += 1
+        # The organization row is locked above, so concurrent requests cannot
+        # receive the same number.  Reconcile a stale counter with already
+        # created orders as well: old deployments may have orders written
+        # before ``next_order_number`` was introduced or repaired manually.
+        last_number = (
+            await self.session.execute(
+                select(func.coalesce(func.max(cast(Order.number, Integer)), 0)).where(
+                    Order.organization_id == self.organization_id
+                )
+            )
+        ).scalar_one()
+        number = max(organization.next_order_number, int(last_number) + 1)
+        organization.next_order_number = number + 1
         return str(number)
 
     async def _ensure_access(self, order: Order) -> None:
@@ -538,8 +550,11 @@ class OrderService:
 
     @staticmethod
     def _check_document_deletable(order: Order) -> None:
-        if order.status in {OrderStatus.DONE, OrderStatus.CANCELLED}:
-            raise BusinessRuleError("Документ закрытого или отменённого заказа нельзя удалить")
+        # A completed order can need a corrected or re-issued document.  After
+        # deletion the existing upload/generation rules allow adding a new one.
+        # Cancelled orders remain immutable for audit consistency.
+        if order.status == OrderStatus.CANCELLED:
+            raise BusinessRuleError("Документ отменённого заказа нельзя удалить")
 
     async def _save_document(
         self,
@@ -761,4 +776,13 @@ justify-content:space-between;margin-top:64px}} @media print{{body{{margin:12mm}
         order = await self.repo.get(order_id)
         if order is None:
             raise NotFoundError("Заказ не найден")
+        # A client reservation has a separate schedule row. The foreign key is
+        # intentionally nullable for manual schedule slots, so remove only the
+        # slot attached to this order before the order itself is deleted.
+        await self.session.execute(
+            delete(ScheduleSlot).where(
+                ScheduleSlot.organization_id == self.organization_id,
+                ScheduleSlot.order_id == order.id,
+            )
+        )
         await self.repo.delete(order)

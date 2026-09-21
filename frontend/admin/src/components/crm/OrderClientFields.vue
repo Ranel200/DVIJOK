@@ -40,6 +40,7 @@
       label="Описание"
       placeholder="Описание"
       :readonly="readonly"
+      :autogrow="false"
       block
     />
     <div v-if="!hideAppointment" class="order-client-fields__h-field">
@@ -70,8 +71,6 @@
         block
         :disable="readonly"
         :hide-chevron="readonly"
-        :required="required && !readonly"
-        required-message="Выберите вид источника"
       />
     </div>
     <div class="order-client-fields__h-field order-client-fields__h-field--markers">
@@ -169,8 +168,15 @@ const phoneRule = requiredPhone('Введите номер телефона кл
 }
 
 .order-client-fields__textarea {
+  :deep(.q-field__control) {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
   :deep(textarea.q-field__native) {
-    max-height: calc(16px * 6);
+    min-height: 32px;
+    height: 32px;
+    max-height: 32px;
     overflow-y: auto !important;
     resize: none;
     scrollbar-width: none;

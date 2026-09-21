@@ -78,25 +78,59 @@ class ScheduleBreak(AdminScheduleModel):
         return self
 
 
-class StaffScheduleSettings(AdminScheduleModel):
-    type: str = "workdays"
+class ScheduleWorkPeriod(AdminScheduleModel):
     start: time
     end: time
+
+    @model_validator(mode="after")
+    def validate_interval(self) -> "ScheduleWorkPeriod":
+        if self.end <= self.start:
+            raise ValueError("Начало рабочего периода должно быть раньше окончания")
+        return self
+
+
+class StaffScheduleSettings(AdminScheduleModel):
+    type: str = "workdays"
+    slot_step: int = Field(default=60, alias="slotStep", ge=1, le=1440)
+    work_periods: list[ScheduleWorkPeriod] = Field(default_factory=list, alias="workPeriods")
+    # Старый контракт оставлен для обратной совместимости клиентов.
+    start: time | None = None
+    end: time | None = None
     breaks: list[ScheduleBreak] = Field(default_factory=list)
     work_days: list[int] = Field(alias="workDays", min_length=1)
-    employee_id: int | str = Field(alias="employeeId")
+    employee_ids: list[int | str] = Field(default_factory=list, alias="employeeIds")
+    employee_id: int | str | None = Field(default=None, alias="employeeId")
+
+    @property
+    def resolved_periods(self) -> list[ScheduleWorkPeriod]:
+        if self.work_periods:
+            return self.work_periods
+        if self.start is not None and self.end is not None:
+            return [ScheduleWorkPeriod(start=self.start, end=self.end)]
+        return []
+
+    @property
+    def resolved_employee_ids(self) -> list[int | str]:
+        return self.employee_ids or ([self.employee_id] if self.employee_id is not None else [])
 
     @model_validator(mode="after")
     def validate_settings(self) -> "StaffScheduleSettings":
         if self.type != "workdays":
             raise ValueError("Поддерживается только тип workdays")
-        if self.end <= self.start:
-            raise ValueError("Начало рабочего дня должно быть раньше окончания")
+        periods = self.resolved_periods
+        if not periods:
+            raise ValueError("Укажите хотя бы один рабочий период")
+        targets = self.resolved_employee_ids
+        if not targets:
+            raise ValueError("Выберите хотя бы одного сотрудника")
         if any(day < 0 or day > 6 for day in self.work_days):
             raise ValueError("День недели должен быть от 0 до 6")
-        if isinstance(self.employee_id, str) and self.employee_id != "all":
-            raise ValueError("employeeId должен быть числом или 'all'")
+        if any(isinstance(item, str) and item != "all" for item in targets):
+            raise ValueError("employeeIds должны содержать числа или 'all'")
+        ordered = sorted(periods, key=lambda item: item.start)
+        if any(left.end > right.start for left, right in zip(ordered, ordered[1:])):
+            raise ValueError("Рабочие периоды не должны пересекаться")
         for item in self.breaks:
-            if item.start < self.start or item.end > self.end:
-                raise ValueError("Перерыв должен находиться внутри рабочего дня")
+            if not any(item.start >= period.start and item.end <= period.end for period in periods):
+                raise ValueError("Перерыв должен находиться внутри рабочего периода")
         return self

@@ -17,8 +17,9 @@ from app.modules.notifications.models import (
     ClientMessengerLinkToken,
     NotificationDelivery,
 )
-from app.modules.orders.models import Order, OrderDocument, OrderItem
+from app.modules.orders.models import Order, OrderDocument, OrderItem, OrderMarker
 from app.modules.organizations.models import Organization
+from app.modules.platform_admin.models import PlatformAdminState
 from app.modules.referrals.models import OrganizationReferral
 from app.modules.schedule.models import MechanicBlock, MechanicWorkingHours, ScheduleSlot
 from app.modules.services.models import Service
@@ -46,6 +47,7 @@ __all__ = [
     "Vehicle",
     "Service",
     "Order",
+    "OrderMarker",
     "OrderItem",
     "OrderDocument",
     "ScheduleSlot",
@@ -54,4 +56,5 @@ __all__ = [
     "InventoryItem",
     "StockMovement",
     "Task",
+    "PlatformAdminState",
 ]

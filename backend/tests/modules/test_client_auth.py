@@ -75,8 +75,22 @@ async def ca_client(session_factory):
         yield c
 
 
+def _registration_request(phone: str) -> dict[str, str | bool]:
+    return {
+        "phone": phone,
+        "purpose": "registration",
+        "accept_terms": True,
+        "consent_personal": True,
+        "consent_transfer": True,
+        "consent_marketing": True,
+    }
+
+
 async def _request_and_get_code(ca_client, phone: str) -> str:
-    resp = await ca_client.post(f"{API}/client-auth/otp/request", json={"phone": phone})
+    resp = await ca_client.post(
+        f"{API}/client-auth/otp/request",
+        json=_registration_request(phone),
+    )
     assert resp.status_code == 200, resp.text
     code = resp.json()["debug_code"]
     assert code is not None  # settings.DEBUG=True в тестовом окружении
@@ -100,6 +114,64 @@ async def test_otp_happy_path_issues_tokens(ca_client):
     )
     assert me.status_code == 200
     assert me.json()["phone"] == phone
+    assert me.json()["consent_personal"] is True
+    assert me.json()["consent_transfer"] is True
+    assert me.json()["consent_marketing"] is True
+
+
+async def test_login_unknown_phone_rejected_before_provider_call(ca_client, monkeypatch):
+    calls = 0
+
+    async def fake_call(self, phone: str, user_ip: str) -> ZvonokFlashCallResult:
+        nonlocal calls
+        calls += 1
+        return ZvonokFlashCallResult(code="7319", call_id="unexpected", balance=None)
+
+    monkeypatch.setattr(settings, "OTP_PROVIDER", "zvonok_flashcall")
+    monkeypatch.setattr(ZvonokFlashCallProvider, "request_code", fake_call)
+
+    response = await ca_client.post(
+        f"{API}/client-auth/otp/request",
+        json={"phone": "+79990001999", "purpose": "login"},
+    )
+
+    assert response.status_code == 404
+    assert response.json()["message"] == (
+        "Аккаунт с таким номером не найден. Сначала зарегистрируйтесь."
+    )
+    assert calls == 0
+
+
+async def test_login_existing_phone_requests_code(ca_client, session_factory):
+    phone = "+79990001998"
+    async with session_factory() as session:
+        session.add(ClientAccount(phone=phone, full_name="Иван Клиент"))
+        await session.commit()
+
+    response = await ca_client.post(
+        f"{API}/client-auth/otp/request",
+        json={"phone": phone, "purpose": "login"},
+    )
+
+    assert response.status_code == 200, response.text
+    assert response.json()["debug_code"] is not None
+
+
+async def test_registration_requires_mandatory_consents(ca_client):
+    response = await ca_client.post(
+        f"{API}/client-auth/otp/request",
+        json={
+            "phone": "+79990001997",
+            "purpose": "registration",
+            "accept_terms": True,
+            "consent_personal": True,
+            "consent_transfer": True,
+            "consent_marketing": False,
+        },
+    )
+
+    assert response.status_code == 422
+    assert "Для регистрации примите обязательные согласия" in response.json()["message"]
 
 
 async def test_first_login_copies_name_from_guest_crm_card(
@@ -192,7 +264,8 @@ async def test_sms_ru_call_code_is_used_but_never_returned(ca_client, monkeypatc
     monkeypatch.setattr(SmsRuCallProvider, "request_code", fake_call)
 
     requested = await ca_client.post(
-        f"{API}/client-auth/otp/request", json={"phone": "+79990001199"}
+        f"{API}/client-auth/otp/request",
+        json=_registration_request("+79990001199"),
     )
     assert requested.status_code == 200, requested.text
     assert requested.json()["debug_code"] is None
@@ -222,7 +295,7 @@ async def test_sms_ru_calls_are_not_globally_limited(ca_client, monkeypatch):
     for suffix in range(6):
         response = await ca_client.post(
             f"{API}/client-auth/otp/request",
-            json={"phone": f"+799911100{suffix:02d}"},
+            json=_registration_request(f"+799911100{suffix:02d}"),
         )
         statuses.append(response.status_code)
     assert statuses == [200] * 6
@@ -242,7 +315,8 @@ async def test_zvonok_flashcall_code_is_used_but_never_returned(ca_client, monke
     monkeypatch.setattr(ZvonokFlashCallProvider, "request_code", fake_call)
 
     requested = await ca_client.post(
-        f"{API}/client-auth/otp/request", json={"phone": "+79990001200"}
+        f"{API}/client-auth/otp/request",
+        json=_registration_request("+79990001200"),
     )
     assert requested.status_code == 200, requested.text
     assert requested.json()["debug_code"] is None
@@ -259,7 +333,7 @@ async def test_zvonok_flashcall_code_is_used_but_never_returned(ca_client, monke
 async def test_masked_phone_name_cookie_refresh_and_logout(ca_client):
     request = await ca_client.post(
         f"{API}/client-auth/otp/request",
-        json={"phone": "8 (999) 111-22-33"},
+        json=_registration_request("8 (999) 111-22-33"),
     )
     assert request.status_code == 200, request.text
     code = request.json()["debug_code"]
@@ -341,7 +415,10 @@ async def test_otp_request_rate_limited(ca_client):
     phone = "+79990001155"
     statuses = []
     for _ in range(settings.OTP_RATE_LIMIT_ATTEMPTS + 2):
-        resp = await ca_client.post(f"{API}/client-auth/otp/request", json={"phone": phone})
+        resp = await ca_client.post(
+            f"{API}/client-auth/otp/request",
+            json=_registration_request(phone),
+        )
         statuses.append(resp.status_code)
     assert 429 in statuses
 

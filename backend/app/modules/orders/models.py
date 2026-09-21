@@ -41,6 +41,22 @@ if TYPE_CHECKING:
     from app.modules.vehicles.models import Vehicle
 
 
+class OrderMarker(Base, IntPKMixin, TimestampMixin):
+    """Пользовательский цветной маркер заказа в рамках автосервиса."""
+
+    __tablename__ = "order_markers"
+
+    organization_id: Mapped[int] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE"), index=True
+    )
+    name: Mapped[str] = mapped_column(String(80))
+    color: Mapped[str] = mapped_column(String(32))
+
+    __table_args__ = (
+        UniqueConstraint("organization_id", "name", name="uq_order_markers_org_name"),
+    )
+
+
 class Order(Base, IntPKMixin, TimestampMixin):
     __tablename__ = "orders"
 
@@ -60,6 +76,9 @@ class Order(Base, IntPKMixin, TimestampMixin):
         ForeignKey("mechanics.id", ondelete="SET NULL"), index=True
     )
     created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    marker_id: Mapped[int | None] = mapped_column(
+        ForeignKey("order_markers.id", ondelete="SET NULL"), index=True
+    )
 
     status: Mapped[OrderStatus] = mapped_column(
         Enum(OrderStatus, native_enum=False, length=20), default=OrderStatus.NEW, index=True
@@ -91,6 +110,7 @@ class Order(Base, IntPKMixin, TimestampMixin):
         lazy="selectin",
         order_by="OrderDocument.id",
     )
+    marker: Mapped["OrderMarker | None"] = relationship(lazy="joined")
 
     @property
     def document(self) -> "OrderDocument | None":

@@ -68,6 +68,12 @@ class Settings(BaseSettings):
     FIRST_ADMIN_PASSWORD: str = "admin12345"
     FIRST_ADMIN_NAME: str = "Администратор"
 
+    # Global creator/admin contour.  In development an organization owner may
+    # open the local creator console so it can be tested without a second
+    # account.  Production must list explicit identifiers (emails/logins).
+    PLATFORM_ADMIN_IDENTIFIERS: str = ""
+    PLATFORM_ADMIN_ALLOW_OWNER_IN_DEV: bool = True
+
     # Клиентский контур (Система B) — JWT
     CLIENT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 43200  # 30 дней, мобильный клиент
     CLIENT_REFRESH_TOKEN_EXPIRE_DAYS: int = 180

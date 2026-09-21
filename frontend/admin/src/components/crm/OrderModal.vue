@@ -196,6 +196,30 @@
               Сгенерировать документы
             </button>
           </template>
+
+          <template v-if="viewServiceLines.length">
+            <h2 class="order-docs__title">Детали заказа</h2>
+            <div class="order-view-services">
+              <div
+                v-for="line in viewServiceLines"
+                :key="line.key"
+                class="order-view-services__row order-docs__glass"
+              >
+                <div class="order-view-services__main">
+                  <span class="order-view-services__name">{{ line.name }}</span>
+                  <span v-if="line.master" class="order-view-services__master">
+                    Мастер: {{ line.master }}
+                  </span>
+                </div>
+                <span v-if="line.price !== null" class="order-view-services__price">
+                  {{ formatCrmMoney(line.price) }} ₽
+                </span>
+              </div>
+            </div>
+            <div v-if="viewServicesTotal !== null" class="order-view-services__total">
+              Итого: {{ formatCrmMoney(viewServicesTotal) }} ₽
+            </div>
+          </template>
         </div>
 
         <template v-else-if="isSchedule">
@@ -227,7 +251,6 @@
               <span class="order-form__week-legend-square" />
             </div>
           </div>
-
           <ScheduleCalendarTable
             v-if="modelValue"
             compact
@@ -242,7 +265,7 @@
               <BaseInput v-model="draft.date" mask="##.##.####" placeholder="Дата" block />
               <BaseInput v-model="draft.time" mask="##:##" placeholder="Время" block />
               <BaseSelect
-                v-model="lineDraft.masterId"
+                v-model="draft.appointmentMasterId"
                 :options="masterOptions"
                 placeholder="Мастер"
                 block
@@ -303,7 +326,12 @@ import BaseSelect from '@/components/ui/BaseSelect.vue'
 import PdfIcon from '@/components/ui/PdfIcon.vue'
 import PrinterIcon from '@/components/ui/PrinterIcon.vue'
 import { crmApi } from '@/api/index.js'
-import { CRM_STATUS_LIST, ORDER_SOURCE_OPTIONS, formatCrmOrderNumber } from '@/constants/crm.js'
+import {
+  CRM_STATUS_LIST,
+  ORDER_SOURCE_OPTIONS,
+  formatCrmMoney,
+  formatCrmOrderNumber
+} from '@/constants/crm.js'
 import { useScheduleFilterStore } from '@/stores/scheduleFilter.js'
 import { formatRuDateNumeric } from '@/utils/formatDateRu.js'
 
@@ -363,6 +391,35 @@ const rightColClass = computed(() => {
 
 const viewDocuments = computed(() => localDocuments.value)
 
+const viewServiceLines = computed(() => {
+  if (draft.lines.length) {
+    return draft.lines.map((line, index) => {
+      const service = serviceOptions.value.find(
+        item => String(item.value) === String(line.serviceId)
+      )
+      const master = masterOptions.value.find(item => String(item.value) === String(line.masterId))
+      return {
+        key: `line-${line.serviceId || index}-${index}`,
+        name: service?.label || (line.serviceId ? `Услуга №${line.serviceId}` : 'Услуга'),
+        master: master?.label || '',
+        price: line.price === '' || line.price == null ? null : lineTotal(line)
+      }
+    })
+  }
+
+  return (props.order?.services || []).map((name, index) => ({
+    key: `service-${index}`,
+    name,
+    master: '',
+    price: null
+  }))
+})
+
+const viewServicesTotal = computed(() => {
+  const pricedLines = viewServiceLines.value.filter(line => line.price !== null)
+  return pricedLines.length ? pricedLines.reduce((sum, line) => sum + line.price, 0) : null
+})
+
 const modalTitle = computed(() =>
   formatCrmOrderNumber(props.order?.number || props.orderNumber || 0)
 )
@@ -403,7 +460,7 @@ watch(
     }
     Object.assign(lineDraft, emptyLine())
 
-    if (props.mode !== 'view' && !serviceOptions.value.length) {
+    if (!serviceOptions.value.length || !masterOptions.value.length) {
       const [services, employees] = await Promise.all([crmApi.services(), crmApi.employees()])
       serviceOptions.value = (services || []).map(item => ({
         value: item.id,
@@ -438,11 +495,14 @@ function emptyLine() {
   }
 }
 
-function onSelectAvailable({ date, time, employeeId }) {
+function onSelectAvailable({ date, time, employeeId, employeeUserId }) {
   if (!date || !time) return
   draft.date = formatRuDateNumeric(date)
   draft.time = time
-  if (employeeId != null && employeeId !== '' && employeeId !== '__empty__') {
+  if (employeeUserId != null && employeeUserId !== '') {
+    draft.appointmentMasterId = employeeUserId
+    lineDraft.masterId = employeeUserId
+  } else if (employeeId != null && employeeId !== '' && employeeId !== '__empty__') {
     lineDraft.masterId = employeeId
   }
 }
@@ -456,6 +516,7 @@ function createEmptyDraft() {
     description: '',
     date: '',
     time: '',
+    appointmentMasterId: '',
     source: '',
     markerId: '',
     lines: [],
@@ -491,8 +552,9 @@ function draftFromOrder(order) {
     description: order.description || '',
     date: order.date || '',
     time: order.time || '',
+    appointmentMasterId: order.appointmentMasterId || '',
     source: order.source || '',
-    // markerId: order.markerId || '',
+    markerId: order.markerId || '',
     lines:
       Array.isArray(order.lines) && order.lines.length
         ? order.lines.map(line => ({
@@ -623,7 +685,20 @@ async function downloadDocumentsArchive() {
   }
 }
 
-function deleteDocument(_doc) {}
+async function deleteDocument(doc) {
+  if (!props.order?.id || !doc?.id) return
+  const title = doc.title || 'этот документ'
+  if (!window.confirm(`Удалить «${title}»? Это действие нельзя отменить.`)) return
+  documentsBusy.value = true
+  try {
+    await crmApi.deleteDocument(props.order.id, doc.id)
+    await refreshOrderDocuments()
+  } catch (error) {
+    window.alert(error?.data?.message || error?.message || 'Не удалось удалить документ')
+  } finally {
+    documentsBusy.value = false
+  }
+}
 
 async function printDocument(doc) {
   if (!props.order?.id || !doc?.id) return
@@ -692,7 +767,7 @@ function onSave() {
     serviceId: line.serviceId,
     price: line.price === '' ? 0 : Number(line.price),
     discount: line.discount === '' ? 0 : Number(line.discount),
-    masterId: line.masterId
+    masterId: line.masterId || null
   }))
   const services = lines
     .map(line => serviceOptions.value.find(item => item.value === line.serviceId)?.label)
@@ -712,8 +787,10 @@ function onSave() {
     description: draft.description.trim(),
     date: draft.date,
     time: draft.time,
+    reserveSlot: Boolean(draft.date || draft.time),
+    appointmentMasterId: draft.appointmentMasterId || null,
     source: draft.source,
-    // markerId: draft.markerId || '',
+    markerId: draft.markerId || null,
     lines,
     amount,
     services,
@@ -812,15 +889,15 @@ function onSave() {
 }
 
 .order-form--schedule .order-form__col--main {
-  flex: 0 1 430px;
-  max-width: 430px;
+  flex: 0 0 500px;
+  max-width: 500px;
 }
 
 .order-form__col--schedule {
   flex: 1 1 auto;
   max-width: none;
   min-width: 0;
-  overflow: hidden;
+  overflow: auto;
   align-items: stretch;
 }
 
@@ -889,8 +966,10 @@ function onSave() {
 }
 
 .order-form__col--schedule :deep(.order-form__calendar) {
-  flex: 1 1 auto;
-  min-height: 240px;
+  flex: 0 0 250px;
+  height: 250px;
+  min-height: 0;
+  max-height: 250px;
   width: 100%;
 }
 
@@ -967,6 +1046,64 @@ function onSave() {
   font-weight: 600;
   line-height: normal;
   text-transform: uppercase;
+}
+
+.order-view-services {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.order-view-services__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  width: 100%;
+  min-height: 52px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.order-view-services__main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.order-view-services__name,
+.order-view-services__price {
+  color: var(--dvijok-white);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: normal;
+}
+
+.order-view-services__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.order-view-services__master {
+  color: #a4acc7;
+  font-size: 12px;
+  line-height: normal;
+}
+
+.order-view-services__price {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.order-view-services__total {
+  align-self: flex-end;
+  color: var(--dvijok-white);
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .order-docs__glass {

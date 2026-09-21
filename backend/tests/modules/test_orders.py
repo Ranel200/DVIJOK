@@ -113,6 +113,16 @@ async def test_order_lifecycle(auth_client):
     assert done.json()["completed_at"] is not None
     assert done.json()["document"]["id"] == generated.json()["id"]
 
+    # Документ завершённого заказа можно удалить, если его нужно исправить
+    # или заменить. После удаления интерфейс предложит загрузить новый.
+    deleted_document = await auth_client.delete(
+        f"{API}/orders/{order_id}/documents/{generated.json()['id']}"
+    )
+    assert deleted_document.status_code == 204, deleted_document.text
+    documents = await auth_client.get(f"{API}/orders/{order_id}/documents")
+    assert documents.status_code == 200
+    assert documents.json() == []
+
     # Состав закрытого заказа менять нельзя
     locked = await auth_client.post(
         f"{API}/orders/{order_id}/items",
@@ -147,6 +157,20 @@ async def test_order_numbers_are_sequential_per_organization(session_factory, or
         assert second_numbers == ["1", "2"]
         assert (await session.get(Organization, organization)).next_order_number == 3
         assert second_organization.next_order_number == 3
+
+
+async def test_order_number_reconciles_a_stale_organization_counter(session_factory, organization):
+    async with session_factory() as session:
+        service = OrderService(OrderRepository(session, organization))
+        assert (await service.create(OrderCreate(), None)).number == "1"
+        assert (await service.create(OrderCreate(), None)).number == "2"
+
+        current_organization = await session.get(Organization, organization)
+        current_organization.next_order_number = 1
+        await session.flush()
+
+        assert (await service.create(OrderCreate(), None)).number == "3"
+        assert current_organization.next_order_number == 4
 
 
 async def test_order_agreement_status(auth_client):

@@ -206,6 +206,8 @@ function emptyCell(dayDate, time, employeeId = '__empty__') {
   return {
     id: `${employeeId}-${dayDate}-${time}-empty`,
     employeeId,
+    dayDate,
+    time,
     color: 'var(--dvijok-text-secondary)',
     status: 'unavailable'
   }
@@ -228,11 +230,12 @@ const timeRows = computed(() =>
     const rows = employeeIds
       .map(employeeId => ({
         employeeId,
-        blocks: weekDays.value.map(
-          day =>
-            (day.slots[time] || []).find(block => block.employeeId === employeeId) ||
-            emptyCell(day.date, time, employeeId)
-        )
+        blocks: weekDays.value.map(day => {
+          const block = (day.slots[time] || []).find(item => item.employeeId === employeeId)
+          return block
+            ? { ...block, dayDate: day.date, time }
+            : emptyCell(day.date, time, employeeId)
+        })
       }))
       .filter(row => row.blocks.some(block => block.status !== 'unavailable'))
 
@@ -289,6 +292,7 @@ function onAvailableClick(block, date, time) {
     date,
     time,
     employeeId: block.employeeId,
+    employeeUserId: block.employeeUserId ?? null,
     employeeName: block.employeeName || '',
     color: block.color
   })

@@ -2,8 +2,8 @@
   <div class="site-header" :class="{ 'site-header--open': menuOpen }" aria-label="Шапка сайта">
     <div class="site-header__bar">
       <router-link :to="{ name: 'home' }" class="site-header__logo" aria-label="На главную">
-        <img class="site-header__logo-desktop" src="/site/icons/logo.png" alt="DVIJOK" />
-        <img class="site-header__logo-mobile" src="/site/icons/logo-mobile.png" alt="DVIJOK" />
+        <img class="site-header__logo-desktop" src="/icons/logo.png" alt="DVIJOK" />
+        <img class="site-header__logo-mobile" src="/icons/logo-mobile.png" alt="DVIJOK" />
       </router-link>
 
       <div class="site-header__actions">
@@ -31,7 +31,7 @@
         :aria-expanded="menuOpen"
         @click="menuOpen = true"
       >
-        <img src="/site/icons/lines.svg" alt="" width="46" height="36" />
+        <img src="/icons/lines.svg" alt="" width="46" height="36" />
       </button>
     </div>
 
@@ -45,7 +45,7 @@
             aria-label="Закрыть меню"
             @click="menuOpen = false"
           >
-            <img src="/site/icons/close.svg" alt="" width="36" height="36" />
+            <img src="/icons/close.svg" alt="" width="36" height="36" />
           </button>
         </div>
 

@@ -150,6 +150,7 @@ async def test_staff_can_be_created_without_optional_email(auth_client):
     assert employee["login"] == "staff.without.email"
     assert employee["access"]["schedule"] is True
     assert employee["access"]["crm"] is False
+    assert employee["access"]["qr"] is False
 
     login = await auth_client.post(
         f"{API}/auth/login",
@@ -172,7 +173,7 @@ async def test_multiple_staff_can_be_created_without_email(auth_client):
                 "role": "junior_master",
                 "name": f"Минимальный сотрудник {index}",
                 "phone": f"+7999000310{index}",
-                "login": f"minimal.{suffix}",
+                "login": f"minimal.staff.{suffix}",
                 "password": "123456",
                 "access": {"schedule": True},
             },
@@ -206,9 +207,10 @@ async def test_required_fields_for_new_staff(auth_client):
 
     short_login = await auth_client.post(
         f"{API}/schedule/employees",
-        json={**base_payload, "login": "ab"},
+        json={**base_payload, "login": "12345678901"},
     )
     assert short_login.status_code == 422, short_login.text
+    assert short_login.json()["detail"] == "Логин должен быть длиннее 11 символов"
 
     short_password = await auth_client.post(
         f"{API}/schedule/employees",
@@ -258,6 +260,61 @@ async def test_schedule_settings_persist_for_non_mechanic_employee(auth_client):
         "start": "10:00",
         "end": "17:00",
     }
+
+
+async def test_extended_schedule_settings_support_multiple_periods_and_slot_step(auth_client):
+    payload = _staff_payload()
+    payload.update(
+        {
+            "email": "split-shift@example.com",
+            "phone": "+79995557781",
+            "login": "split.shift.master",
+        }
+    )
+    created = await auth_client.post(f"{API}/schedule/employees", json=payload)
+    assert created.status_code == 201, created.text
+    employee_id = created.json()["id"]
+
+    settings = await auth_client.put(
+        f"{API}/schedule/settings",
+        json={
+            "slotStep": 30,
+            "workPeriods": [
+                {"start": "09:00", "end": "12:00"},
+                {"start": "14:00", "end": "18:00"},
+            ],
+            "breaks": [{"start": "10:00", "end": "10:30"}],
+            "workDays": [1],
+            "employeeIds": [employee_id],
+        },
+    )
+    assert settings.status_code == 204, settings.text
+
+    today = dt.date.today()
+    next_monday = today + dt.timedelta(days=(7 - today.weekday()) % 7 or 7)
+    employee = await auth_client.get(f"{API}/employees/{employee_id}")
+    mechanic_id = employee.json()["mechanic_id"]
+    availability = await auth_client.get(
+        f"{API}/schedule/availability",
+        params={
+            "date_from": next_monday.isoformat(),
+            "date_to": next_monday.isoformat(),
+            "mechanic_id": mechanic_id,
+            "duration_minutes": 30,
+        },
+    )
+    assert availability.status_code == 200, availability.text
+    starts = [slot["start_time"][11:16] for slot in availability.json()["slots"]]
+    assert "09:30" in starts
+    assert "10:00" not in starts
+    assert "12:00" not in starts
+    assert "14:00" in starts
+
+    calendar = await auth_client.get(
+        f"{API}/schedule/calendar", params={"weekStart": next_monday.isoformat()}
+    )
+    assert calendar.status_code == 200, calendar.text
+    assert "09:30" in calendar.json()["times"]
 
 
 async def test_master_sees_only_own_employee_and_schedule(auth_client, client):

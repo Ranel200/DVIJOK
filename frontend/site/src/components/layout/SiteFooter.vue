@@ -1,7 +1,7 @@
 <template>
   <footer class="site-footer" aria-label="Подвал сайта">
     <div class="site-footer__main">
-      <img class="site-footer__logo" src="/site/icons/logo.png" alt="DVIJOK" />
+      <img class="site-footer__logo" src="/icons/logo.png" alt="DVIJOK" />
 
       <p class="site-footer__lead">
         Единая платформа для автосервисов <br class="site-footer__lead-br" />и автовладельцев.

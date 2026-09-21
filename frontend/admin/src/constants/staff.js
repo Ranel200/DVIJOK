@@ -44,10 +44,17 @@ export function isAdministratorRole(roleKey) {
 
 /** Права, которые владелец может выдать выбранной должности сотрудника. */
 export function editableStaffAccessOptions(roleKey) {
-  const isAdministrator = isAdministratorRole(roleKey)
+  const normalizedRoleKey = mapLegacyRole(roleKey)
+  const isAdministrator = isAdministratorRole(normalizedRoleKey)
   return STAFF_ACCESS_OPTIONS.filter(item => {
     if (item.key === 'settings') return false
-    if (item.key === 'qr') return isAdministrator
+    if (item.key === 'qr') {
+      return (
+        isAdministrator ||
+        normalizedRoleKey === 'senior_master' ||
+        normalizedRoleKey === 'junior_master'
+      )
+    }
     return true
   })
 }
@@ -68,11 +75,13 @@ export function normalizeStaffAccess(access) {
 }
 
 export function sanitizeStaffAccess(roleKey, access) {
+  const normalizedRoleKey = mapLegacyRole(roleKey)
   const normalized = normalizeStaffAccess(access)
-  const allowed = new Set(editableStaffAccessOptions(roleKey).map(item => item.key))
-  return Object.fromEntries(
+  const allowed = new Set(editableStaffAccessOptions(normalizedRoleKey).map(item => item.key))
+  const result = Object.fromEntries(
     STAFF_ACCESS_KEYS.map(key => [key, allowed.has(key) && Boolean(normalized[key])])
   )
+  return result
 }
 
 /** Первая доступная страница или null, если доступов нет. */

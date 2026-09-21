@@ -22,6 +22,8 @@ class EmployeeCreate(UserBase):
     def validate_login_identity(self) -> "EmployeeCreate":
         if self.email is None and self.login is None:
             raise ValueError("Для сотрудника обязателен логин или email")
+        if self.login is not None and len(self.login.strip()) <= 11:
+            raise ValueError("Логин должен быть длиннее 11 символов")
         return self
 
 

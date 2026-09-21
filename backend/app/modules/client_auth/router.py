@@ -79,7 +79,7 @@ async def request_otp(
     service: ClientAuthService = Depends(get_client_auth_service),
 ) -> OtpRequestResponse:
     ip, _ = _request_meta(request)
-    code = await service.request_otp(payload.phone, ip)
+    code = await service.request_otp(payload.phone, ip, payload.purpose)
     is_call = settings.OTP_PROVIDER in {"sms_ru_call", "zvonok_flashcall"}
     return OtpRequestResponse(
         detail=(

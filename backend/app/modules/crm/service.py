@@ -14,18 +14,22 @@ from app.modules.crm.schemas import (
     CrmClientBrief,
     CrmColumn,
     CrmDocument,
+    CrmMarkerCreate,
+    CrmMarkerRead,
     CrmOrderLineRead,
     CrmOrderRead,
     CrmOrderWrite,
 )
 from app.modules.mechanics.models import Mechanic
-from app.modules.orders.models import Order, OrderItem
+from app.modules.orders.models import Order, OrderItem, OrderMarker
 from app.modules.orders.repository import OrderRepository
 from app.modules.orders.schemas import (
     OrderCreate,
     OrderItemCreate,
 )
 from app.modules.orders.service import OrderService
+from app.modules.schedule.repository import ScheduleRepository
+from app.modules.schedule.service import ScheduleService
 from app.modules.users.models import User
 from app.modules.vehicles.models import Vehicle
 from app.shared.enums import OrderItemType, OrderStatus
@@ -63,6 +67,11 @@ _MONTHS = (
     "ноября",
     "декабря",
 )
+_DEFAULT_MARKERS = (
+    ("Сы мэра", "rgb(67, 252, 30)"),
+    ("Постояшка", "rgb(138, 65, 255)"),
+    ("Конфликтный", "rgb(189, 35, 30)"),
+)
 
 
 class CrmService:
@@ -75,6 +84,65 @@ class CrmService:
         # grant works with the board like an administrator, rather than being
         # limited to orders assigned to their mechanic profile.
         self.orders = OrderService(repo)
+
+    async def markers(self) -> list[CrmMarkerRead]:
+        rows = list(
+            (
+                await self.session.execute(
+                    select(OrderMarker)
+                    .where(OrderMarker.organization_id == self.organization_id)
+                    .order_by(OrderMarker.id)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        if not rows:
+            rows = [
+                OrderMarker(organization_id=self.organization_id, name=name, color=color)
+                for name, color in _DEFAULT_MARKERS
+            ]
+            self.session.add_all(rows)
+            await self.session.flush()
+        return [CrmMarkerRead(id=item.id, name=item.name, color=item.color) for item in rows]
+
+    async def create_marker(self, data: CrmMarkerCreate) -> CrmMarkerRead:
+        name = data.name.strip()
+        duplicate = (
+            await self.session.execute(
+                select(OrderMarker).where(
+                    OrderMarker.organization_id == self.organization_id,
+                    OrderMarker.name == name,
+                )
+            )
+        ).scalar_one_or_none()
+        if duplicate is not None:
+            raise BusinessRuleError("Маркер с таким названием уже существует")
+        marker = OrderMarker(
+            organization_id=self.organization_id,
+            name=name,
+            color=data.color.strip(),
+        )
+        self.session.add(marker)
+        await self.session.flush()
+        return CrmMarkerRead(id=marker.id, name=marker.name, color=marker.color)
+
+    async def _set_marker(self, order: Order, marker_id: int | None) -> None:
+        if marker_id is None:
+            order.marker = None
+            order.marker_id = None
+            return
+        marker = (
+            await self.session.execute(
+                select(OrderMarker).where(
+                    OrderMarker.id == marker_id,
+                    OrderMarker.organization_id == self.organization_id,
+                )
+            )
+        ).scalar_one_or_none()
+        if marker is None:
+            raise NotFoundError("Маркер не найден")
+        order.marker = marker
 
     async def _all_orders(self) -> list[Order]:
         orders, _ = await self.repo.search(
@@ -166,6 +234,11 @@ class CrmService:
             description=order.comment or "",
             date=scheduled_date,
             time=scheduled_time,
+            appointment_master_id=(
+                order.mechanic.user_id if order.mechanic is not None else None
+            ),
+            marker_id=order.marker_id,
+            marker_color=order.marker.color if order.marker else None,
             source=order.source,
             plate=(vehicle.license_plate or "") if vehicle else "",
             brand=vehicle.make if vehicle else "",
@@ -262,6 +335,79 @@ class CrmService:
         ]
 
     @staticmethod
+    def _appointment_start(data: CrmOrderWrite) -> dt.datetime:
+        if not data.date.strip() or not data.time.strip():
+            raise BusinessRuleError("Для записи укажите дату и время")
+        raw = f"{data.date.strip()} {data.time.strip()}"
+        parsed: dt.datetime | None = None
+        for pattern in ("%d.%m.%Y %H:%M", "%Y-%m-%d %H:%M"):
+            try:
+                parsed = dt.datetime.strptime(raw, pattern)
+                break
+            except ValueError:
+                continue
+        if parsed is None:
+            raise BusinessRuleError("Дата и время записи указаны некорректно")
+        return parsed.replace(tzinfo=ZoneInfo(settings.SCHEDULE_TIMEZONE))
+
+    async def _sync_reservation(self, order: Order, data: CrmOrderWrite) -> Order:
+        schedule = ScheduleService(ScheduleRepository(self.session, self.organization_id))
+        existing = await schedule.repo.get_slot_by_order(order.id)
+
+        if not data.reserve_slot:
+            if existing is not None:
+                await schedule.repo.delete_slot(existing)
+            order.mechanic_id = None
+            order.scheduled_at = None
+            await self.session.flush()
+            return await self.orders.get(order.id)
+
+        start = self._appointment_start(data)
+        duration = await self.orders.appointment_duration(order.id)
+        mechanic_id: int | None = None
+        if data.appointment_master_id is not None:
+            mechanics = await self._mechanic_ids([data.appointment_master_id])
+            mechanic_id = mechanics.get(data.appointment_master_id)
+            if mechanic_id is None:
+                raise BusinessRuleError("Выбранный сотрудник не является мастером")
+        else:
+            suggestions = await schedule.suggestions(
+                date_from=start.date(),
+                date_to=start.date(),
+                mechanic_id=None,
+                service_id=None,
+                duration_minutes=duration,
+                exclude_slot_id=existing.id if existing is not None else None,
+            )
+            selected_start = start.astimezone(ZoneInfo(settings.SCHEDULE_TIMEZONE))
+            mechanic_id = next(
+                (
+                    slot.mechanic_id
+                    for slot in suggestions.slots
+                    if slot.start_time.astimezone(ZoneInfo(settings.SCHEDULE_TIMEZONE))
+                    == selected_start
+                ),
+                None,
+            )
+            if mechanic_id is None:
+                raise BusinessRuleError("На выбранное время нет свободного мастера")
+
+        if existing is not None:
+            await schedule.repo.delete_slot(existing)
+        await schedule.reserve(
+            mechanic_id=mechanic_id,
+            start_time=start,
+            duration_minutes=duration,
+            order_id=order.id,
+            title=f"Заказ {order.id}",
+        )
+        order.mechanic_id = mechanic_id
+        order.scheduled_at = start
+        await self.session.flush()
+        await self.session.refresh(order, attribute_names=["mechanic"])
+        return await self.orders.get(order.id)
+
+    @staticmethod
     def _has_client_data(data: CrmOrderWrite) -> bool:
         return bool(data.client_name.strip() or data.phone.strip() or data.email)
 
@@ -352,8 +498,13 @@ class CrmService:
             ),
             created_by_id=self.current_user.id,
         )
+        if "marker_id" in data.model_fields_set:
+            await self._set_marker(order, data.marker_id)
+        await self.session.flush()
         if data.status != OrderStatus.NEW:
             order = await self.orders.change_status(order.id, data.status)
+        if "reserve_slot" in data.model_fields_set:
+            order = await self._sync_reservation(order, data)
         return self._read(order)
 
     async def _load_for_update(self, order_id: int) -> Order:
@@ -404,6 +555,8 @@ class CrmService:
             elif order.vehicle.client_id != order.client.id:
                 raise BusinessRuleError("Автомобиль принадлежит другому клиенту")
         order.source = data.source
+        if "marker_id" in data.model_fields_set:
+            await self._set_marker(order, data.marker_id)
         order.comment = data.description.strip() or None
         order.mileage = data.mileage
         await self.orders.replace_items(order.id, await self._items(data))
@@ -414,7 +567,10 @@ class CrmService:
                 validate_transition=False,
                 require_completion_document=False,
             )
-        return self._read(await self.orders.get(order.id))
+        order = await self.orders.get(order.id)
+        if "reserve_slot" in data.model_fields_set:
+            order = await self._sync_reservation(order, data)
+        return self._read(order)
 
     async def get(self, order_id: int) -> CrmOrderRead:
         return self._read(await self.orders.get(order_id))

@@ -12,7 +12,12 @@ from app.modules.users.models import User
 from app.shared.enums import UserRole
 
 router = APIRouter(prefix="/referrals", tags=["referrals"])
-qr_access = require_feature("qr", UserRole.ADMIN, UserRole.MANAGER)
+qr_access = require_feature(
+    "qr",
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+    staff_role_keys=("senior_master", "junior_master"),
+)
 
 
 def get_referral_service(

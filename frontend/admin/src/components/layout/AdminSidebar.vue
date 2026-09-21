@@ -32,7 +32,7 @@
         type="button"
         class="admin-sidebar__logout"
         :disabled="logoutLoading"
-        @click="onLogout"
+        @click="logoutConfirmOpen = true"
       >
         {{ logoutLoading ? 'Выход...' : 'Выйти' }}
       </button>
@@ -42,6 +42,22 @@
         <p class="admin-sidebar__user-text">{{ userText }}</p>
       </div>
     </div>
+
+    <BaseModal v-model="logoutConfirmOpen">
+      <div class="logout-modal">
+        <h2 class="logout-modal__title">
+          Вы уверены, что хотите
+          <br />
+          выйти из аккаунта?
+        </h2>
+        <div class="logout-modal__actions">
+          <BaseButton color="green" size="lg" @click="logoutConfirmOpen = false">Отмена</BaseButton>
+          <BaseButton color="red" size="lg" :loading="logoutLoading" @click="confirmLogout">
+            Да, выйти
+          </BaseButton>
+        </div>
+      </div>
+    </BaseModal>
   </q-drawer>
 </template>
 
@@ -53,6 +69,8 @@ import { useAuthStore } from '@/stores/auth.js'
 import { adminNavigation } from '@/constants/navigation.js'
 import { STAFF_ACCESS_KEYS } from '@/constants/staff.js'
 import { getInitials, getShortName } from '@/utils/name.js'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import BaseModal from '@/components/ui/BaseModal.vue'
 
 const authStore = useAuthStore()
 const route = useRoute()
@@ -60,6 +78,7 @@ const router = useRouter()
 
 const { user } = storeToRefs(authStore)
 const logoutLoading = ref(false)
+const logoutConfirmOpen = ref(false)
 
 const visibleNavigation = computed(() =>
   adminNavigation.filter(item => {
@@ -115,6 +134,11 @@ async function onLogout() {
     logoutLoading.value = false
     await router.replace({ name: 'login' })
   }
+}
+
+async function confirmLogout() {
+  await onLogout()
+  logoutConfirmOpen.value = false
 }
 
 watch(
@@ -303,5 +327,25 @@ onBeforeUnmount(() => {
     cursor: wait;
     opacity: 0.7;
   }
+}
+
+.logout-modal {
+  width: min(100%, 640px);
+  padding: 34px 36px 28px;
+  text-align: center;
+}
+
+.logout-modal__title {
+  margin: 0 0 34px;
+  color: var(--dvijok-blue-dark, #093095);
+  font-size: 28px;
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+.logout-modal__actions {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
 }
 </style>

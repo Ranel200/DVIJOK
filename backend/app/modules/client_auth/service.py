@@ -12,12 +12,13 @@ import hmac
 import secrets
 import time
 import uuid
+from typing import Literal
 
 import jwt
 from sqlalchemy import select, update
 
 from app.core.config import settings
-from app.core.exceptions import UnauthorizedError
+from app.core.exceptions import NotFoundError, UnauthorizedError
 from app.core.rate_limit import InMemoryRateLimiter
 from app.core.security import (
     create_client_access_token,
@@ -134,7 +135,20 @@ class ClientAuthService:
         self.sms_ru = sms_ru or SmsRuCallProvider()
         self.zvonok = zvonok or ZvonokFlashCallProvider()
 
-    async def request_otp(self, phone: str, user_ip: str) -> str:
+    async def request_otp(
+        self,
+        phone: str,
+        user_ip: str,
+        purpose: Literal["login", "registration"] = "login",
+    ) -> str:
+        if purpose == "login":
+            account = await self.repo.get_by_phone(phone)
+            if account is None:
+                raise NotFoundError(
+                    "Аккаунт с таким номером не найден. Сначала зарегистрируйтесь."
+                )
+            if not account.is_active:
+                raise UnauthorizedError("Учётная запись деактивирована")
         otp_request_limiter.check(f"otp:{phone}")
         otp_ip_limiter.check(f"otp-ip:{user_ip or 'unknown'}")
         if settings.OTP_PROVIDER == "sms_ru_call":
@@ -180,7 +194,13 @@ class ClientAuthService:
         guest_name = guest_name.strip() if guest_name and guest_name.strip() else None
         if account is None:
             account = await self.repo.add(
-                ClientAccount(phone=phone, full_name=requested_name or guest_name)
+                ClientAccount(
+                    phone=phone,
+                    full_name=requested_name or guest_name,
+                    consent_personal=True,
+                    consent_transfer=True,
+                    consent_marketing=True,
+                )
             )
         elif self._is_generated_name(account.full_name, account.phone):
             profile_name = requested_name or guest_name

@@ -68,6 +68,7 @@ class CalendarBlock(BaseModel):
 
     id: str
     employee_id: int = Field(alias="employeeId")
+    employee_user_id: int | None = Field(default=None, alias="employeeUserId")
     employee_name: str = Field(alias="employeeName")
     color: str
     status: str
@@ -77,6 +78,7 @@ class CalendarBlock(BaseModel):
     client_name: str | None = Field(default=None, alias="clientName")
     service_name: str | None = Field(default=None, alias="serviceName")
     order_status: str | None = Field(default=None, alias="orderStatus")
+    marker_color: str | None = Field(default=None, alias="markerColor")
     reason: str | None = None
 
 

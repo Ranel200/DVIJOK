@@ -9,6 +9,8 @@ from app.modules.crm.schemas import (
     CrmBulkDelete,
     CrmClientBrief,
     CrmColumn,
+    CrmMarkerCreate,
+    CrmMarkerRead,
     CrmOrderRead,
     CrmOrderStatusUpdate,
     CrmOrderWrite,
@@ -78,6 +80,21 @@ async def list_crm_deals(
     service: CrmService = Depends(get_crm_service),
 ) -> list[CrmOrderRead]:
     return await service.list_deals()
+
+
+@router.get("/markers", response_model=list[CrmMarkerRead])
+async def list_crm_markers(
+    service: CrmService = Depends(get_crm_service),
+) -> list[CrmMarkerRead]:
+    return await service.markers()
+
+
+@router.post("/markers", response_model=CrmMarkerRead, status_code=status.HTTP_201_CREATED)
+async def create_crm_marker(
+    payload: CrmMarkerCreate,
+    service: CrmService = Depends(get_crm_service),
+) -> CrmMarkerRead:
+    return await service.create_marker(payload)
 
 
 @router.post(

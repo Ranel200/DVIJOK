@@ -61,6 +61,7 @@ from app.modules.client_vehicles.service import ClientVehicleService
 from app.modules.clients.models import Client
 from app.modules.clients.repository import ClientRepository
 from app.modules.mechanics.models import Mechanic
+from app.modules.notifications.models import ClientMessengerBinding
 from app.modules.notifications.service import MessengerService
 from app.modules.orders.models import Order
 from app.modules.orders.repository import OrderRepository
@@ -1339,6 +1340,17 @@ class ClientPortalService:
 
         bots = []
         messengers = MessengerService(self.session)
+        connected_channels = {
+            str(channel.value if hasattr(channel, "value") else channel)
+            for channel in (
+                await self.session.execute(
+                    select(ClientMessengerBinding.channel).where(
+                        ClientMessengerBinding.client_account_id == client_account_id,
+                        ClientMessengerBinding.is_active.is_(True),
+                    )
+                )
+            ).scalars().all()
+        }
         for bot_id, fallback, icon, url in (
             (
                 "tg",
@@ -1359,6 +1371,8 @@ class ClientPortalService:
                             client_account_id,
                             NotificationChannel(bot_id if bot_id != "tg" else "telegram"),
                         ),
+                        connected=("telegram" if bot_id == "tg" else bot_id)
+                        in connected_channels,
                     )
                 )
         return ClientCarsRead(cars=result, bots=bots)

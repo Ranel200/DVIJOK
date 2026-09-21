@@ -3,7 +3,9 @@
 from tests.conftest import API
 
 
-async def _create_staff(auth_client, *, login: str, role: str, role_key: str):
+async def _create_staff(
+    auth_client, *, login: str, role: str, role_key: str, qr: bool = True
+):
     response = await auth_client.post(
         f"{API}/users",
         json={
@@ -18,7 +20,7 @@ async def _create_staff(auth_client, *, login: str, role: str, role_key: str):
                 "crm": True,
                 "services": True,
                 "tasks": True,
-                "qr": True,
+                "qr": qr,
                 "settings": True,
             },
         },
@@ -45,9 +47,9 @@ async def test_admin_frontend_permission_matrix(auth_client, client):
     )
     await _create_staff(
         auth_client,
-        login="matrix.junior",
-        role="manager",
-        role_key="junior_admin",
+        login="matrix.junior-master",
+        role="mechanic",
+        role_key="junior_master",
     )
     master = await _create_staff(
         auth_client,
@@ -119,17 +121,45 @@ async def test_admin_frontend_permission_matrix(auth_client, client):
         await client.post(f"{API}/crm/orders", headers=master_headers, json={})
     ).status_code == 201
     assert (
-        await client.get(f"{API}/referrals/me", headers=master_headers)
-    ).status_code == 403
+        await client.post(f"{API}/referrals/me", headers=master_headers)
+    ).status_code in {200, 201}
     assert (await client.get(f"{API}/settings", headers=master_headers)).status_code == 403
 
+    junior_master_headers = await _headers(client, "matrix.junior-master")
+    assert (
+        await client.get(f"{API}/referrals/me", headers=junior_master_headers)
+    ).status_code == 200
+
+    await _create_staff(
+        auth_client,
+        login="matrix.junior-master-denied",
+        role="mechanic",
+        role_key="junior_master",
+        qr=False,
+    )
+    denied_junior_master_headers = await _headers(
+        client, "matrix.junior-master-denied"
+    )
+    assert (
+        await client.get(
+            f"{API}/referrals/me", headers=denied_junior_master_headers
+        )
+    ).status_code == 403
+
+    await _create_staff(
+        auth_client,
+        login="matrix.junior",
+        role="manager",
+        role_key="junior_admin",
+        qr=False,
+    )
     junior_headers = await _headers(client, "matrix.junior")
     assert (
         await client.get(f"{API}/services/admin", headers=junior_headers)
     ).status_code == 200
     assert (
         await client.post(f"{API}/referrals/me", headers=junior_headers)
-    ).status_code in {200, 201}
+    ).status_code == 403
     assert (await client.get(f"{API}/settings", headers=junior_headers)).status_code == 403
     denied_schedule_change = await client.put(
         f"{API}/schedule/settings",

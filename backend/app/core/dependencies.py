@@ -66,8 +66,42 @@ async def require_owner(user: User = Depends(get_current_user)) -> User:
     return user
 
 
-def require_feature(feature: str, *roles: UserRole):
-    """Require a technical role and, when configured, an admin UI feature grant.
+async def require_platform_owner(user: User = Depends(get_current_user)) -> User:
+    """Authorize the separate creator/platform console.
+
+    Tenant owners are intentionally not treated as platform owners in
+    production.  For local development the flag allows the existing seeded
+    owner account to exercise the new console without introducing a second
+    login; production uses an explicit comma-separated allow-list.
+    """
+
+    identifiers = {
+        value.strip().lower()
+        for value in settings.PLATFORM_ADMIN_IDENTIFIERS.split(",")
+        if value.strip()
+    }
+    user_identifiers = {
+        value.strip().lower()
+        for value in (user.email, user.login, user.phone)
+        if value
+    }
+    explicitly_allowed = bool(identifiers & user_identifiers)
+    local_owner = (
+        not settings.is_production
+        and settings.PLATFORM_ADMIN_ALLOW_OWNER_IN_DEV
+        and user.is_owner
+    )
+    if not explicitly_allowed and not local_owner:
+        raise ForbiddenError("Доступно только создателю платформы")
+    return user
+
+
+def require_feature(
+    feature: str,
+    *roles: UserRole,
+    staff_role_keys: tuple[str, ...] = (),
+):
+    """Require a technical role or an explicitly permitted staff position.
 
     Empty permission dictionaries keep legacy users working. Once an owner has
     configured the access switches, missing/false features are denied by the
@@ -75,7 +109,9 @@ def require_feature(feature: str, *roles: UserRole):
     """
 
     async def _checker(user: User = Depends(get_current_user)) -> User:
-        if roles and user.role not in roles:
+        technical_role_allowed = not roles or user.role in roles
+        staff_role_allowed = user.staff_role_key in staff_role_keys
+        if not technical_role_allowed and not staff_role_allowed:
             raise ForbiddenError("Недостаточно прав для этого раздела")
         if user.is_owner:
             return user

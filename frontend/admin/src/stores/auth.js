@@ -34,7 +34,13 @@ export const useAuthStore = defineStore('auth', () => {
     if (isOwner.value) return true
     if (!STAFF_ACCESS_KEYS.includes(permission)) return false
     if (permission === 'settings') return false
-    if (permission === 'qr' && !isAdministrator.value) return false
+    if (
+      permission === 'qr' &&
+      !isAdministrator.value &&
+      !['senior_master', 'junior_master'].includes(staffRoleKey.value)
+    ) {
+      return false
+    }
     return Boolean(user.value?.access?.[permission])
   }
 

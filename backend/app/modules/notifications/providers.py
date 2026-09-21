@@ -12,6 +12,39 @@ class ProviderError(RuntimeError):
     pass
 
 
+WELCOME_MESSAGE_1 = """Добро пожаловать в экосистему ДВИЖОК!
+
+Теперь все под контролем. Мы будем сопровождать ваш автомобиль на всех этапах его жизни:
+
+⏰ Плановое ТО и замена расходников.
+
+🛠 Контроль статуса ремонта.
+🎁 Персональные скидки и выгодные предложения от СТО.
+
+Мы пишем только по делу. Без лишних отвлечений — только важная информация о вашем авто."""
+
+WELCOME_MESSAGE_2_TELEGRAM = """*Записаться на обслуживание, посмотреть историю визитов и свои автомобили можно в личном кабинете:*
+
+https://dvizhok.tech/client
+
+*ДВИЖОК — ваш автомобиль всегда под контролем.*"""
+
+# MAX uses a different Markdown dialect: two asterisks are required for bold.
+WELCOME_MESSAGE_2_MAX = """**Записаться на обслуживание, посмотреть историю визитов и свои автомобили можно в личном кабинете:**
+
+https://dvizhok.tech/client
+
+**ДВИЖОК — ваш автомобиль всегда под контролем.**"""
+
+# VK does not parse Markdown in messages.send, so do not expose formatting
+# markers to VK users.
+WELCOME_MESSAGE_2_VK = """Записаться на обслуживание, посмотреть историю визитов и свои автомобили можно в личном кабинете:
+
+https://dvizhok.tech/client
+
+ДВИЖОК — ваш автомобиль всегда под контролем."""
+
+
 class BotProviders:
     def __init__(self, client: httpx.AsyncClient | None = None) -> None:
         self._client = client
@@ -21,14 +54,28 @@ class BotProviders:
         channel: NotificationChannel,
         recipient_id: str,
         message: str,
+        *,
+        formatted: bool = False,
     ) -> str | None:
         if channel == NotificationChannel.TELEGRAM:
-            return await self._telegram(recipient_id, message)
+            return await self._telegram(recipient_id, message, formatted=formatted)
         if channel == NotificationChannel.VK:
             return await self._vk(recipient_id, message)
         if channel == NotificationChannel.MAX:
-            return await self._max(recipient_id, message)
+            return await self._max(recipient_id, message, formatted=formatted)
         raise ProviderError(f"Неизвестный канал: {channel}")
+
+    async def send_welcome(
+        self, channel: NotificationChannel, recipient_id: str
+    ) -> None:
+        """Отправить два приветственных сообщения после привязки бота."""
+        await self.send(channel, recipient_id, WELCOME_MESSAGE_1)
+        message_2 = {
+            NotificationChannel.TELEGRAM: WELCOME_MESSAGE_2_TELEGRAM,
+            NotificationChannel.VK: WELCOME_MESSAGE_2_VK,
+            NotificationChannel.MAX: WELCOME_MESSAGE_2_MAX,
+        }[channel]
+        await self.send(channel, recipient_id, message_2, formatted=True)
 
     async def _request(
         self,
@@ -47,13 +94,18 @@ class BotProviders:
             raise ProviderError(f"Bot API вернул HTTP {response.status_code}") from exc
         return response
 
-    async def _telegram(self, chat_id: str, message: str) -> str | None:
+    async def _telegram(
+        self, chat_id: str, message: str, *, formatted: bool = False
+    ) -> str | None:
         if not settings.TELEGRAM_BOT_TOKEN:
             raise ProviderError("TELEGRAM_BOT_TOKEN не настроен")
+        payload = {"chat_id": chat_id, "text": message}
+        if formatted:
+            payload["parse_mode"] = "Markdown"
         response = await self._request(
             "POST",
             f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendMessage",
-            json={"chat_id": chat_id, "text": message},
+            json=payload,
         )
         data = response.json()
         if not data.get("ok"):
@@ -81,15 +133,20 @@ class BotProviders:
         value = data.get("response")
         return str(value) if value is not None else None
 
-    async def _max(self, chat_id: str, message: str) -> str | None:
+    async def _max(
+        self, chat_id: str, message: str, *, formatted: bool = False
+    ) -> str | None:
         if not settings.MAX_BOT_TOKEN:
             raise ProviderError("MAX_BOT_TOKEN не настроен")
+        payload = {"text": message}
+        if formatted:
+            payload["format"] = "markdown"
         response = await self._request(
             "POST",
             "https://platform-api2.max.ru/messages",
             params={"chat_id": chat_id},
             headers={"Authorization": settings.MAX_BOT_TOKEN},
-            json={"text": message},
+            json=payload,
         )
         data = response.json()
         result = data.get("message") or {}

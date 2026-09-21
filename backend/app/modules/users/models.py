@@ -4,7 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import JSON, Boolean, DateTime, Enum, ForeignKey, Numeric, String, Text, func
+from sqlalchemy import JSON, Boolean, DateTime, Enum, ForeignKey, Integer, Numeric, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.shared.base_model import Base, IntPKMixin, TimestampMixin
@@ -50,6 +50,7 @@ class User(Base, IntPKMixin, TimestampMixin):
     # существующий контур расчёта доступности и клиентских бронирований.
     schedule_intervals: Mapped[list[dict[str, str | int]]] = mapped_column(JSON, default=list)
     schedule_breaks: Mapped[list[dict[str, str]]] = mapped_column(JSON, default=list)
+    schedule_slot_step: Mapped[int] = mapped_column(Integer, default=60, server_default="60")
     password_changed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

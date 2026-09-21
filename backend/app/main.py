@@ -25,6 +25,7 @@ from app.modules.notifications.router import router as notifications_router
 from app.modules.notifications.service import NotificationDispatcher
 from app.modules.orders.router import router as orders_router
 from app.modules.organizations.router import router as organizations_router
+from app.modules.platform_admin.router import router as platform_admin_router
 from app.modules.referrals.router import router as referrals_router
 from app.modules.schedule.router import router as schedule_router
 from app.modules.services.router import router as services_router
@@ -36,6 +37,7 @@ from app.modules.vehicles.router import router as vehicles_router
 
 ROUTERS = [
     organizations_router,
+    platform_admin_router,
     tariffs_router,
     referrals_router,
     auth_router,

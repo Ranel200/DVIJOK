@@ -84,7 +84,12 @@ class ScheduleAdminService:
     def _writable_access(cls, role_key: str, value: dict | None) -> dict[str, bool]:
         access = cls._access(value)
         access["settings"] = False
-        if role_key not in {"senior_admin", "junior_admin"}:
+        if role_key not in {
+            "senior_admin",
+            "junior_admin",
+            "senior_master",
+            "junior_master",
+        }:
             access["qr"] = False
         return access
 
@@ -130,8 +135,8 @@ class ScheduleAdminService:
             raise BusinessRuleError("Введите номер телефона сотрудника")
         if not login:
             raise BusinessRuleError("Придумайте логин сотрудника")
-        if len(login) < 3:
-            raise BusinessRuleError("Логин нового сотрудника должен быть не короче 3 символов")
+        if len(login) <= 11:
+            raise BusinessRuleError("Логин должен быть длиннее 11 символов")
         if not data.password:
             raise BusinessRuleError("Придумайте пароль сотрудника")
         if len(data.password) < 6:
@@ -249,15 +254,17 @@ class ScheduleAdminService:
                 intervals = (await self.schedule.working_hours(user.mechanic.id)).intervals
             if not intervals:
                 intervals = _DEFAULT_INTERVALS
-            by_weekday = {interval.weekday: interval for interval in intervals}
+            by_weekday: dict[int, list[WorkingHoursInterval]] = {}
+            for interval in intervals:
+                by_weekday.setdefault(interval.weekday, []).append(interval)
             days: list[StaffMonthDay] = []
             total_minutes = 0
             total_days = 0
             break_minutes = self._break_minutes(user)
             for day_number in range(1, days_count + 1):
                 day = dt.date(year, month + 1, day_number)
-                interval = by_weekday.get(day.weekday())
-                if interval is None:
+                day_intervals = by_weekday.get(day.weekday(), [])
+                if not day_intervals:
                     days.append(
                         StaffMonthDay(
                             day=day_number,
@@ -267,12 +274,15 @@ class ScheduleAdminService:
                         )
                     )
                     continue
-                minutes = int(
-                    (
-                        dt.datetime.combine(day, interval.end_time)
-                        - dt.datetime.combine(day, interval.start_time)
-                    ).total_seconds()
-                    // 60
+                minutes = sum(
+                    int(
+                        (
+                            dt.datetime.combine(day, interval.end_time)
+                            - dt.datetime.combine(day, interval.start_time)
+                        ).total_seconds()
+                        // 60
+                    )
+                    for interval in day_intervals
                 )
                 total_days += 1
                 total_minutes += max(0, minutes - break_minutes)
@@ -280,8 +290,8 @@ class ScheduleAdminService:
                     StaffMonthDay(
                         day=day_number,
                         active=True,
-                        start=interval.start_time.strftime("%H:%M"),
-                        end=interval.end_time.strftime("%H:%M"),
+                            start=min(item.start_time for item in day_intervals).strftime("%H:%M"),
+                            end=max(item.end_time for item in day_intervals).strftime("%H:%M"),
                     )
                 )
             result.append(
@@ -299,18 +309,21 @@ class ScheduleAdminService:
 
     async def save_settings(self, data: StaffScheduleSettings) -> None:
         users = await self._users()
-        if data.employee_id != "all":
-            users = [user for user in users if user.id == int(data.employee_id)]
-            if not users:
-                raise NotFoundError("Сотрудник не найден")
+        targets = data.resolved_employee_ids
+        if "all" not in targets:
+            target_ids = {int(item) for item in targets}
+            users = [user for user in users if user.id in target_ids]
+            if {user.id for user in users} != target_ids:
+                raise NotFoundError("Один или несколько сотрудников не найдены")
         intervals = [
             WorkingHoursInterval(
                 # Frontend/JS: Sunday=0; backend/Python: Monday=0.
                 weekday=(weekday - 1) % 7,
-                start_time=data.start,
-                end_time=data.end,
+                start_time=period.start,
+                end_time=period.end,
             )
             for weekday in sorted(set(data.work_days))
+            for period in data.resolved_periods
         ]
         breaks = [
             {
@@ -330,6 +343,7 @@ class ScheduleAdminService:
         for user in users:
             user.schedule_intervals = stored_intervals
             user.schedule_breaks = breaks
+            user.schedule_slot_step = data.slot_step
             if user.mechanic is not None:
                 await self.schedule.replace_working_hours(user.mechanic.id, intervals)
                 user.mechanic.schedule_breaks = breaks

@@ -157,7 +157,7 @@ async def test_explicit_reservation_removes_slot_and_prevents_double_booking(aut
     assert busy["employeeName"] == "Мастер календаря"
     assert busy["brand"] == "Lada"
     assert busy["clientName"] == "Клиент календаря"
-    assert busy["serviceName"] == f"Заказ {order_a}"
+    assert busy["serviceName"] == "Услуга не указана"
 
 
 async def test_empty_config_means_day_off_and_outside_hours_is_rejected(auth_client):

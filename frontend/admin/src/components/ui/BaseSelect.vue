@@ -14,7 +14,37 @@
       }
     ]"
   >
+    <div
+      v-if="searchable"
+      ref="triggerRef"
+      class="base-select__trigger"
+      role="combobox"
+      :aria-expanded="open"
+      :aria-invalid="shownError || undefined"
+      :aria-disabled="disable || undefined"
+      @click="openSearch"
+    >
+      <input
+        ref="searchInputRef"
+        v-model="searchQuery"
+        class="base-select__search-input"
+        type="text"
+        :placeholder="placeholder"
+        :disabled="disable"
+        autocomplete="off"
+        @focus="openSearch"
+        @input="openSearch"
+        @keydown.enter.prevent="selectFirstFiltered"
+        @keydown.esc.prevent="closeSearch"
+      />
+      <ChevronIcon
+        v-if="!hideChevron"
+        :direction="open ? 'up' : 'down'"
+        @click.stop="toggle"
+      />
+    </div>
     <button
+      v-else
       ref="triggerRef"
       type="button"
       class="base-select__trigger"
@@ -39,7 +69,7 @@
           @click.stop
         >
           <li
-            v-for="option in options"
+            v-for="option in filteredOptions"
             :key="option.value"
             :class="[
               'base-select__option',
@@ -48,6 +78,9 @@
             @click="select(option.value)"
           >
             {{ option.label }}
+          </li>
+          <li v-if="searchable && !filteredOptions.length" class="base-select__empty">
+            Подходящие услуги не найдены
           </li>
         </ul>
       </Transition>
@@ -114,6 +147,10 @@ const props = defineProps({
   validate: {
     type: Function,
     default: null
+  },
+  searchable: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -124,14 +161,36 @@ const { error: shownError, errorMessage: shownMessage } = useFieldError(props)
 const rootRef = ref(null)
 const triggerRef = ref(null)
 const listRef = ref(null)
+const searchInputRef = ref(null)
 const open = ref(false)
 const listVisible = ref(false)
 const listStyle = ref({})
+const searchQuery = ref('')
 
-const currentLabel = computed(() => {
+const selectedLabel = computed(() => {
   const active = props.options.find(o => o.value === props.modelValue)
-  return active ? active.label : props.placeholder
+  return active?.label || ''
 })
+
+const currentLabel = computed(() => selectedLabel.value || props.placeholder)
+
+const filteredOptions = computed(() => {
+  const query = normalizeSearch(searchQuery.value)
+  if (!props.searchable || !query) return props.options
+
+  const terms = query.split(/\s+/).filter(Boolean)
+  return props.options.filter(option => {
+    const label = normalizeSearch(option.label)
+    return terms.every(term => label.includes(term))
+  })
+})
+
+function normalizeSearch(value) {
+  return String(value ?? '')
+    .toLocaleLowerCase('ru-RU')
+    .replaceAll('ё', 'е')
+    .trim()
+}
 
 function isActive(value) {
   return props.modelValue === value
@@ -145,8 +204,25 @@ function toggle() {
   }
 }
 
+function openSearch() {
+  if (props.disable) return
+  open.value = true
+  listVisible.value = true
+}
+
+function closeSearch() {
+  open.value = false
+}
+
+function selectFirstFiltered() {
+  const first = filteredOptions.value[0]
+  if (open.value && first) select(first.value)
+}
+
 function select(value) {
+  const option = props.options.find(item => item.value === value)
   emit('update:modelValue', value)
+  searchQuery.value = option?.label || ''
   open.value = false
 }
 
@@ -181,10 +257,25 @@ function onReposition() {
 }
 
 watch(open, async value => {
-  if (!value) return
+  if (!value) {
+    searchQuery.value = selectedLabel.value
+    return
+  }
   await nextTick()
   updateListPosition()
+  if (props.searchable) {
+    searchInputRef.value?.focus()
+    searchInputRef.value?.select()
+  }
 })
+
+watch(
+  selectedLabel,
+  value => {
+    if (!open.value) searchQuery.value = value
+  },
+  { immediate: true }
+)
 
 onMounted(() => {
   document.addEventListener('click', onDocumentClick)
@@ -292,6 +383,28 @@ onBeforeUnmount(() => {
   font-weight: 400;
   color: var(--dvijok-text-primary);
   cursor: pointer;
+}
+
+.base-select__search-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  color: var(--dvijok-text-primary);
+  background: transparent;
+  font: inherit;
+}
+
+.base-select__search-input::placeholder,
+.base-select__empty {
+  color: var(--dvijok-text-secondary);
+}
+
+.base-select__empty {
+  padding: 10px 9px;
+  font-size: 12px;
+  line-height: 15px;
 }
 
 .base-select__option--active {

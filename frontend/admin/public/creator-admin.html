@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ДВИЖОК — Internal Admin</title>
+<style>
+:root{
+  --bg:#f5f7fb;--panel:#fff;--text:#101828;--muted:#667085;--line:#eaecf0;
+  --blue:#2563eb;--blue2:#1d4ed8;--soft:#eff6ff;--green:#16a34a;--red:#dc2626;
+  --yellow:#d97706;--nav:#0b1220;--nav2:#111827;--shadow:0 10px 30px rgba(16,24,40,.06);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text)}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.app{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+.sidebar{background:var(--nav);color:#fff;padding:22px 16px;position:sticky;top:0;height:100vh;overflow:auto}
+.brand{display:flex;align-items:center;gap:12px;padding:0 10px 20px}
+.logo{width:40px;height:40px;border-radius:12px;background:linear-gradient(145deg,#3b82f6,#1d4ed8);display:grid;place-items:center;font-weight:900;font-size:21px;box-shadow:0 8px 20px rgba(37,99,235,.3)}
+.brand b{font-size:18px}.brand small{display:block;color:#98a2b3;margin-top:2px}
+.nav-title{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#667085;margin:18px 12px 7px}
+.nav-btn{width:100%;border:0;background:transparent;color:#d0d5dd;display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:10px;text-align:left;margin:2px 0}
+.nav-btn:hover{background:#182230;color:#fff}.nav-btn.active{background:#1d2939;color:#fff}
+.ico{width:20px;display:inline-grid;place-items:center;font-size:16px}
+.content{min-width:0}
+.topbar{height:72px;background:rgba(255,255,255,.92);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:5;backdrop-filter:blur(10px)}
+.top-left{display:flex;align-items:center;gap:12px}.mobile-menu{display:none;border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 10px}
+.breadcrumb{font-size:14px;color:var(--muted)}.breadcrumb strong{color:var(--text)}
+.top-actions{display:flex;gap:10px;align-items:center}
+.icon-btn{border:1px solid var(--line);background:#fff;width:40px;height:40px;border-radius:10px}
+.avatar{width:40px;height:40px;border-radius:50%;background:#e0e7ff;color:#3730a3;display:grid;place-items:center;font-weight:800}
+.main{padding:28px}
+.page{display:none}.page.active{display:block}
+.page-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:22px}
+.page-head h1{margin:0 0 5px;font-size:29px}.page-head p{margin:0;color:var(--muted)}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:#fff;padding:10px 14px;border-radius:10px;font-weight:700;color:#344054}
+.btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}.btn.danger{color:#b42318;background:#fff5f5}
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+.metric{padding:18px}.metric .label{color:var(--muted);font-size:13px}.metric .value{font-size:28px;font-weight:850;margin:7px 0 4px;letter-spacing:-.02em}.delta{font-size:12px;font-weight:700}.up{color:var(--green)}.down{color:var(--red)}
+.grid-2{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:18px}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:18px 18px 0}
+.card-head h3{margin:0;font-size:17px}.card-body{padding:18px}
+.pills{display:flex;gap:6px}.pill{border:1px solid var(--line);background:#fff;padding:6px 9px;border-radius:8px;font-size:12px}.pill.active{background:var(--soft);border-color:#bfdbfe;color:var(--blue2);font-weight:700}
+.chart{width:100%;height:240px;display:block}
+.donut-wrap{display:flex;align-items:center;justify-content:center;min-height:240px;gap:24px;flex-wrap:wrap}
+.donut{width:150px;height:150px;border-radius:50%;background:conic-gradient(#2563eb 0 46%,#7c3aed 46% 78%,#0ea5e9 78% 100%);position:relative}
+.donut:after{content:"";position:absolute;inset:28px;background:#fff;border-radius:50%}
+.legend{display:grid;gap:10px}.legend-row{display:flex;align-items:center;gap:9px;font-size:13px}.dot{width:9px;height:9px;border-radius:50%}
+.attention{display:grid;gap:10px}.attention-row{display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid var(--line);border-radius:12px}
+.badge{display:inline-flex;padding:5px 8px;border-radius:999px;font-size:12px;font-weight:800}.b-green{background:#ecfdf3;color:#027a48}.b-yellow{background:#fffaeb;color:#b54708}.b-red{background:#fef3f2;color:#b42318}.b-blue{background:#eff8ff;color:#175cd3}.b-gray{background:#f2f4f7;color:#475467}
+.toolbar{display:flex;gap:10px;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap}.search{min-width:300px;position:relative}.search input{width:100%;border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px 12px 10px 36px}.search span{position:absolute;left:12px;top:10px;color:var(--muted)}
+.filters{display:flex;gap:8px;flex-wrap:wrap}.filters select{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 11px;color:#344054}
+.table-card{overflow:hidden}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:850px}th{background:#f9fafb;color:#475467;text-align:left;font-size:12px;padding:12px 16px;border-bottom:1px solid var(--line);white-space:nowrap}td{padding:14px 16px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:middle}tr:hover td{background:#fcfcfd}.name{font-weight:800}.sub{font-size:12px;color:var(--muted);margin-top:3px}
+.kebab{border:0;background:transparent;font-size:20px;color:#667085}
+.plan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.plan{padding:22px;position:relative}.plan h3{font-size:21px;margin:0}.price{font-size:31px;font-weight:900;margin:14px 0 3px}.plan ul{padding-left:18px;color:#475467;line-height:1.9}.plan.featured{border:2px solid #2563eb}.popular{position:absolute;top:14px;right:14px;background:#eff6ff;color:#1d4ed8;font-size:11px;font-weight:800;padding:5px 7px;border-radius:999px}
+.finance-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.funnel{display:grid;gap:8px;max-width:780px;margin:5px auto 20px}.stage{margin:auto;background:#eff6ff;border:1px solid #bfdbfe;padding:13px 16px;border-radius:11px;text-align:center;color:#1d4ed8;font-weight:800}
+.system-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.system-item{padding:17px;display:flex;align-items:center;justify-content:space-between}.status-dot{width:10px;height:10px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px #dcfce7}
+.settings{display:grid;grid-template-columns:220px 1fr;min-height:480px}.settings-nav{border-right:1px solid var(--line);padding:12px}.settings-nav button{width:100%;text-align:left;border:0;background:none;padding:10px;border-radius:8px}.settings-nav button.active{background:#f2f4f7;font-weight:800}.settings-pane{padding:24px}.field{display:grid;gap:6px;margin-bottom:16px;max-width:520px}.field label{font-size:13px;font-weight:800}.field input,.field select,.field textarea{border:1px solid var(--line);border-radius:10px;padding:11px}
+.audit{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;background:#101828;color:#d0d5dd;border-radius:14px;padding:16px;line-height:1.8;max-height:270px;overflow:auto}
+.modal-back{position:fixed;inset:0;background:rgba(16,24,40,.42);display:none;align-items:center;justify-content:center;z-index:20;padding:20px}.modal-back.show{display:flex}.modal{width:min(620px,100%);background:#fff;border-radius:18px;box-shadow:0 30px 90px rgba(0,0,0,.2)}.modal-head{padding:20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}.modal-head h3{margin:0}.modal-body{padding:20px}.modal-foot{padding:16px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+.toast{position:fixed;right:24px;bottom:24px;background:#101828;color:#fff;padding:13px 16px;border-radius:10px;opacity:0;transform:translateY(8px);transition:.2s;z-index:30}.toast.show{opacity:1;transform:none}
+.dropdown{position:relative;display:inline-block}.dropdown-menu{position:fixed;z-index:40;min-width:190px;background:#fff;border:1px solid var(--line);box-shadow:0 14px 40px rgba(16,24,40,.15);border-radius:12px;padding:6px;display:none}.dropdown-menu.show{display:block}.dropdown-menu button{width:100%;border:0;background:#fff;text-align:left;padding:9px 10px;border-radius:8px;color:#344054}.dropdown-menu button:hover{background:#f2f4f7}.dropdown-menu button.danger-item{color:#b42318}.empty{padding:32px;text-align:center;color:var(--muted)}.modal .field input:invalid,.modal .field select:invalid{border-color:#f04438}.muted-note{font-size:12px;color:var(--muted);margin-top:8px}.settings-pane[hidden]{display:none}.clickable{cursor:pointer}.clickable:hover{background:#f9fafb}.toast.error{background:#b42318}.toast.success{background:#067647}
+@media(max-width:1100px){.cards,.finance-grid{grid-template-columns:repeat(2,1fr)}.grid-2{grid-template-columns:1fr}.plan-grid{grid-template-columns:1fr}.system-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:760px){.app{grid-template-columns:1fr}.sidebar{position:fixed;z-index:15;width:260px;transform:translateX(-100%);transition:.2s}.sidebar.open{transform:none}.mobile-menu{display:block}.main{padding:18px}.topbar{padding:0 16px}.cards,.finance-grid,.system-grid{grid-template-columns:1fr}.page-head{flex-direction:column}.search{min-width:100%}.settings{grid-template-columns:1fr}.settings-nav{border-right:0;border-bottom:1px solid var(--line);display:flex;overflow:auto}.settings-nav button{white-space:nowrap;width:auto}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar" id="sidebar">
+  <div class="brand"><div class="logo">Д</div><div><b>ДВИЖОК</b><small>Internal Admin</small></div></div>
+  <div class="nav-title">Главное</div>
+  <button class="nav-btn active" data-page="dashboard"><span class="ico">⌂</span>Дашборд</button>
+  <div class="nav-title">Клиенты</div>
+  <button class="nav-btn" data-page="services"><span class="ico">▦</span>Автосервисы</button>
+  <button class="nav-btn" data-page="users"><span class="ico">♙</span>Пользователи</button>
+  <div class="nav-title">Монетизация</div>
+  <button class="nav-btn" data-page="subscriptions"><span class="ico">↻</span>Подписки</button>
+  <button class="nav-btn" data-page="plans"><span class="ico">◇</span>Тарифы</button>
+  <button class="nav-btn" data-page="finance"><span class="ico">₽</span>Финансы</button>
+  <button class="nav-btn" data-page="economics"><span class="ico">◫</span>Юнит-экономика</button>
+  <div class="nav-title">Рост</div>
+  <button class="nav-btn" data-page="sales"><span class="ico">↗</span>Продажи</button>
+  <button class="nav-btn" data-page="marketing"><span class="ico">◎</span>Маркетинг</button>
+  <div class="nav-title">Управление</div>
+  <button class="nav-btn" data-page="team"><span class="ico">♟</span>Сотрудники</button>
+  <button class="nav-btn" data-page="system"><span class="ico">◉</span>Система</button>
+  <button class="nav-btn" data-page="settings"><span class="ico">⚙</span>Настройки</button>
+</aside>
+
+<div class="content">
+<header class="topbar">
+  <div class="top-left"><button class="mobile-menu" id="mobileMenu">☰</button><div class="breadcrumb">ДВИЖОК / <strong id="crumb">Дашборд</strong></div></div>
+  <div class="top-actions"><button class="icon-btn" title="Уведомления">🔔</button><div class="avatar">AA</div></div>
+</header>
+
+<main class="main">
+<section class="page active" id="page-dashboard">
+  <div class="page-head"><div><h1>Дашборд</h1><p>Состояние бизнеса и платформы за текущий месяц</p></div><div class="actions"><button class="btn" onclick="exportReport()">Экспорт отчёта</button><button class="btn primary" onclick="openModal('service')">+ Добавить СТО</button></div></div>
+  <div class="cards">
+    <div class="card metric"><div class="label">MRR</div><div class="value">347 420 ₽</div><div class="delta up">↑ 12,4% к прошлому месяцу</div></div>
+    <div class="card metric"><div class="label">Выручка за месяц</div><div class="value">421 870 ₽</div><div class="delta up">↑ 8,7%</div></div>
+    <div class="card metric"><div class="label">Всего автосервисов</div><div class="value" id="totalServicesMetric">52</div><div class="delta up">+6 за месяц</div></div>
+    <div class="card metric"><div class="label">ARPU</div><div class="value">6 681 ₽</div><div class="delta up">↑ 3,1%</div></div>
+    <div class="card metric"><div class="label">Новые СТО</div><div class="value">8</div><div class="delta up">+2 к июлю</div></div>
+    <div class="card metric"><div class="label">Ушедшие СТО</div><div class="value">2</div><div class="delta down">Churn 3,8%</div></div>
+    <div class="card metric"><div class="label">Автовладельцы</div><div class="value">4 283</div><div class="delta up">+417 за месяц</div></div>
+    <div class="card metric"><div class="label">Автомобили</div><div class="value">5 106</div><div class="delta up">+489 за месяц</div></div>
+  </div>
+  <div class="grid-2">
+    <div class="card"><div class="card-head"><h3>Выручка</h3><div class="pills"><button class="pill">7д</button><button class="pill active">30д</button><button class="pill">3м</button><button class="pill">12м</button></div></div><div class="card-body"><canvas id="revenueChart" class="chart"></canvas></div></div>
+    <div class="card"><div class="card-head"><h3>Тарифы</h3></div><div class="card-body donut-wrap"><div class="donut"></div><div class="legend"><div class="legend-row"><span class="dot" style="background:#2563eb"></span>Стандарт — 24</div><div class="legend-row"><span class="dot" style="background:#7c3aed"></span>Про — 17</div><div class="legend-row"><span class="dot" style="background:#0ea5e9"></span>Премиум — 11</div></div></div></div>
+  </div>
+  <div class="grid-2">
+    <div class="card"><div class="card-head"><h3>Рост автосервисов</h3></div><div class="card-body"><canvas id="servicesChart" class="chart"></canvas></div></div>
+    <div class="card"><div class="card-head"><h3>Требует внимания</h3></div><div class="card-body attention">
+      <div class="attention-row"><span>Просроченные подписки</span><span class="badge b-red">3</span></div>
+      <div class="attention-row"><span>Trial заканчивается ≤ 3 дней</span><span class="badge b-yellow">5</span></div>
+      <div class="attention-row"><span>Неуспешные списания</span><span class="badge b-red">2</span></div>
+      <div class="attention-row"><span>Нет активности 14+ дней</span><span class="badge b-yellow">4</span></div>
+      <div class="attention-row"><span>Ошибки платформы</span><span class="badge b-blue">1</span></div>
+    </div></div>
+  </div>
+</section>
+
+<section class="page" id="page-services">
+  <div class="page-head"><div><h1>Автосервисы</h1><p>Управление подключёнными СТО и их подписками</p></div><button class="btn primary" onclick="openModal('service')">+ Добавить СТО</button></div>
+  <div class="toolbar"><div class="search"><span>⌕</span><input id="serviceSearch" placeholder="Название, телефон, email или ID"></div><div class="filters"><select id="cityFilter"><option value="">Все города</option><option>Казань</option><option>Уфа</option></select><select id="planFilter"><option value="">Все тарифы</option><option>Стандарт</option><option>Про</option><option>Премиум</option></select><select id="statusFilter"><option value="">Все статусы</option><option>Активна</option><option>Trial</option><option>Просрочена</option></select></div></div>
+  <div class="card table-card"><div class="table-wrap"><table><thead><tr><th>ID</th><th>Автосервис</th><th>Город</th><th>Тариф</th><th>Клиенты</th><th>Сотрудники</th><th>Подписка</th><th>Последняя активность</th><th></th></tr></thead><tbody id="servicesBody"></tbody></table></div></div>
+</section>
+
+<section class="page" id="page-users">
+  <div class="page-head"><div><h1>Пользователи</h1><p>Зарегистрированные автовладельцы</p></div><button class="btn" onclick="exportUsers()">Экспорт CSV</button></div>
+  <div class="toolbar"><div class="search"><span>⌕</span><input id="userSearch" placeholder="ID пользователя, автомобиль или СТО"></div></div>
+  <div class="card table-card"><div class="table-wrap"><table><thead><tr><th>ID</th><th>Авто</th><th>Связанный СТО</th><th>Регистрация</th><th>Активность</th><th></th></tr></thead><tbody id="usersBody"></tbody></table></div></div>
+</section>
+
+<section class="page" id="page-subscriptions">
+  <div class="page-head"><div><h1>Подписки</h1><p>Контроль статусов, продлений и ручных изменений</p></div></div>
+  <div class="cards"><div class="card metric"><div class="label">ACTIVE</div><div class="value">52</div><span class="badge b-green">Активные</span></div><div class="card metric"><div class="label">TRIAL</div><div class="value">7</div><span class="badge b-blue">Тестовый период</span></div><div class="card metric"><div class="label">PAST_DUE</div><div class="value">3</div><span class="badge b-red">Просроченные</span></div><div class="card metric"><div class="label">CANCELED</div><div class="value">5</div><span class="badge b-gray">Отменённые</span></div></div>
+  <div class="card table-card"><div class="table-wrap"><table><thead><tr><th>СТО</th><th>Тариф</th><th>Стоимость</th><th>Следующее списание</th><th>Скидка</th><th>Статус</th><th>Действия</th></tr></thead><tbody>
+    <tr><td><div class="name">АвтоЛига</div><div class="sub">Казань</div></td><td>Про</td><td>9 990 ₽</td><td>18.08.2026</td><td>—</td><td><span class="badge b-green">Активна</span></td><td><button class="btn" onclick="openModal('subscription')">Управление</button></td></tr>
+    <tr><td><div class="name">Garage 16</div><div class="sub">Казань</div></td><td>Стандарт</td><td>5 990 ₽</td><td>12.08.2026</td><td>10%</td><td><span class="badge b-yellow">Trial</span></td><td><button class="btn" onclick="openModal('subscription')">Управление</button></td></tr>
+    <tr><td><div class="name">Уфа Моторс</div><div class="sub">Уфа</div></td><td>Премиум</td><td>14 990 ₽</td><td>09.08.2026</td><td>—</td><td><span class="badge b-red">Просрочена</span></td><td><button class="btn" onclick="openModal('subscription')">Управление</button></td></tr>
+  </tbody></table></div></div>
+</section>
+
+<section class="page" id="page-plans">
+  <div class="page-head"><div><h1>Тарифы</h1><p>Цена, лимиты и функции меняются из админки без правки кода</p></div><button class="btn primary" onclick="openModal('plan')">+ Создать тариф</button></div>
+  <div class="plan-grid">
+    <div class="card plan"><h3>Стандарт</h3><div class="price">5 990 ₽<span style="font-size:14px;color:#667085;font-weight:500"> / мес</span></div><div class="sub">Небольшая мастерская</div><ul><li>1 мастерская</li><li>Базовая CRM</li><li>Статусы ремонта</li><li>История обслуживания</li><li>Telegram-уведомления</li></ul><button class="btn" onclick="openModal('plan')">Редактировать</button></div>
+    <div class="card plan featured"><span class="popular">ПОПУЛЯРНЫЙ</span><h3>Про</h3><div class="price">9 990 ₽<span style="font-size:14px;color:#667085;font-weight:500"> / мес</span></div><div class="sub">Полноценный автосервис</div><ul><li>Всё из Стандарт</li><li>Несколько сотрудников</li><li>Управленческий дашборд</li><li>Расширенная аналитика</li><li>Приоритетная поддержка</li></ul><button class="btn" onclick="openModal('plan')">Редактировать</button></div>
+    <div class="card plan"><h3>Премиум</h3><div class="price">от 14 990 ₽<span style="font-size:14px;color:#667085;font-weight:500"> / мес</span></div><div class="sub">Сети и филиалы</div><ul><li>Мультиточка</li><li>Филиалы и роли</li><li>Расширенная аналитика</li><li>Интеграции под запрос</li><li>Персональное сопровождение</li></ul><button class="btn" onclick="openModal('plan')">Редактировать</button></div>
+  </div>
+</section>
+
+<section class="page" id="page-finance">
+  <div class="page-head"><div><h1>Финансы</h1><p>Выручка, расходы и платежи платформы</p></div><div class="actions"><button class="btn" onclick="exportFinance()">Экспорт</button><button class="btn primary" onclick="openModal('expense')">+ Добавить расход</button></div></div>
+  <div class="finance-grid"><div class="card metric"><div class="label">Выручка</div><div class="value">421 870 ₽</div><div class="delta up">↑ 8,7%</div></div><div class="card metric"><div class="label">MRR</div><div class="value">347 420 ₽</div><div class="delta up">↑ 12,4%</div></div><div class="card metric"><div class="label">Расходы</div><div class="value">554 700 ₽</div><div class="delta down">операционные</div></div><div class="card metric"><div class="label">Результат</div><div class="value">−132 830 ₽</div><div class="delta down">этап роста</div></div></div>
+  <div class="grid-2"><div class="card"><div class="card-head"><h3>Доходы / расходы</h3></div><div class="card-body"><canvas id="financeChart" class="chart"></canvas></div></div><div class="card"><div class="card-head"><h3>Структура расходов</h3></div><div class="card-body attention"><div class="attention-row"><span>ФОТ</span><b>470 000 ₽</b></div><div class="attention-row"><span>Страховые</span><b>70 000 ₽</b></div><div class="attention-row"><span>Маркетинг</span><b>100 000 ₽</b></div><div class="attention-row"><span>Серверы и домены</span><b>2 200 ₽</b></div></div></div></div>
+  <div class="card table-card"><div class="card-head"><h3>Последние платежи</h3></div><div class="table-wrap"><table><thead><tr><th>Дата</th><th>СТО</th><th>Тариф</th><th>Сумма</th><th>Комиссия</th><th>Статус</th></tr></thead><tbody><tr><td>10.08.2026</td><td>АвтоЛига</td><td>Про</td><td>9 990 ₽</td><td>380 ₽</td><td><span class="badge b-green">Успешно</span></td></tr><tr><td>09.08.2026</td><td>Уфа Моторс</td><td>Премиум</td><td>14 990 ₽</td><td>570 ₽</td><td><span class="badge b-red">Ошибка</span></td></tr></tbody></table></div></div>
+</section>
+
+<section class="page" id="page-economics">
+  <div class="page-head"><div><h1>Юнит-экономика</h1><p>Экономика привлечения и удержания автосервисов</p></div></div>
+  <div class="cards"><div class="card metric"><div class="label">CAC</div><div class="value">12 500 ₽</div><div class="sub">100 000 / 8 новых СТО</div></div><div class="card metric"><div class="label">LTV</div><div class="value">80 172 ₽</div><div class="sub">оценка на основе ARPU и churn</div></div><div class="card metric"><div class="label">LTV / CAC</div><div class="value">6,4×</div><div class="delta up">здоровое соотношение</div></div><div class="card metric"><div class="label">Payback</div><div class="value">1,9 мес</div><div class="sub">срок окупаемости CAC</div></div></div>
+  <div class="card"><div class="card-head"><h3>Динамика CAC и LTV</h3></div><div class="card-body"><canvas id="economicsChart" class="chart"></canvas></div></div>
+</section>
+
+<section class="page" id="page-sales">
+  <div class="page-head"><div><h1>Продажи</h1><p>Воронка продаж автосервисов</p></div><button class="btn primary" onclick="openModal('lead')">+ Новый лид</button></div>
+  <div class="cards"><div class="card metric"><div class="label">Новые лиды</div><div class="value">34</div></div><div class="card metric"><div class="label">Демо</div><div class="value">16</div></div><div class="card metric"><div class="label">Trial</div><div class="value">9</div></div><div class="card metric"><div class="label">Оплаты</div><div class="value">8</div></div></div>
+  <div class="card"><div class="card-head"><h3>Воронка</h3></div><div class="card-body"><div class="funnel"><div class="stage" style="width:100%">Новый лид — 34</div><div class="stage" style="width:88%">Связались — 30</div><div class="stage" style="width:68%">Назначили демо — 23</div><div class="stage" style="width:52%">Провели демо — 18</div><div class="stage" style="width:38%">Trial — 13</div><div class="stage" style="width:24%">Оплата — 8</div></div></div></div>
+</section>
+
+<section class="page" id="page-marketing">
+  <div class="page-head"><div><h1>Маркетинг</h1><p>Эффективность каналов привлечения</p></div></div>
+  <div class="card table-card"><div class="table-wrap"><table><thead><tr><th>Источник</th><th>Расходы</th><th>Лиды</th><th>Демо</th><th>Клиенты</th><th>CPL</th><th>CAC</th><th>Выручка</th></tr></thead><tbody><tr><td>Холодные продажи</td><td>42 000 ₽</td><td>22</td><td>13</td><td>5</td><td>1 909 ₽</td><td>8 400 ₽</td><td>39 950 ₽</td></tr><tr><td>Яндекс</td><td>28 000 ₽</td><td>8</td><td>4</td><td>2</td><td>3 500 ₽</td><td>14 000 ₽</td><td>15 980 ₽</td></tr><tr><td>Telegram</td><td>12 000 ₽</td><td>5</td><td>2</td><td>1</td><td>2 400 ₽</td><td>12 000 ₽</td><td>5 990 ₽</td></tr><tr><td>Рекомендации</td><td>0 ₽</td><td>4</td><td>3</td><td>2</td><td>0 ₽</td><td>0 ₽</td><td>19 980 ₽</td></tr></tbody></table></div></div>
+</section>
+
+<section class="page" id="page-team">
+  <div class="page-head"><div><h1>Сотрудники ДВИЖКА</h1><p>Роли и уровни доступа внутренней команды</p></div><button class="btn primary" onclick="openModal('employee')">+ Добавить сотрудника</button></div>
+  <div class="card table-card"><div class="table-wrap"><table><thead><tr><th>Сотрудник</th><th>Роль</th><th>Доступ</th><th>Последний вход</th><th>Статус</th></tr></thead><tbody><tr><td><div class="name">Администратор</div><div class="sub">admin@dvizhok.tech</div></td><td>Super Admin</td><td>Полный доступ</td><td>сегодня, 14:06</td><td><span class="badge b-green">Активен</span></td></tr><tr><td><div class="name">Директор</div><div class="sub">director@dvizhok.tech</div></td><td>Директор</td><td>Бизнес и аналитика</td><td>сегодня, 11:42</td><td><span class="badge b-green">Активен</span></td></tr><tr><td><div class="name">Менеджер продаж</div><div class="sub">sales@dvizhok.tech</div></td><td>Менеджер</td><td>СТО, продажи, лиды</td><td>вчера, 18:20</td><td><span class="badge b-green">Активен</span></td></tr></tbody></table></div></div>
+</section>
+
+<section class="page" id="page-system">
+  <div class="page-head"><div><h1>Система</h1><p>Мониторинг инфраструктуры и ошибок</p></div><button class="btn" id="systemRefreshBtn" onclick="refreshSystem()">Обновить</button></div>
+  <div class="system-grid">
+    <div class="card system-item"><div><b>API</b><div class="sub">42 ms</div></div><span class="status-dot"></span></div>
+    <div class="card system-item"><div><b>База данных</b><div class="sub">18 ms</div></div><span class="status-dot"></span></div>
+    <div class="card system-item"><div><b>Сервер</b><div class="sub">CPU 31% · RAM 58%</div></div><span class="status-dot"></span></div>
+    <div class="card system-item"><div><b>Платежи</b><div class="sub">Работает</div></div><span class="status-dot"></span></div>
+    <div class="card system-item"><div><b>Авторизация</b><div class="sub">Работает</div></div><span class="status-dot"></span></div>
+    <div class="card system-item"><div><b>Уведомления</b><div class="sub">Работает</div></div><span class="status-dot"></span></div>
+  </div>
+  <div class="card" style="margin-top:16px"><div class="card-head"><h3>Журнал событий</h3></div><div class="card-body"><div class="audit">14:13:09 INFO subscription.payment_succeeded service=STO-1042 amount=9990
+14:11:42 INFO auth.login_success user=admin
+14:08:13 WARNING notification.retry provider=telegram attempt=2
+13:57:34 ERROR payment.failed service=STO-1018 code=card_declined
+13:42:06 INFO service.created id=STO-1068 city=Kazan
+13:30:12 INFO system.health api=ok db=ok payments=ok</div></div></div>
+</section>
+
+<section class="page" id="page-settings">
+  <div class="page-head"><div><h1>Настройки</h1><p>Системные параметры внутренней админки</p></div></div>
+  <div class="card settings"><div class="settings-nav"><button class="active">Общие</button><button>Платежи</button><button>Авторизация</button><button>Уведомления</button><button>Интеграции</button><button>Роли и права</button></div><div class="settings-pane"><h3 style="margin-top:0">Общие настройки</h3><div class="field"><label for="setPlatform">Название платформы</label><input id="setPlatform" value="ДВИЖОК"></div><div class="field"><label for="setDomain">Основной домен</label><input id="setDomain" value="dvizhok.tech"></div><div class="field"><label for="setTrial">Trial по умолчанию</label><select id="setTrial"><option>14 дней</option><option>7 дней</option><option>30 дней</option></select></div><div class="field"><label for="setSupport">Email поддержки</label><input id="setSupport" value="support@dvizhok.tech"></div><button class="btn primary" onclick="saveSettings()">Сохранить изменения</button></div></div>
+</section>
+</main>
+</div>
+</div>
+
+<div class="modal-back" id="modalBack">
+  <div class="modal"><div class="modal-head"><h3 id="modalTitle">Действие</h3><button class="kebab" onclick="closeModal()">×</button></div><div class="modal-body" id="modalBody"></div><div class="modal-foot"><button class="btn" onclick="closeModal()">Отмена</button><button class="btn primary" onclick="saveModal()">Сохранить</button></div></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const titles={dashboard:'Дашборд',services:'Автосервисы',users:'Пользователи',subscriptions:'Подписки',plans:'Тарифы',finance:'Финансы',economics:'Юнит-экономика',sales:'Продажи',marketing:'Маркетинг',team:'Сотрудники',system:'Система',settings:'Настройки'};
+const STORAGE_KEY='dvizhok_admin_v2';
+const clone=x=>JSON.parse(JSON.stringify(x));
+const defaultState={
+ services:[
+  {id:'STO-1042',name:'АвтоЛига',city:'Казань',plan:'Про',users:284,staff:7,status:'Активна',active:'5 мин назад',email:'office@autoliga.local',note:''},
+  {id:'STO-1046',name:'Garage 16',city:'Казань',plan:'Стандарт',users:91,staff:2,status:'Trial',active:'23 мин назад',email:'garage16@local',note:''},
+  {id:'STO-1051',name:'Уфа Моторс',city:'Уфа',plan:'Премиум',users:402,staff:18,status:'Просрочена',active:'2 часа назад',email:'ufa-motors@local',note:''},
+  {id:'STO-1059',name:'Техцентр Победа',city:'Казань',plan:'Про',users:176,staff:6,status:'Активна',active:'сегодня, 10:34',email:'pobeda@local',note:''},
+  {id:'STO-1063',name:'Motor Lab',city:'Уфа',plan:'Стандарт',users:67,staff:1,status:'Активна',active:'вчера, 19:10',email:'motorlab@local',note:''},
+  {id:'STO-1068',name:'АвтоПрофи',city:'Казань',plan:'Про',users:122,staff:5,status:'Trial',active:'вчера, 18:42',email:'autoprofi@local',note:''}
+ ],
+ users:[
+  {id:'USR-4821',cars:['Kia K5 · А123ВС716','Lada Vesta · В456ОР716'],sto:'АвтоЛига',reg:'02.08.2026',active:'сегодня, 13:42'},
+  {id:'USR-4812',cars:['Hyundai Solaris · Е777КХ716'],sto:'Garage 16',reg:'01.08.2026',active:'сегодня, 12:10'},
+  {id:'USR-4798',cars:['BMW 3 · Р321РР716','Lada Granta · М111ММ716','Toyota Camry · С909СС716'],sto:'Техцентр Победа',reg:'30.07.2026',active:'вчера, 20:11'},
+  {id:'USR-4781',cars:['Skoda Octavia · У555УУ702'],sto:'Уфа Моторс',reg:'29.07.2026',active:'вчера, 18:01'},
+  {id:'USR-4750',cars:['Chery Tiggo 7 · Т070ТТ716'],sto:'АвтоЛига',reg:'25.07.2026',active:'08.08.2026'}
+ ],
+ plans:[
+  {name:'Стандарт',price:5990,description:'Небольшая мастерская',features:['1 мастерская','Базовая CRM','Статусы ремонта','История обслуживания','Telegram-уведомления']},
+  {name:'Про',price:9990,description:'Полноценный автосервис',featured:true,features:['Всё из Стандарт','Несколько сотрудников','Управленческий дашборд','Расширенная аналитика','Приоритетная поддержка']},
+  {name:'Премиум',price:14990,description:'Сети и филиалы',features:['Мультиточка','Филиалы и роли','Расширенная аналитика','Интеграции под запрос','Персональное сопровождение']}
+ ],
+ subscriptions:[
+  {service:'АвтоЛига',plan:'Про',price:9990,next:'18.08.2026',discount:0,status:'Активна'},
+  {service:'Garage 16',plan:'Стандарт',price:5990,next:'12.08.2026',discount:10,status:'Trial'},
+  {service:'Уфа Моторс',plan:'Премиум',price:14990,next:'09.08.2026',discount:0,status:'Просрочена'}
+ ],
+ leads:[], expenses:[], employees:[
+  {name:'Администратор',email:'admin@dvizhok.tech',role:'Super Admin',access:'Полный доступ',last:'сегодня, 14:06',status:'Активен'},
+  {name:'Директор',email:'director@dvizhok.tech',role:'Директор',access:'Бизнес и аналитика',last:'сегодня, 11:42',status:'Активен'},
+  {name:'Менеджер продаж',email:'sales@dvizhok.tech',role:'Менеджер',access:'СТО, продажи, лиды',last:'вчера, 18:20',status:'Активен'}
+ ],
+ settings:{platform:'ДВИЖОК',domain:'dvizhok.tech',trial:'14 дней',support:'support@dvizhok.tech'}
+};
+// Do not render the legacy demo state while the backend request is pending.
+// The creator console is backend-backed; an empty state is safer than showing
+// stale sample organizations to the operator.
+let state={services:[],users:[],plans:[],subscriptions:[],expenses:[],leads:[],employees:[],settings:{},dashboard:{},system:{}}, modalContext=null;
+function loadState(){
+  try{
+    const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')||{};
+    const base=clone(defaultState);
+    return {
+      ...base,
+      ...saved,
+      services:Array.isArray(saved.services)?saved.services:base.services,
+      users:Array.isArray(saved.users)?saved.users:base.users,
+      plans:Array.isArray(saved.plans)?saved.plans:base.plans,
+      subscriptions:Array.isArray(saved.subscriptions)?saved.subscriptions:base.subscriptions,
+      leads:Array.isArray(saved.leads)?saved.leads:base.leads,
+      expenses:Array.isArray(saved.expenses)?saved.expenses:base.expenses,
+      employees:Array.isArray(saved.employees)?saved.employees:base.employees,
+      settings:{...base.settings,...(saved.settings||{})}
+    };
+  }catch(e){return clone(defaultState)}
+}
+function legacyPersist(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));renderAll()}
+function uid(prefix,list){let n=Math.max(1000,...list.map(x=>parseInt((x.id||'').replace(/\D/g,''))||0))+1;return `${prefix}-${n}`}
+function esc(v=''){return String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function money(v){return new Intl.NumberFormat('ru-RU').format(Number(v)||0)+' ₽'}
+function statusBadge(s){let c=s==='Активна'||s==='Активен'||s==='Успешно'?'b-green':s==='Trial'?'b-yellow':s==='Просрочена'||s==='Ошибка'?'b-red':s==='Отменена'?'b-gray':'b-blue';return `<span class="badge ${c}">${esc(s)}</span>`}
+
+document.querySelectorAll('.nav-btn').forEach(btn=>btn.addEventListener('click',()=>navigate(btn.dataset.page)));
+function navigate(page){document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.page===page));document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('page-'+page)?.classList.add('active');document.getElementById('crumb').textContent=titles[page];document.getElementById('sidebar').classList.remove('open');history.replaceState(null,'','#'+page);setTimeout(drawAll,50)}
+document.getElementById('mobileMenu').onclick=()=>document.getElementById('sidebar').classList.toggle('open');
+
+function renderServices(){let q=(document.getElementById('serviceSearch')?.value||'').toLowerCase(),city=document.getElementById('cityFilter')?.value||'',plan=document.getElementById('planFilter')?.value||'',status=document.getElementById('statusFilter')?.value||'';let list=state.services.filter(x=>(!q||(x.name+x.id+x.email).toLowerCase().includes(q))&&(!city||x.city===city)&&(!plan||x.plan===plan)&&(!status||x.status===status));let body=document.getElementById('servicesBody');if(!body)return;body.innerHTML=list.length?list.map(x=>`<tr><td>${esc(x.id)}</td><td><div class="name">${esc(x.name)}</div><div class="sub">${esc(x.email||'')}</div></td><td>${esc(x.city)}</td><td>${esc(x.plan)}</td><td>${x.users}</td><td>${x.staff}</td><td>${statusBadge(x.status)}</td><td>${esc(x.active)}</td><td><button class="kebab" onclick="serviceMenu(event,'${x.id}')">⋯</button></td></tr>`).join(''):`<tr><td colspan="9" class="empty">Ничего не найдено</td></tr>`}
+function renderUsers(){let q=(document.getElementById('userSearch')?.value||'').toLowerCase();let list=state.users.filter(x=>{const cars=Array.isArray(x.cars)?x.cars:[];return (x.id+x.sto+cars.join(' ')).toLowerCase().includes(q)});let body=document.getElementById('usersBody');if(!body)return;body.innerHTML=list.length?list.map(x=>{const cars=Array.isArray(x.cars)?x.cars:[];return `<tr><td class="name">${esc(x.id)}</td><td>${cars.map(c=>`<div>${esc(c)}</div>`).join('')}<div class="sub">${cars.length} авто</div></td><td>${esc(x.sto||'—')}</td><td>${esc(x.reg)}</td><td>${esc(x.active)}</td><td><button class="kebab" onclick="openUser('${esc(x.id)}')">⋯</button></td></tr>`}).join(''):`<tr><td colspan="6" class="empty">Ничего не найдено</td></tr>`}
+function renderPlans(){let grid=document.querySelector('#page-plans .plan-grid');if(!grid)return;grid.innerHTML=state.plans.map((p,i)=>`<div class="card plan ${p.featured?'featured':''}">${p.featured?'<span class="popular">ПОПУЛЯРНЫЙ</span>':''}<h3>${esc(p.name)}</h3><div class="price">${money(p.price)}<span style="font-size:14px;color:#667085;font-weight:500"> / мес</span></div><div class="sub">${esc(p.description||'')}</div><ul>${p.features.map(f=>`<li>${esc(f)}</li>`).join('')}</ul><button class="btn" onclick="openModal('plan',${i})">Редактировать</button></div>`).join('')}
+function renderSubscriptions(){let body=document.querySelector('#page-subscriptions tbody');if(!body)return;body.innerHTML=state.subscriptions.map((x,i)=>`<tr><td><div class="name">${esc(x.service)}</div></td><td>${esc(x.plan)}</td><td>${money(x.price)}</td><td>${esc(x.next||'—')}</td><td>${x.discount?x.discount+'%':'—'}</td><td>${statusBadge(x.status)}</td><td><button class="btn" onclick="openModal('subscription',${i})">Управление</button></td></tr>`).join('')}
+function renderTeam(){let body=document.querySelector('#page-team tbody');if(!body)return;body.innerHTML=state.employees.map((x,i)=>`<tr><td><div class="name">${esc(x.name)}</div><div class="sub">${esc(x.email)}</div></td><td>${esc(x.role)}</td><td>${esc(x.access)}</td><td>${esc(x.last)}</td><td>${statusBadge(x.status)}</td></tr>`).join('')}
+function legacyRenderAll(){
+  try{renderServices()}catch(e){console.error(e)}
+  try{renderUsers()}catch(e){console.error(e)}
+  try{updateDashboardMetrics()}catch(e){console.error(e)}
+  try{renderPlans()}catch(e){console.error(e)}
+  try{renderSubscriptions()}catch(e){console.error(e)}
+  try{renderTeam()}catch(e){console.error(e)}
+  try{syncSettingsForm()}catch(e){console.error(e)}
+}
+['serviceSearch','cityFilter','planFilter','statusFilter'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.addEventListener('input',renderServices);
+  el.addEventListener('change',renderServices);
+});
+document.getElementById('userSearch')?.addEventListener('input',renderUsers);
+document.querySelectorAll('#page-dashboard .pills .pill').forEach(pill=>{
+  pill.addEventListener('click',()=>{
+    pill.parentElement.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+    pill.classList.add('active');
+    drawAll();
+    toast('Период: '+pill.textContent.trim(),'success');
+  });
+});
+
+let dropdownCloser=null;
+function serviceMenu(e,id){
+  e.preventDefault();e.stopPropagation();
+  closeDropdowns();
+  let m=document.createElement('div');
+  m.className='dropdown-menu show';
+  m.innerHTML=`<button type="button" data-act="open">Открыть карточку</button><button type="button" data-act="edit">Редактировать</button><button type="button" data-act="toggle">Изменить статус</button><button type="button" class="danger-item" data-act="delete">Удалить</button>`;
+  m.addEventListener('click',ev=>{
+    ev.stopPropagation();
+    const act=ev.target.closest('button')?.dataset?.act;
+    if(!act)return;
+    closeDropdowns();
+    if(act==='open')openService(id);
+    else if(act==='edit')openModal('editService',id);
+    else if(act==='toggle')toggleService(id);
+    else if(act==='delete')deleteService(id);
+  });
+  document.body.appendChild(m);
+  let r=e.currentTarget.getBoundingClientRect();
+  m.style.left=Math.min(r.left-150,innerWidth-210)+'px';
+  m.style.top=(r.bottom+4)+'px';
+  dropdownCloser=(ev)=>{if(!m.contains(ev.target))closeDropdowns()};
+  setTimeout(()=>document.addEventListener('click',dropdownCloser),0);
+}
+function closeDropdowns(){
+  if(dropdownCloser){document.removeEventListener('click',dropdownCloser);dropdownCloser=null}
+  document.querySelectorAll('.dropdown-menu').forEach(x=>x.remove());
+}
+function legacyToggleService(id){let s=state.services.find(x=>x.id===id);if(!s)return;let order=['Активна','Trial','Просрочена'];s.status=order[(order.indexOf(s.status)+1)%order.length];legacyPersist();toast('Статус СТО изменён','success')}
+function legacyDeleteService(id){if(!confirm('Удалить автосервис из локальной админки?'))return;state.services=state.services.filter(x=>x.id!==id);legacyPersist();toast('Автосервис удалён','success')}
+function openService(id){let s=state.services.find(x=>x.id===id);if(!s)return;modalContext={type:'serviceCard',id};document.getElementById('modalTitle').textContent=s.name;document.getElementById('modalBody').innerHTML=`<div class="cards" style="grid-template-columns:repeat(2,1fr)"><div class="card metric"><div class="label">Тариф</div><div class="value" style="font-size:20px">${esc(s.plan)}</div></div><div class="card metric"><div class="label">Подписка</div><div style="margin-top:8px">${statusBadge(s.status)}</div></div><div class="card metric"><div class="label">Клиенты</div><div class="value" style="font-size:20px">${s.users}</div></div><div class="card metric"><div class="label">Сотрудники</div><div class="value" style="font-size:20px">${s.staff}</div></div></div><div class="field"><label>Внутренняя заметка</label><textarea id="serviceNote" rows="4">${esc(s.note||'')}</textarea></div>`;document.getElementById('modalBack').classList.add('show')}
+function openUser(id){let u=state.users.find(x=>x.id===id);if(!u)return;const cars=Array.isArray(u.cars)?u.cars:[];modalContext={type:'userCard',id};document.getElementById('modalTitle').textContent='Автовладелец '+u.id;document.getElementById('modalBody').innerHTML=`<div class="field"><label>Технический ID</label><input value="${esc(u.id)}" disabled></div><div class="field"><label>Автомобили</label><textarea id="userCars" rows="4">${esc(cars.join('\n'))}</textarea></div><div class="field"><label>Связанный СТО</label><select id="userSto"><option value="">Не связан</option>${state.services.map(s=>`<option ${s.name===u.sto?'selected':''}>${esc(s.name)}</option>`).join('')}</select></div><div class="muted-note">ФИО и телефон в интерфейсе внутренней админки не хранятся и не отображаются.</div>`;document.getElementById('modalBack').classList.add('show')}
+
+function field(id,label,html){return `<div class="field"><label for="${id}">${label}</label>${html}</div>`}
+function openModal(type,arg){
+  modalContext={type,arg};
+  let title='Действие',body='';
+  if(type==='service'||type==='editService'){
+    let s=type==='editService'?state.services.find(x=>x.id===arg):{};
+    if(type==='editService'&&!s){toast('Автосервис не найден','error');return}
+    title=type==='service'?'Добавить автосервис':'Редактировать автосервис';
+    body=field('mName','Название СТО',`<input id="mName" required value="${esc(s?.name||'')}" placeholder="Например, АвтоЛига">`)+field('mCity','Город',`<select id="mCity"><option ${s?.city==='Казань'?'selected':''}>Казань</option><option ${s?.city==='Уфа'?'selected':''}>Уфа</option></select>`)+field('mEmail','Рабочий email СТО',`<input id="mEmail" type="email" value="${esc(s?.email||'')}">`)+field('mPlan','Тариф',`<select id="mPlan">${state.plans.map(p=>`<option ${s?.plan===p.name?'selected':''}>${esc(p.name)}</option>`).join('')}</select>`)+(type==='service'?field('mPhone','Телефон владельца',`<input id="mPhone" type="tel" inputmode="tel" required placeholder="+7 900 000-00-00">`)+field('mOwnerName','ФИО владельца',`<input id="mOwnerName" required>`)+field('mOwnerEmail','Email для входа владельца',`<input id="mOwnerEmail" type="email" required>`)+field('mOwnerLogin','Логин владельца (от 11 символов)',`<input id="mOwnerLogin" minlength="11" required>`)+field('mOwnerPassword','Пароль владельца',`<input id="mOwnerPassword" type="password" minlength="6" required autocomplete="new-password">`):'')+field('mStaff','Сотрудники',`<input id="mStaff" type="number" min="1" value="${s?.staff||1}">`);
+  }else if(type==='subscription'){
+    let x=typeof arg==='number'?state.subscriptions[arg]:null;
+    if(!x){toast('Подписка не найдена','error');return}
+    title='Управление подпиской';
+    body=field('mPlan','Тариф',`<select id="mPlan">${state.plans.map(p=>`<option ${x.plan===p.name?'selected':''}>${esc(p.name)}</option>`).join('')}</select>`)+field('mDiscount','Скидка, %',`<input id="mDiscount" type="number" min="0" max="100" value="${x.discount||0}">`)+field('mNext','Следующее списание',`<input id="mNext" type="text" value="${esc(x.next||'')}">`)+field('mStatus','Статус',`<select id="mStatus"><option>Активна</option><option>Trial</option><option>Просрочена</option><option>Отменена</option></select>`);
+  }else if(type==='plan'){
+    let p=typeof arg==='number'?state.plans[arg]:null;
+    if(typeof arg==='number'&&!p){toast('Тариф не найден','error');return}
+    p=p||{name:'',price:'',description:'',features:[]};
+    title=typeof arg==='number'?'Редактирование тарифа':'Создать тариф';
+    body=field('mName','Название',`<input id="mName" required value="${esc(p.name)}">`)+field('mPrice','Цена в месяц, ₽',`<input id="mPrice" type="number" min="0" required value="${p.price||''}">`)+field('mDesc','Описание',`<input id="mDesc" value="${esc(p.description||'')}">`)+field('mFeatures','Доступные функции',`<textarea id="mFeatures" rows="6">${esc((p.features||[]).join('\n'))}</textarea>`);
+  }else if(type==='expense'){
+    title='Добавить расход';
+    body=field('mCategory','Категория',`<select id="mCategory"><option>ФОТ</option><option>Маркетинг</option><option>Серверы</option><option>Домены</option><option>Сервисы и API</option><option>Прочее</option></select>`)+field('mAmount','Сумма, ₽',`<input id="mAmount" type="number" min="0" required>`)+field('mComment','Комментарий',`<textarea id="mComment" rows="3"></textarea>`);
+  }else if(type==='lead'){
+    title='Новый лид';
+    body=field('mName','Название СТО',`<input id="mName" required>`)+field('mCity','Город',`<input id="mCity">`)+field('mContact','Контакт',`<input id="mContact">`)+field('mPhone','Телефон',`<input id="mPhone">`)+field('mSource','Источник',`<select id="mSource"><option>Холодные продажи</option><option>Яндекс</option><option>Telegram</option><option>Рекомендация</option></select>`)+field('mLeadStatus','Этап',`<select id="mLeadStatus"><option>Новый лид</option><option>Связались</option><option>Назначили демо</option><option>Провели демо</option><option>Trial</option><option>Оплата</option></select>`);
+  }else if(type==='employee'){
+    title='Добавить сотрудника';
+    body=field('mName','ФИО / название роли',`<input id="mName" required>`)+field('mEmail','Email',`<input id="mEmail" type="email" required>`)+field('mRole','Роль',`<select id="mRole"><option>Директор</option><option>Менеджер</option><option>Бухгалтер</option><option>Поддержка</option><option>Разработчик</option></select>`);
+  }else{
+    toast('Неизвестное действие','error');
+    return;
+  }
+  document.getElementById('modalTitle').textContent=title;
+  document.getElementById('modalBody').innerHTML=body;
+  if(type==='subscription')document.getElementById('mStatus').value=state.subscriptions[arg].status;
+  document.getElementById('modalBack').classList.add('show');
+}
+function closeModal(){document.getElementById('modalBack').classList.remove('show');modalContext=null}
+function val(id){return document.getElementById(id)?.value?.trim()||''}
+function legacySaveModal(){
+  if(!modalContext){closeModal();return}
+  let c=modalContext;
+  try{
+    if(c.type==='serviceCard'){
+      const s=state.services.find(x=>x.id===c.id);if(!s)throw Error('Автосервис не найден');s.note=val('serviceNote');
+    }else if(c.type==='userCard'){
+      let u=state.users.find(x=>x.id===c.id);if(!u)throw Error('Пользователь не найден');
+      u.cars=val('userCars').split('\n').map(x=>x.trim()).filter(Boolean);u.sto=val('userSto');
+    }else if(c.type==='service'||c.type==='editService'){
+      if(!val('mName'))throw Error('Укажите название СТО');
+      let s=c.type==='editService'?state.services.find(x=>x.id===c.arg):{id:uid('STO',state.services),users:0,status:'Trial',active:'только что'};
+      if(!s)throw Error('Автосервис не найден');
+      Object.assign(s,{name:val('mName'),city:val('mCity'),email:val('mEmail'),plan:val('mPlan'),staff:Number(val('mStaff')||1)});
+      if(c.type==='service'){state.services.push(s);state.subscriptions.push({service:s.name,plan:s.plan,price:state.plans.find(p=>p.name===s.plan)?.price||0,next:'—',discount:0,status:'Trial'})}
+    }else if(c.type==='subscription'){
+      let x=state.subscriptions[c.arg];if(!x)throw Error('Подписка не найдена');
+      x.plan=val('mPlan');x.price=state.plans.find(p=>p.name===x.plan)?.price||x.price;x.discount=Number(val('mDiscount')||0);x.next=val('mNext');x.status=val('mStatus');
+      const svc=state.services.find(s=>s.name===x.service);if(svc){svc.plan=x.plan;svc.status=x.status}
+    }else if(c.type==='plan'){
+      if(!val('mName'))throw Error('Укажите название тарифа');
+      let p={name:val('mName'),price:Number(val('mPrice')||0),description:val('mDesc'),features:val('mFeatures').split('\n').map(x=>x.trim()).filter(Boolean)};
+      if(typeof c.arg!=='number')state.plans.push(p);else state.plans[c.arg]={...state.plans[c.arg],...p};
+    }else if(c.type==='expense'){
+      if(!val('mAmount'))throw Error('Укажите сумму');
+      state.expenses.push({category:val('mCategory'),amount:Number(val('mAmount')),comment:val('mComment'),date:new Date().toISOString()});
+    }else if(c.type==='lead'){
+      if(!val('mName'))throw Error('Укажите название СТО');
+      state.leads.push({name:val('mName'),city:val('mCity'),contact:val('mContact'),phone:val('mPhone'),source:val('mSource'),created:new Date().toISOString()});
+    }else if(c.type==='employee'){
+      if(!val('mName')||!val('mEmail'))throw Error('Заполните имя и email');
+      state.employees.push({name:val('mName'),email:val('mEmail'),role:val('mRole'),access:'По роли',last:'ещё не входил',status:'Активен'});
+    }
+    persist();closeModal();toast('Изменения сохранены','success');
+  }catch(e){toast(e.message||'Проверьте поля','error')}
+}
+
+function csvEscape(v){v=String(v??'');return /[";,\n]/.test(v)?'"'+v.replaceAll('"','""')+'"':v}
+function downloadCSV(filename,headers,rows){let csv='\ufeff'+headers.join(';')+'\n'+rows.map(r=>r.map(csvEscape).join(';')).join('\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=filename;a.click();URL.revokeObjectURL(a.href)}
+function exportUsers(){downloadCSV('dvizhok_users.csv',['ID','Автомобили','СТО','Регистрация','Активность'],state.users.map(u=>[u.id,(u.cars||[]).join(' | '),u.sto,u.reg,u.active]));toast('CSV выгружен','success')}
+function exportReport(){downloadCSV('dvizhok_services.csv',['ID','СТО','Город','Тариф','Клиенты','Сотрудники','Статус','Активность'],state.services.map(s=>[s.id,s.name,s.city,s.plan,s.users,s.staff,s.status,s.active]));toast('Отчёт выгружен','success')}
+function exportFinance(){
+  const rows=state.expenses.map(x=>[x.category,x.amount,x.comment,x.date]);
+  downloadCSV('dvizhok_finance.csv',['Категория','Сумма','Комментарий','Дата'],rows);
+  toast('Финансовый отчёт выгружен','success');
+}
+
+let notifyBtn=document.querySelector('.top-actions .icon-btn');if(notifyBtn)notifyBtn.onclick=()=>toast('Уведомления creator-админки пока не настроены');
+const settingsLabels=['Общие','Платежи','Авторизация','Уведомления','Интеграции','Роли и права'];
+function renderSettingsGeneral(){
+  const pane=document.querySelector('.settings-pane');if(!pane)return;
+  pane.innerHTML=`<h3 style="margin-top:0">Общие настройки</h3>${field('setPlatform','Название платформы',`<input id="setPlatform" value="${esc(state.settings.platform)}">`)}${field('setDomain','Основной домен',`<input id="setDomain" value="${esc(state.settings.domain)}">`)}${field('setTrial','Trial по умолчанию',`<select id="setTrial"><option>14 дней</option><option>7 дней</option><option>30 дней</option></select>`)}${field('setSupport','Email поддержки',`<input id="setSupport" value="${esc(state.settings.support)}">`)}<button class="btn primary" onclick="saveSettings()">Сохранить изменения</button>`;
+  const trial=document.getElementById('setTrial');if(trial)trial.value=state.settings.trial||'14 дней';
+}
+function syncSettingsForm(){
+  const platform=document.getElementById('setPlatform');
+  if(!platform)return;
+  if(document.activeElement&&['setPlatform','setDomain','setTrial','setSupport'].includes(document.activeElement.id))return;
+  platform.value=state.settings.platform||'';
+  const domain=document.getElementById('setDomain');if(domain)domain.value=state.settings.domain||'';
+  const trial=document.getElementById('setTrial');if(trial)trial.value=state.settings.trial||'14 дней';
+  const support=document.getElementById('setSupport');if(support)support.value=state.settings.support||'';
+}
+document.querySelectorAll('.settings-nav button').forEach((b,i)=>b.onclick=()=>{
+  document.querySelectorAll('.settings-nav button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  const pane=document.querySelector('.settings-pane');
+  if(i===0)renderSettingsGeneral();
+  else pane.innerHTML=`<h3 style="margin-top:0">${settingsLabels[i]}</h3><p class="sub">Раздел подготовлен для подключения к backend/API. Настройки здесь не имитируют внешнюю интеграцию.</p><div class="attention"><div class="attention-row"><span>Состояние</span><span class="badge b-blue">Требуется API</span></div></div>`;
+});
+function saveSettings(){
+  if(!document.getElementById('setPlatform')){toast('Откройте вкладку «Общие»','error');return}
+  state.settings={platform:val('setPlatform'),domain:val('setDomain'),trial:val('setTrial'),support:val('setSupport')};
+  persist();toast('Настройки сохранены','success');
+}
+function refreshSystem(){
+  document.querySelectorAll('.system-item .sub').forEach((el,i)=>{
+    if(i===0)el.textContent=(30+Math.floor(Math.random()*30))+' ms';
+    if(i===1)el.textContent=(10+Math.floor(Math.random()*20))+' ms';
+    if(i===2)el.textContent='CPU '+(20+Math.floor(Math.random()*30))+'% · RAM '+(45+Math.floor(Math.random()*20))+'%';
+  });
+  toast('Статусы обновлены','success');
+}
+
+function drawLine(id,values,labels,fill=false){const c=document.getElementById(id);if(!c||c.offsetParent===null||!values.length)return;const dpr=window.devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;c.width=w*dpr;c.height=h*dpr;const ctx=c.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);const pad={l:38,r:14,t:18,b:28},iw=w-pad.l-pad.r,ih=h-pad.t-pad.b,rawMin=Math.min(...values),rawMax=Math.max(...values),min=rawMin===rawMax?rawMin-1:rawMin*.92,max=rawMin===rawMax?rawMax+1:rawMax*1.04;ctx.strokeStyle='#eaecf0';ctx.lineWidth=1;ctx.font='11px sans-serif';ctx.fillStyle='#98a2b3';for(let i=0;i<5;i++){let y=pad.t+ih*i/4;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke()}const pts=values.map((v,i)=>[pad.l+iw*i/Math.max(values.length-1,1),pad.t+ih-(v-min)/(max-min)*ih]);if(fill){let g=ctx.createLinearGradient(0,pad.t,0,h-pad.b);g.addColorStop(0,'rgba(37,99,235,.18)');g.addColorStop(1,'rgba(37,99,235,0)');ctx.beginPath();ctx.moveTo(pts[0][0],h-pad.b);pts.forEach(p=>ctx.lineTo(...p));ctx.lineTo(pts.at(-1)[0],h-pad.b);ctx.closePath();ctx.fillStyle=g;ctx.fill()}ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(...p):ctx.moveTo(...p));ctx.strokeStyle='#2563eb';ctx.lineWidth=2.5;ctx.stroke();pts.forEach(p=>{ctx.beginPath();ctx.arc(p[0],p[1],3.5,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();ctx.strokeStyle='#2563eb';ctx.stroke()});labels.forEach((l,i)=>{let x=pad.l+iw*i/Math.max(labels.length-1,1);ctx.fillStyle='#98a2b3';ctx.fillText(l,x-10,h-8)})}
+function drawBars(id,a,b,labels){const c=document.getElementById(id);if(!c||c.offsetParent===null||!labels.length)return;const dpr=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;c.width=w*dpr;c.height=h*dpr;const ctx=c.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);const pad=32,iw=w-pad*2,ih=h-58,max=Math.max(1,...a,...b)*1.15,bw=iw/(labels.length*2.8);ctx.font='11px sans-serif';labels.forEach((l,i)=>{let gx=pad+iw*(i+.5)/labels.length,ah=a[i]/max*ih,bh=b[i]/max*ih;ctx.fillStyle='#2563eb';ctx.fillRect(gx-bw-2,h-28-ah,bw,ah);ctx.fillStyle='#c7d7fe';ctx.fillRect(gx+2,h-28-bh,bw,bh);ctx.fillStyle='#98a2b3';ctx.fillText(l,gx-12,h-8)})}
+
+function updateDashboardMetrics(){
+  const el=document.getElementById('totalServicesMetric');
+  if(el) el.textContent=String((state.services||[]).length);
+}
+
+function legacyDrawAll(){drawLine('revenueChart',[91000,114000,108000,142000,155000,181000,208000],['12.07','17.07','22.07','27.07','01.08','06.08','10.08'],true);drawLine('servicesChart',[14,19,24,31,39,46,state.services.length],['Фев','Мар','Апр','Май','Июн','Июл','Авг'],true);drawBars('financeChart',[280,310,338,356,391,388,422],[510,502,520,531,548,559,555],['Фев','Мар','Апр','Май','Июн','Июл','Авг']);drawLine('economicsChart',[2.3,2.8,3.4,4.1,4.9,5.8,6.4],['Фев','Мар','Апр','Май','Июн','Июл','Авг'],true)}
+window.addEventListener('resize',drawAll);document.getElementById('modalBack').addEventListener('click',e=>{if(e.target.id==='modalBack')closeModal()});
+function toast(text,type=''){let t=document.getElementById('toast');t.textContent=text;t.className='toast show '+type;clearTimeout(window._toastTimer);window._toastTimer=setTimeout(()=>t.className='toast',1900)}
+
+/* Backend binding for the creator console.  The HTML/CSS above stays intact;
+   this layer only replaces the demo state and mutations with API calls. */
+const creatorApiBase='/api/v1';
+let creatorAccessToken=null;
+const emptyCreatorState={services:[],users:[],plans:[],subscriptions:[],expenses:[],leads:[],employees:[],settings:{},dashboard:{},finance:{},system:{}};
+
+function normalizeCreatorState(payload){
+  const source=payload&&typeof payload==='object'?payload:{};
+  return {
+    ...emptyCreatorState,
+    ...source,
+    services:Array.isArray(source.services)?source.services:[],
+    users:Array.isArray(source.users)?source.users:[],
+    plans:Array.isArray(source.plans)?source.plans:[],
+    subscriptions:Array.isArray(source.subscriptions)?source.subscriptions:[],
+    expenses:Array.isArray(source.expenses)?source.expenses:[],
+    leads:Array.isArray(source.leads)?source.leads:[],
+    employees:Array.isArray(source.employees)?source.employees:[],
+    settings:{...(source.settings||{})},
+    dashboard:{...(source.dashboard||{})},
+    finance:{...(source.finance||{})},
+    system:{...(source.system||{})}
+  };
+}
+function apiErrorMessage(data,status){
+  if(typeof data==='string'&&data.trim())return data;
+  if(data?.detail){
+    if(Array.isArray(data.detail))return data.detail.map(x=>x.msg||x.message||'Ошибка').join('; ');
+    return typeof data.detail==='string'?data.detail:JSON.stringify(data.detail);
+  }
+  return `Запрос не выполнен (${status})`;
+}
+function creatorHttpError(data,status){
+  const error=new Error(apiErrorMessage(data,status));
+  error.status=status;
+  return error;
+}
+async function refreshCreatorToken(){
+  const response=await fetch(`${creatorApiBase}/auth/refresh`,{method:'POST',credentials:'include'});
+  const type=response.headers.get('content-type')||'';
+  const data=type.includes('application/json')?await response.json():await response.text();
+  if(!response.ok)throw creatorHttpError(data,response.status);
+  creatorAccessToken=data?.access_token||data?.token;
+  if(!creatorAccessToken)throw new Error('Backend не вернул access token');
+  return creatorAccessToken;
+}
+async function creatorRequest(path,{method='GET',body,noRetry=false}={}){
+  const options={method,credentials:'include',headers:{...(body!==undefined?{'Content-Type':'application/json'}:{}),...(creatorAccessToken?{Authorization:`Bearer ${creatorAccessToken}`}:{})}};
+  if(body!==undefined)options.body=JSON.stringify(body);
+  let response=await fetch(`${creatorApiBase}${path}`,options);
+  if(response.status===401&&!noRetry){
+    try{
+      const token=await refreshCreatorToken();
+      options.headers.Authorization=`Bearer ${token}`;
+      response=await fetch(`${creatorApiBase}${path}`,options);
+    }catch(error){creatorAccessToken=null;throw error}
+  }
+  const type=response.headers.get('content-type')||'';
+  const data=response.status===204?null:(type.includes('application/json')?await response.json():await response.text());
+  if(!response.ok)throw creatorHttpError(data,response.status);
+  return data;
+}
+function refreshCreatorFilters(){
+  const values={cityFilter:[...new Set(state.services.map(x=>x.city).filter(Boolean))],planFilter:[...new Set(state.plans.map(x=>x.name).filter(Boolean))],statusFilter:[...new Set(state.services.map(x=>x.status).filter(Boolean))]};
+  Object.entries(values).forEach(([id,items])=>{
+    const select=document.getElementById(id);if(!select)return;
+    const current=select.value;
+    const labels=id==='cityFilter'?['Все города']:id==='planFilter'?['Все тарифы']:['Все статусы'];
+    select.innerHTML=labels.concat(items).map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
+    select.value=items.includes(current)?current:'';
+  });
+}
+function setMetric(pageId,label,value){
+  const page=document.getElementById(`page-${pageId}`);if(!page)return;
+  const card=[...page.querySelectorAll('.metric')].find(x=>x.querySelector('.label')?.textContent.trim()===label);
+  const target=card?.querySelector('.value');if(target)target.textContent=value;
+}
+function metricMoney(value){return money(value)}
+function applyCreatorSummary(){
+  const d=state.dashboard||{};
+  setMetric('dashboard','MRR',metricMoney(d.mrr));
+  setMetric('dashboard','Выручка за месяц',metricMoney(d.revenue));
+  setMetric('dashboard','Всего автосервисов',String(d.services??state.services.length));
+  setMetric('dashboard','ARPU',metricMoney(d.arpu));
+  setMetric('dashboard','Новые СТО',String(d.new_services||0));
+  setMetric('dashboard','Ушедшие СТО',String(d.churned_services||0));
+  setMetric('dashboard','Автовладельцы',String(d.users||0));
+  setMetric('dashboard','Автомобили',String(d.cars||0));
+  const attention=document.querySelectorAll('#page-dashboard .attention-row .badge');
+  const a=d.attention||{};['overdue','trial_soon','failed_payments','inactive','errors'].forEach((key,i)=>{if(attention[i])attention[i].textContent=key in a?String(a[key]??0):'—'});
+  const counts={ACTIVE:0,TRIAL:0,PAST_DUE:0,CANCELED:0};
+  state.subscriptions.forEach(x=>{if(x.status==='Активна')counts.ACTIVE++;else if(x.status==='Trial')counts.TRIAL++;else if(x.status==='Просрочена')counts.PAST_DUE++;else if(x.status==='Отменена')counts.CANCELED++});
+  Object.entries(counts).forEach(([label,value])=>setMetric('subscriptions',label,String(value)));
+  const revenue=Number(d.revenue||0),mrr=Number(d.mrr||0),expenses=state.expenses.reduce((sum,x)=>sum+Number(x.amount||0),0);
+  setMetric('finance','Выручка',metricMoney(revenue));setMetric('finance','MRR',metricMoney(mrr));setMetric('finance','Расходы',metricMoney(expenses));setMetric('finance','Результат',metricMoney(revenue-expenses));
+  const leadCounts={new:0,demo:0,trial:0,paid:0};
+  state.leads.forEach(x=>{const status=String(x.status||'new').toLowerCase();if(status.includes('оплат'))leadCounts.paid++;else if(status.includes('trial'))leadCounts.trial++;else if(status.includes('демо'))leadCounts.demo++;else leadCounts.new++});
+  ['Новые лиды','Демо','Trial','Оплаты'].forEach((label,i)=>setMetric('sales',label,String([state.leads.length,leadCounts.demo,leadCounts.trial,leadCounts.paid][i]||0)));
+  document.querySelectorAll('#page-system .system-item .sub').forEach((el,i)=>{const key=['api','database','server','payments','auth','notifications'][i];if(key&&state.system[key]!==undefined)el.textContent=String(state.system[key])});
+  renderPlanDistribution(d.plan_counts||{});
+  renderEconomics(revenue,mrr,expenses,d);
+}
+function renderPlanDistribution(counts){
+  const entries=Object.entries(counts).filter(([,count])=>Number(count)>0);
+  const legend=document.querySelector('#page-dashboard .legend');
+  const donut=document.querySelector('#page-dashboard .donut');
+  if(!legend||!donut)return;
+  if(!entries.length){legend.innerHTML='<div class="empty">Нет активных тарифов</div>';donut.style.background='#eaecf0';return}
+  const palette=['#2563eb','#7c3aed','#0ea5e9','#16a34a','#d97706'];
+  const total=entries.reduce((sum,[,count])=>sum+Number(count),0);let cursor=0;
+  donut.style.background=`conic-gradient(${entries.map(([name,count],index)=>{const start=cursor/total*100;cursor+=Number(count);return `${palette[index%palette.length]} ${start}% ${cursor/total*100}%`}).join(',')})`;
+  legend.innerHTML=entries.map(([name,count],index)=>`<div class="legend-row"><span class="dot" style="background:${palette[index%palette.length]}"></span>${esc(name)} — ${Number(count)}</div>`).join('');
+}
+function renderEconomics(revenue,mrr,expenses,d){
+  const page=document.getElementById('page-economics');if(!page)return;
+  const cards=page.querySelectorAll('.metric .value');
+  const marketing=state.expenses.filter(x=>String(x.category||'').toLowerCase().includes('маркет')).reduce((sum,x)=>sum+Number(x.amount||0),0);
+  const newServices=Number(d.new_services||0),churned=Number(d.churned_services||0),services=Number(d.services||0);
+  const cac=newServices?marketing/newServices:null;
+  const churnRate=services?churned/services:0;
+  const ltv=churnRate&&mrr?mrr/services/churnRate:null;
+  const values=[cac===null?'—':money(cac),ltv===null?'—':money(ltv),cac&&ltv?(ltv/cac).toFixed(1)+'×':'—',cac&&mrr?Math.ceil(cac/(mrr/Math.max(services,1)))+' мес':'—'];
+  cards.forEach((card,index)=>{if(values[index]!==undefined)card.textContent=values[index]});
+  const note=page.querySelector('.metric .sub');if(note)note.textContent=marketing?'маркетинговые расходы / новые СТО':'нет маркетинговых расходов в БД';
+}
+function renderMarketingFromBackend(){
+  const body=document.querySelector('#page-marketing tbody');if(!body)return;
+  const groups={};state.leads.forEach(lead=>{const source=lead.source||'Без источника';const row=groups[source]||(groups[source]={leads:0,demo:0,clients:0,expenses:0});row.leads++;const status=String(lead.status||'').toLowerCase();if(status.includes('демо'))row.demo++;if(status.includes('оплат'))row.clients++});
+  state.expenses.forEach(expense=>{const key=expense.category||'Прочее';(groups[key]||(groups[key]={leads:0,demo:0,clients:0,expenses:0})).expenses+=Number(expense.amount||0)});
+  const rows=Object.entries(groups).map(([source,row])=>{const cpl=row.leads?row.expenses/row.leads:0;return `<tr><td>${esc(source)}</td><td>${money(row.expenses)}</td><td>${row.leads}</td><td>${row.demo}</td><td>${row.clients}</td><td>${money(cpl)}</td><td>${money(row.clients?row.expenses/row.clients:0)}</td><td>—</td></tr>`});
+  body.innerHTML=rows.length?rows.join(''):`<tr><td colspan="8" class="empty">Нет данных из backend</td></tr>`;
+}
+function renderFinanceFromBackend(){
+  const attention=document.querySelector('#page-finance .grid-2 .attention');if(!attention)return;
+  const groups={};state.expenses.forEach(x=>groups[x.category]=(groups[x.category]||0)+Number(x.amount||0));
+  attention.innerHTML=Object.keys(groups).length?Object.entries(groups).map(([key,value])=>`<div class="attention-row"><span>${esc(key)}</span><b>${money(value)}</b></div>`).join(''):`<div class="empty">Нет расходов из backend</div>`;
+  const table=document.querySelector('#page-finance .table-card');
+  const body=table?.querySelector('tbody');
+  const title=table?.querySelector('.card-head h3');
+  if(title)title.textContent='Последние закрытые заказ-наряды';
+  if(body){
+    const orders=Array.isArray(state.finance?.recent_orders)?state.finance.recent_orders:[];
+    body.innerHTML=orders.length?orders.map(order=>`<tr><td>${esc(order.date||'—')}</td><td>${esc(order.service||'—')}</td><td>${esc(order.number||'—')}</td><td>${money(order.amount)}</td><td colspan="2"><span class="badge b-green">Закрыт</span></td></tr>`).join(''):`<tr><td colspan="6" class="empty">Нет закрытых заказ-нарядов в БД</td></tr>`;
+    const head=table.querySelector('thead tr');if(head)head.innerHTML='<th>Дата</th><th>СТО</th><th>Заказ-наряд</th><th>Сумма</th><th colspan="2">Статус</th>';
+  }
+}
+function renderSalesFromBackend(){
+  const stages=['Новый лид','Связались','Назначили демо','Провели демо','Trial','Оплата'];
+  const counts=Object.fromEntries(stages.map(stage=>[stage,0]));
+  state.leads.forEach(lead=>{const status=stages.includes(lead.status)?lead.status:'Новый лид';counts[status]++});
+  document.querySelectorAll('#page-sales .stage').forEach((stage,index)=>{const label=stages[index];stage.textContent=`${label} — ${counts[label]}`});
+}
+function renderSystemFromBackend(){
+  const audit=document.querySelector('#page-system .audit');if(!audit)return;
+  const rows=Array.isArray(state.system?.audit)?state.system.audit:[];
+  audit.textContent=rows.length?rows.join('\n'):'Событий для отображения пока нет.';
+}
+function renderCreatorAll(){
+  legacyRenderAll();
+  refreshCreatorFilters();
+  applyCreatorSummary();
+  renderMarketingFromBackend();
+  renderFinanceFromBackend();
+  renderSalesFromBackend();
+  renderSystemFromBackend();
+}
+function creatorSeries(values,count){
+  const result=Array.isArray(values)?values.map(Number).filter(Number.isFinite):[];
+  if(result.length)return result;
+  return Array.from({length:count||7},()=>0);
+}
+function drawCreatorAll(){
+  const d=state.dashboard||{};const labels=Array.isArray(d.months)&&d.months.length?d.months:['—'];
+  const revenue=creatorSeries(d.revenue_series,labels.length),growth=creatorSeries(d.growth,labels.length);
+  drawLine('revenueChart',revenue,labels,true);
+  drawLine('servicesChart',growth,labels,true);
+  const monthlyExpenses=labels.map(label=>state.expenses.filter(x=>String(x.date||'').includes(label)).reduce((sum,x)=>sum+Number(x.amount||0),0));
+  drawBars('financeChart',revenue,monthlyExpenses,labels);
+  const economics=labels.map((_,i)=>revenue[i]||0);drawLine('economicsChart',economics,labels,true);
+}
+function setCreatorState(payload){state=normalizeCreatorState(payload);renderCreatorAll();setTimeout(drawCreatorAll,50)}
+async function loadCreatorBackend(){
+  try{
+    const payload=await creatorRequest('/platform-admin/bootstrap');
+    setCreatorState(payload);
+    toast('Данные загружены из backend','success');
+  }catch(error){
+    if(error?.status===401){
+      location.replace('/admin/login');
+      return;
+    }
+    state=normalizeCreatorState({});renderCreatorAll();
+    toast(`Creator API: ${error.message}`,'error');
+    console.error('creator-admin bootstrap failed',error);
+  }
+}
+async function persistCreatorBackend(){
+  const payload={plans:state.plans,expenses:state.expenses,leads:state.leads,employees:state.employees,settings:state.settings};
+  const response=await creatorRequest('/platform-admin/state',{method:'PUT',body:payload});setCreatorState(response);return response;
+}
+async function persist(){
+  try{await persistCreatorBackend()}catch(error){toast(`Не удалось сохранить: ${error.message}`,'error');throw error}
+}
+async function toggleService(id){
+  const service=state.services.find(x=>x.id===id);if(!service)return;
+  const order=['Активна','Trial','Просрочена'];const next=order[(order.indexOf(service.status)+1)%order.length];
+  try{await creatorRequest(`/platform-admin/services/${encodeURIComponent(id)}`,{method:'PATCH',body:{status:next}});await loadCreatorBackend();toast('Статус СТО изменён','success')}catch(error){toast(`Не удалось изменить статус: ${error.message}`,'error')}
+}
+async function deleteService(id){
+  if(!confirm('Удалить автосервис из creator-админки?'))return;
+  try{await creatorRequest(`/platform-admin/services/${encodeURIComponent(id)}`,{method:'DELETE'});await loadCreatorBackend();toast('Автосервис отключён','success')}catch(error){toast(`Не удалось удалить: ${error.message}`,'error')}
+}
+async function saveModal(){
+  if(!modalContext){closeModal();return}
+  const c=modalContext;
+  try{
+    if(c.type==='serviceCard'){
+      const service=state.services.find(x=>x.id===c.id);if(!service)throw Error('Автосервис не найден');
+      await creatorRequest(`/platform-admin/services/${encodeURIComponent(c.id)}`,{method:'PATCH',body:{note:val('serviceNote')}});
+    }else if(c.type==='userCard'){
+      throw Error('Клиентские данные в creator-админке доступны только для просмотра');
+    }else if(c.type==='service'||c.type==='editService'){
+      if(!val('mName'))throw Error('Укажите название СТО');
+      const body={name:val('mName'),city:val('mCity'),email:val('mEmail'),plan:val('mPlan')};
+      if(c.type==='service'){
+        if(!val('mPhone')||!val('mOwnerName')||!val('mOwnerEmail')||!val('mOwnerLogin')||!val('mOwnerPassword'))throw Error('Заполните данные владельца');
+        if(val('mOwnerLogin').trim().length<11)throw Error('Логин владельца должен быть не короче 11 символов');
+        body.phone=val('mPhone');body.owner_name=val('mOwnerName');body.owner_email=val('mOwnerEmail');body.owner_login=val('mOwnerLogin');body.owner_password=val('mOwnerPassword');
+      }
+      if(c.type==='editService')await creatorRequest(`/platform-admin/services/${encodeURIComponent(c.arg)}`,{method:'PATCH',body});
+      else await creatorRequest('/platform-admin/services',{method:'POST',body});
+    }else if(c.type==='subscription'){
+      const subscription=state.subscriptions[c.arg];if(!subscription)throw Error('Подписка не найдена');
+      const service=state.services.find(x=>x.name===subscription.service);if(!service)throw Error('Автосервис не найден');
+      await creatorRequest(`/platform-admin/services/${encodeURIComponent(service.id)}`,{method:'PATCH',body:{plan:val('mPlan'),status:val('mStatus')}});
+    }else if(c.type==='plan'){
+      if(!val('mName'))throw Error('Укажите название тарифа');
+      const plan={key:(typeof c.arg==='number'?state.plans[c.arg]?.key:val('mName').toLowerCase().replace(/[^a-z0-9а-я]+/gi,'-'))||`plan-${Date.now()}`,name:val('mName'),price:Number(val('mPrice')||0),description:val('mDesc'),features:val('mFeatures').split('\n').map(x=>x.trim()).filter(Boolean),featured:false};
+      if(typeof c.arg==='number')state.plans[c.arg]={...state.plans[c.arg],...plan};else state.plans.push(plan);await persistCreatorBackend();
+    }else if(c.type==='expense'){
+      if(!val('mAmount'))throw Error('Укажите сумму');state.expenses.push({category:val('mCategory'),amount:Number(val('mAmount')),comment:val('mComment'),date:new Date().toISOString()});await persistCreatorBackend();
+    }else if(c.type==='lead'){
+      if(!val('mName'))throw Error('Укажите название СТО');state.leads.push({name:val('mName'),city:val('mCity'),contact:val('mContact'),phone:val('mPhone'),source:val('mSource'),status:val('mLeadStatus')||'Новый лид',created:new Date().toISOString()});await persistCreatorBackend();
+    }else if(c.type==='employee'){
+      if(!val('mName'))throw Error('Заполните имя');state.employees.push({name:val('mName'),email:val('mEmail'),role:val('mRole'),access:'По роли',last:'ещё не входил',status:'Активен'});await persistCreatorBackend();
+    }
+    closeModal();await loadCreatorBackend();toast('Изменения сохранены','success');
+  }catch(error){toast(error.message||'Проверьте поля','error');console.error('creator-admin save failed',error)}
+}
+async function saveSettings(){
+  if(!document.getElementById('setPlatform')){toast('Откройте вкладку «Общие»','error');return}
+  state.settings={platform:val('setPlatform'),domain:val('setDomain'),trial:val('setTrial'),support:val('setSupport')};
+  try{await persistCreatorBackend();toast('Настройки сохранены','success')}catch(error){toast(`Не удалось сохранить: ${error.message}`,'error')}
+}
+function refreshSystem(){loadCreatorBackend()}
+function renderAll(){renderCreatorAll()}
+function drawAll(){drawCreatorAll()}
+renderAll();
+setTimeout(drawAll,100);
+const initial=location.hash.slice(1);if(titles[initial])navigate(initial);
+loadCreatorBackend();
+</script>
+</body>
+</html>

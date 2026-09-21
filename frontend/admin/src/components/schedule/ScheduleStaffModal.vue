@@ -168,6 +168,7 @@
             :readonly="isView"
             required
             required-message="Придумайте логин сотрудника"
+            :validate="loginRule"
             block
           />
           <BaseField
@@ -400,6 +401,11 @@ function accessRule() {
   return Object.values(draft.access).some(Boolean)
     ? ''
     : 'Выберите разделы, к которым сотрудник получит доступ'
+}
+
+function loginRule(value) {
+  if (isView.value || isEdit.value) return ''
+  return String(value ?? '').trim().length > 11 ? '' : 'Логин должен быть длиннее 11 символов'
 }
 
 function onSave() {

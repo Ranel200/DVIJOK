@@ -3,8 +3,8 @@
 import asyncio
 import datetime as dt
 import hashlib
+import hmac
 import logging
-import secrets
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from sqlalchemy import or_, select, update
@@ -20,8 +20,10 @@ from app.modules.notifications.models import (
     ClientMessengerLinkToken,
     NotificationDelivery,
 )
+from app.modules.organizations.models import Organization
 from app.modules.notifications.providers import BotProviders
 from app.modules.orders.models import Order
+from app.modules.vehicles.models import Vehicle
 from app.shared.enums import (
     NotificationChannel,
     NotificationEventType,
@@ -43,12 +45,61 @@ _STATUS_EVENTS: dict[OrderStatus, NotificationEventType] = {
 logger = logging.getLogger(__name__)
 
 _EVENT_TEXTS: dict[NotificationEventType, str] = {
-    NotificationEventType.BOOKING_CREATED: "Вы записаны. Статус: «Записан».",
-    NotificationEventType.STATUS_IN_PROGRESS: "Ваш автомобиль в работе.",
-    NotificationEventType.STATUS_AGREEMENT: "Статус заказа: «Согласование».",
-    NotificationEventType.STATUS_DONE: "Работа завершена. Автомобиль готов.",
     NotificationEventType.STATUS_CANCELLED: "Запись отменена.",
 }
+
+
+def _format_scheduled_at(value: dt.datetime | None) -> tuple[str, str]:
+    if value is None:
+        return "Не указана", "Не указано"
+    return value.strftime("%d.%m.%Y"), value.strftime("%H:%M")
+
+
+def _order_message(
+    event_type: NotificationEventType,
+    *,
+    number: str,
+    vehicle_name: str,
+    organization_name: str,
+    scheduled_at: dt.datetime | None,
+) -> str:
+    """Build a readable client notification without exposing internal statuses."""
+
+    date, time = _format_scheduled_at(scheduled_at)
+    if event_type == NotificationEventType.BOOKING_CREATED:
+        body = f"""🚗 Вы записаны на обслуживание
+
+Ваша запись в автосервис подтверждена.
+
+Автомобиль: {vehicle_name}
+Дата: {date}
+Время: {time}
+Автосервис: {organization_name}
+
+Ждём вас в назначенное время. Если ваши планы изменились, свяжитесь с автосервисом заранее."""
+    elif event_type == NotificationEventType.STATUS_IN_PROGRESS:
+        body = """🔧 Ваша машина в работе
+
+Автосервис приступил к выполнению работ по вашему автомобилю.
+
+Мы сообщим вам, когда работы будут завершены или если потребуется ваше согласование по дополнительным работам."""
+    elif event_type == NotificationEventType.STATUS_AGREEMENT:
+        body = """⚠️ Требуется ваше согласование
+
+В процессе обслуживания автомобиля возник вопрос, который требует вашего решения.
+
+Пожалуйста, свяжитесь с автосервисом, чтобы уточнить детали и согласовать дальнейшие работы.
+После согласования автосервис сможет продолжить выполнение работ."""
+    elif event_type == NotificationEventType.STATUS_DONE:
+        body = """✅ Ваша машина готова!
+
+Работы по вашему автомобилю завершены. Вы можете забрать машину в автосервисе в удобное для вас время.
+
+Документы и заказ-наряд уже доступны в личном кабинете в разделе «История».
+Перейти в личный кабинет: https://dvizhok.tech/client"""
+    else:
+        body = _EVENT_TEXTS[event_type]
+    return f"ДВИЖОК · Заказ №{number}\n\n{body}"
 
 
 def _now() -> dt.datetime:
@@ -57,6 +108,19 @@ def _now() -> dt.datetime:
 
 def _token_hash(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
+
+
+def _stable_link_token(client_account_id: int, channel: NotificationChannel) -> str:
+    """Return a permanent, unguessable deep-link token for one account/channel.
+
+    The client cabinet may be opened many times before a user clicks the bot
+    link. Generating a fresh short-lived token on every page load made the
+    visible link expire underneath the user. Deriving it from the production
+    secret keeps the link stable without storing its plaintext in the DB.
+    """
+
+    payload = f"messenger-link:{client_account_id}:{channel.value}".encode()
+    return hmac.new(settings.JWT_SECRET.encode(), payload, hashlib.sha256).hexdigest()
 
 
 def _with_query(url: str, **params: str) -> str:
@@ -80,6 +144,20 @@ class MessengerService:
 
     async def issue_token(self, client_account_id: int, channel: NotificationChannel) -> str:
         now = _now()
+        token = _stable_link_token(client_account_id, channel)
+        token_hash = _token_hash(token)
+        stable_link = (
+            await self.session.execute(
+                select(ClientMessengerLinkToken).where(
+                    ClientMessengerLinkToken.token_hash == token_hash
+                )
+            )
+        ).scalar_one_or_none()
+        if stable_link is not None:
+            return token
+
+        # Invalidate legacy short-lived links once when a client first opens
+        # the updated cabinet. The newly created personal link stays the same.
         await self.session.execute(
             update(ClientMessengerLinkToken)
             .where(
@@ -89,14 +167,14 @@ class MessengerService:
             )
             .values(consumed_at=now)
         )
-        token = secrets.token_urlsafe(24)
         self.session.add(
             ClientMessengerLinkToken(
                 client_account_id=client_account_id,
                 channel=channel,
-                token_hash=_token_hash(token),
-                expires_at=now
-                + dt.timedelta(seconds=settings.CLIENT_LINK_TOKEN_TTL_SECONDS),
+                token_hash=token_hash,
+                # This is effectively permanent for a client-facing link;
+                # the row is still consumed after successful first binding.
+                expires_at=now + dt.timedelta(days=3650),
             )
         )
         await self.session.flush()
@@ -120,6 +198,25 @@ class MessengerService:
         external_chat_id: str,
         username: str | None = None,
     ) -> ClientMessengerBinding:
+        binding, _ = await self.bind_with_status(
+            channel=channel,
+            token=token,
+            external_user_id=external_user_id,
+            external_chat_id=external_chat_id,
+            username=username,
+        )
+        return binding
+
+    async def bind_with_status(
+        self,
+        *,
+        channel: NotificationChannel,
+        token: str,
+        external_user_id: str,
+        external_chat_id: str,
+        username: str | None = None,
+    ) -> tuple[ClientMessengerBinding, bool]:
+        """Привязать канал и сообщить, была ли это новая привязка."""
         now = _now()
         link = (
             await self.session.execute(
@@ -148,7 +245,7 @@ class MessengerService:
                 )
             ).scalar_one_or_none()
             if existing_binding is not None:
-                return existing_binding
+                return existing_binding, False
             raise BusinessRuleError("Ссылка привязки уже использована или недействительна")
         expires_at = link.expires_at
         if expires_at.tzinfo is None:
@@ -200,7 +297,7 @@ class MessengerService:
                 account.vk_id = external_user_id
         link.consumed_at = now
         await self.session.flush()
-        return binding
+        return binding, True
 
 
 class NotificationService:
@@ -232,7 +329,22 @@ class NotificationService:
         )
         if not bindings:
             return
-        message = f"ДВИЖОК · Заказ №{order.number}\n{_EVENT_TEXTS[event_type]}"
+        vehicle = (
+            await self.session.get(Vehicle, order.vehicle_id)
+            if order.vehicle_id is not None
+            else None
+        )
+        organization = await self.session.get(Organization, order.organization_id)
+        vehicle_name = " ".join(
+            part for part in (vehicle.make, vehicle.model) if part
+        ) if vehicle is not None else "Не указан"
+        message = _order_message(
+            event_type,
+            number=order.number,
+            vehicle_name=vehicle_name or "Не указан",
+            organization_name=organization.name if organization is not None else "Не указан",
+            scheduled_at=order.scheduled_at,
+        )
         values = [
             {
                 "client_account_id": client.client_account_id,

@@ -18,9 +18,12 @@
         <template v-else-if="step === 'phone'">
           <BaseField
             v-model="form.phone"
+            type="tel"
             placeholder="+7 999 999 99 99"
             mask="+7 ### ### ## ##"
             block
+            :error="Boolean(phoneError)"
+            :error-message="phoneError"
           />
 
           <div v-if="!isLogin" class="auth-form__consents">
@@ -165,6 +168,7 @@ const form = reactive({
   consentMarketing: false
 })
 const loading = ref(false)
+const phoneError = ref('')
 const step = ref('phone')
 
 const isLogin = computed(() => route.name === 'login')
@@ -207,10 +211,18 @@ function resetForm() {
   form.consentPersonal = false
   form.consentTransfer = false
   form.consentMarketing = false
+  phoneError.value = ''
   step.value = isLogin.value ? 'phone' : 'name'
 }
 
 watch(isLogin, resetForm, { immediate: true })
+
+watch(
+  () => form.phone,
+  () => {
+    phoneError.value = ''
+  }
+)
 
 watch(
   () => route.params.referralCode,
@@ -241,13 +253,23 @@ async function onPrimaryAction() {
   if (step.value === 'phone') {
     if (!canProceedPhone.value || loading.value) return
     loading.value = true
+    phoneError.value = ''
     try {
       await authApi.requestCode({
         phone: form.phone,
-        name: form.name || undefined
+        purpose: isLogin.value ? 'login' : 'registration',
+        acceptTerms: form.acceptTerms,
+        consentPersonal: form.consentPersonal,
+        consentTransfer: form.consentTransfer,
+        consentMarketing: form.consentMarketing
       })
       form.code = ''
       step.value = 'code'
+    } catch (error) {
+      phoneError.value =
+        error?.data?.message ||
+        (typeof error?.data?.detail === 'string' ? error.data.detail : '') ||
+        'Не удалось отправить код. Попробуйте ещё раз.'
     } finally {
       loading.value = false
     }

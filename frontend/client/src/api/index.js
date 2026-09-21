@@ -6,7 +6,10 @@ function clientUser(profile) {
     id: profile.id,
     name: profile.full_name || 'Клиент',
     email: profile.email || '',
-    phone: profile.phone
+    phone: profile.phone,
+    consentPersonal: Boolean(profile.consent_personal),
+    consentTransfer: Boolean(profile.consent_transfer),
+    consentMarketing: Boolean(profile.consent_marketing)
   }
 }
 
@@ -190,11 +193,25 @@ function isMockDayAvailable(day) {
 }
 
 export const authApi = {
-  async requestCode({ phone }) {
+  async requestCode({
+    phone,
+    purpose = 'login',
+    acceptTerms = false,
+    consentPersonal = false,
+    consentTransfer = false,
+    consentMarketing = false
+  }) {
     if (USE_MOCK) {
       return mockOk({ detail: 'Код отправлен', debug_code: '1111' })
     }
-    return http.post('/client-auth/otp/request', { phone })
+    return http.post('/client-auth/otp/request', {
+      phone,
+      purpose,
+      accept_terms: acceptTerms,
+      consent_personal: consentPersonal,
+      consent_transfer: consentTransfer,
+      consent_marketing: consentMarketing
+    })
   },
 
   async verifyOtp(payload) {
@@ -205,7 +222,10 @@ export const authApi = {
           id: 1,
           name: payload.name || payload.full_name || 'Клиент',
           email: '',
-          phone: payload.phone
+          phone: payload.phone,
+          consentPersonal: true,
+          consentTransfer: true,
+          consentMarketing: true
         }
       })
     }

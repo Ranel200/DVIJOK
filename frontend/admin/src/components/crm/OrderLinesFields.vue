@@ -7,6 +7,7 @@
             v-model="lineDraft.serviceId"
             :options="serviceOptions"
             placeholder="Виды услуг"
+            searchable
             block
           />
         </div>

@@ -25,7 +25,16 @@
             <img src="/admin/icons/qr/link.svg" alt="" class="qr__link-icon" />
             <span class="qr__link-url">{{ referral.booking_url }}</span>
           </button>
-          <span class="qr__link-label">Ссылка на запись</span>
+          <span
+            class="qr__link-label"
+            :class="{
+              'qr__link-label--success': copyState === 'copied',
+              'qr__link-label--error': copyState === 'error'
+            }"
+            aria-live="polite"
+          >
+            {{ copyState === 'copied' ? 'Ссылка скопирована' : copyState === 'error' ? 'Не удалось скопировать' : 'Ссылка на запись' }}
+          </span>
         </div>
       </div>
     </div>
@@ -33,13 +42,15 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import AdminHeader from '@/components/layout/AdminHeader.vue'
 import PrinterIcon from '@/components/ui/PrinterIcon.vue'
 import { referralsApi } from '@/api/index.js'
 
 const action = { label: 'Напечатать QR-код' }
 const referral = ref(null)
+const copyState = ref('idle')
+let copyResetTimer
 
 function withBrandColor(svg) {
   return svg?.replace('fill="#000000"', 'fill="#051b54"')
@@ -49,8 +60,10 @@ async function copyBookingUrl() {
   const url = referral.value?.booking_url
   if (!url) return
 
+  let copied = false
   try {
     await navigator.clipboard.writeText(url)
+    copied = true
   } catch {
     const textarea = document.createElement('textarea')
     textarea.value = url
@@ -58,9 +71,15 @@ async function copyBookingUrl() {
     textarea.style.opacity = '0'
     document.body.appendChild(textarea)
     textarea.select()
-    document.execCommand('copy')
+    copied = document.execCommand('copy')
     textarea.remove()
   }
+
+  copyState.value = copied ? 'copied' : 'error'
+  clearTimeout(copyResetTimer)
+  copyResetTimer = window.setTimeout(() => {
+    copyState.value = 'idle'
+  }, 1800)
 }
 
 function onAction() {
@@ -95,6 +114,8 @@ onMounted(async () => {
   const result = await referralsApi.getOrCreate()
   referral.value = { ...result, qr_svg: withBrandColor(result.qr_svg) }
 })
+
+onBeforeUnmount(() => clearTimeout(copyResetTimer))
 </script>
 
 <style scoped lang="scss">
@@ -209,5 +230,13 @@ onMounted(async () => {
   font-size: 14px;
   line-height: 17px;
   color: #7a82a0;
+}
+
+.qr__link-label--success {
+  color: #239447;
+}
+
+.qr__link-label--error {
+  color: #d13636;
 }
 </style>

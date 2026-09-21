@@ -40,6 +40,7 @@
       <BaseField v-model="form.name" label="Фамилия Имя *" placeholder="Иванов Иван" block />
       <BaseField
         v-model="form.phone"
+        type="tel"
         label="Номер телефона *"
         placeholder="+7 999 999 99 99"
         mask="+7 ### ### ## ##"

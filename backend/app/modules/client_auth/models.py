@@ -27,6 +27,11 @@ class ClientAccount(Base, IntPKMixin, TimestampMixin):
     source_organization_id: Mapped[int | None] = mapped_column(
         ForeignKey("organizations.id", ondelete="RESTRICT"), index=True, nullable=True
     )
+    # Согласия, принятые при регистрации клиента. Они хранятся на глобальной
+    # учётной записи, поскольку клиент может пользоваться несколькими СТО.
+    consent_personal: Mapped[bool] = mapped_column(Boolean, default=False)
+    consent_transfer: Mapped[bool] = mapped_column(Boolean, default=False)
+    consent_marketing: Mapped[bool] = mapped_column(Boolean, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
 

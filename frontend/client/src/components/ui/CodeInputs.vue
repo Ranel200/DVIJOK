@@ -8,6 +8,7 @@
       class="code-inputs__cell"
       block
       placeholder="0"
+      type="tel"
       :maxlength="1"
       :input-attrs="{ inputmode: 'numeric', autocomplete: 'one-time-code' }"
       @update:model-value="value => onDigit(index, value)"

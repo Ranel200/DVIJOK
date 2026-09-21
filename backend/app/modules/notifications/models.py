@@ -54,7 +54,7 @@ class ClientMessengerBinding(Base, IntPKMixin, TimestampMixin):
 
 
 class ClientMessengerLinkToken(Base, IntPKMixin, TimestampMixin):
-    """Одноразовый токен: в БД хранится только SHA-256, не исходное значение."""
+    """Стабильный персональный deep-link; в БД хранится только SHA-256 токена."""
 
     __tablename__ = "client_messenger_link_tokens"
 

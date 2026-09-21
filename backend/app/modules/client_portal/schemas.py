@@ -355,6 +355,7 @@ class ClientBotRead(ClientUiModel):
     label: str
     icon: str
     href: str
+    connected: bool = False
 
 
 class ClientCarsRead(ClientUiModel):

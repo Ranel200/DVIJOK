@@ -52,6 +52,7 @@
 
     <OrderModal
       v-model="orderOpen"
+      variant="schedule"
       :mode="orderMode"
       :order="activeOrder"
       :order-number="nextOrderNumber"

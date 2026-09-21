@@ -63,7 +63,7 @@ export default defineConfig((/* ctx */) => {
     build: {
       // available values: 'hash', 'history'
       vueRouterMode: 'history',
-      publicPath: '/site/',
+      publicPath: '/',
       extendViteConf(viteConf) {
         viteConf.plugins = [...(viteConf.plugins || []), serveLandingDocs()]
       },

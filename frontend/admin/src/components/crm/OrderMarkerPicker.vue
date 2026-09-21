@@ -39,11 +39,12 @@
 <script setup>
 import { ref, watch } from 'vue'
 import MarkerAddModal from '@/components/crm/MarkerAddModal.vue'
+import { crmApi } from '@/api/index.js'
 import { ORDER_MARKER_OPTIONS } from '@/constants/crm.js'
 
 const props = defineProps({
   modelValue: {
-    type: String,
+    type: [String, Number],
     default: ''
   },
   readonly: {
@@ -73,11 +74,16 @@ const markerModalOpen = ref(false)
 
 watch(
   () => props.active,
-  open => {
+  async open => {
     if (!open) return
-    markers.value = cloneDefaultMarkers()
     markerModalOpen.value = false
-  }
+    try {
+      markers.value = await crmApi.markers()
+    } catch {
+      markers.value = cloneDefaultMarkers()
+    }
+  },
+  { immediate: true }
 )
 
 function selectMarker(id) {
@@ -85,12 +91,8 @@ function selectMarker(id) {
   emit('update:modelValue', props.modelValue === id ? '' : id)
 }
 
-function onMarkerAdd({ name, color }) {
-  const marker = {
-    id: `marker-${Date.now()}`,
-    name,
-    color
-  }
+async function onMarkerAdd({ name, color }) {
+  const marker = await crmApi.createMarker({ name, color })
   markers.value.push(marker)
   emit('update:modelValue', marker.id)
 }

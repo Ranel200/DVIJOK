@@ -122,6 +122,7 @@ function onAdd() {
     date: props.appointment?.date || '',
     time: props.appointment?.time || '',
     employeeId: props.appointment?.employeeId ?? '',
+    employeeUserId: props.appointment?.employeeUserId ?? null,
     employeeName: props.appointment?.employeeName || ''
   })
 }
