@@ -3,6 +3,7 @@
 
 :root {
   --dvijok-font-display: 'Dela Gothic One', sans-serif;
+  --site-scale: 1;
 }
 
 html,
@@ -10,6 +11,10 @@ body,
 #q-app {
   min-height: 100%;
   min-height: 100dvh;
+}
+
+html {
+  zoom: var(--site-scale);
 }
 
 body {
@@ -20,4 +25,9 @@ body {
     'Segoe UI',
     Roboto,
     sans-serif;
+  background-color: var(--dvijok-bg-light);
+}
+
+.q-page-container {
+  background-color: var(--dvijok-bg-light);
 }

@@ -22,10 +22,16 @@ const routes = [
         meta: { title: 'Автовладельцам' }
       },
       {
-        path: 'faq',
-        name: 'faq',
-        component: () => import('@/pages/FaqPage.vue'),
-        meta: { title: 'FAQ' }
+        path: 'blog',
+        name: 'blog',
+        component: () => import('@/pages/BlogPage.vue'),
+        meta: { title: 'Блог' }
+      },
+      {
+        path: 'blog/:id',
+        name: 'blog-article',
+        component: () => import('@/pages/BlogArticlePage.vue'),
+        meta: { title: 'Статья' }
       }
     ]
   },
