@@ -61,7 +61,9 @@ button{cursor:pointer}
 .system-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.system-item{padding:17px;display:flex;align-items:center;justify-content:space-between}.status-dot{width:10px;height:10px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px #dcfce7}
 .settings{display:grid;grid-template-columns:220px 1fr;min-height:480px}.settings-nav{border-right:1px solid var(--line);padding:12px}.settings-nav button{width:100%;text-align:left;border:0;background:none;padding:10px;border-radius:8px}.settings-nav button.active{background:#f2f4f7;font-weight:800}.settings-pane{padding:24px}.field{display:grid;gap:6px;margin-bottom:16px;max-width:520px}.field label{font-size:13px;font-weight:800}.field input,.field select,.field textarea{border:1px solid var(--line);border-radius:10px;padding:11px}
 .audit{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;background:#101828;color:#d0d5dd;border-radius:14px;padding:16px;line-height:1.8;max-height:270px;overflow:auto}
-.modal-back{position:fixed;inset:0;background:rgba(16,24,40,.42);display:none;align-items:center;justify-content:center;z-index:20;padding:20px}.modal-back.show{display:flex}.modal{width:min(620px,100%);background:#fff;border-radius:18px;box-shadow:0 30px 90px rgba(0,0,0,.2)}.modal-head{padding:20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}.modal-head h3{margin:0}.modal-body{padding:20px}.modal-foot{padding:16px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+.modal-back{position:fixed;inset:0;background:rgba(16,24,40,.42);display:none;align-items:center;justify-content:center;z-index:20;padding:20px}.modal-back.show{display:flex}.modal{width:min(620px,100%);background:#fff;border-radius:18px;box-shadow:0 30px 90px rgba(0,0,0,.2)}.modal.wide{width:min(860px,100%)}.modal-head{padding:20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}.modal-head h3{margin:0}.modal-body{padding:20px;max-height:min(70vh,720px);overflow:auto}.modal-foot{padding:16px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+.section-card{border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px;background:#f9fafb}.section-card__head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-weight:800;font-size:13px}.thumb{width:56px;height:40px;border-radius:8px;object-fit:cover;background:#f2f4f7;border:1px solid var(--line)}
+.audience-tabs{display:flex;gap:8px;margin-bottom:14px}.audience-tabs .pill{cursor:pointer}
 .toast{position:fixed;right:24px;bottom:24px;background:#101828;color:#fff;padding:13px 16px;border-radius:10px;opacity:0;transform:translateY(8px);transition:.2s;z-index:30}.toast.show{opacity:1;transform:none}
 .dropdown{position:relative;display:inline-block}.dropdown-menu{position:fixed;z-index:40;min-width:190px;background:#fff;border:1px solid var(--line);box-shadow:0 14px 40px rgba(16,24,40,.15);border-radius:12px;padding:6px;display:none}.dropdown-menu.show{display:block}.dropdown-menu button{width:100%;border:0;background:#fff;text-align:left;padding:9px 10px;border-radius:8px;color:#344054}.dropdown-menu button:hover{background:#f2f4f7}.dropdown-menu button.danger-item{color:#b42318}.empty{padding:32px;text-align:center;color:var(--muted)}.modal .field input:invalid,.modal .field select:invalid{border-color:#f04438}.muted-note{font-size:12px;color:var(--muted);margin-top:8px}.settings-pane[hidden]{display:none}.clickable{cursor:pointer}.clickable:hover{background:#f9fafb}.toast.error{background:#b42318}.toast.success{background:#067647}
 @media(max-width:1100px){.cards,.finance-grid{grid-template-columns:repeat(2,1fr)}.grid-2{grid-template-columns:1fr}.plan-grid{grid-template-columns:1fr}.system-grid{grid-template-columns:repeat(2,1fr)}}
@@ -85,6 +87,9 @@ button{cursor:pointer}
   <div class="nav-title">Рост</div>
   <button class="nav-btn" data-page="sales"><span class="ico">↗</span>Продажи</button>
   <button class="nav-btn" data-page="marketing"><span class="ico">◎</span>Маркетинг</button>
+  <div class="nav-title">Контент сайта</div>
+  <button class="nav-btn" data-page="articles"><span class="ico">✎</span>Статьи</button>
+  <button class="nav-btn" data-page="faq"><span class="ico">?</span>FAQ</button>
   <div class="nav-title">Управление</div>
   <button class="nav-btn" data-page="team"><span class="ico">♟</span>Сотрудники</button>
   <button class="nav-btn" data-page="system"><span class="ico">◉</span>Система</button>
@@ -204,6 +209,35 @@ button{cursor:pointer}
 13:30:12 INFO system.health api=ok db=ok payments=ok</div></div></div>
 </section>
 
+<section class="page" id="page-articles">
+  <div class="page-head"><div><h1>Статьи</h1><p>Контент блога публичного сайта (/site) — мок без бэкенда</p></div><button class="btn primary" onclick="openModal('article')">+ Новая статья</button></div>
+  <div class="cards">
+    <div class="card metric"><div class="label">Всего статей</div><div class="value" id="articlesTotalMetric">0</div></div>
+    <div class="card metric"><div class="label">За этот месяц</div><div class="value" id="articlesMonthMetric">0</div></div>
+    <div class="card metric"><div class="label">С разделами</div><div class="value" id="articlesSectionsMetric">0</div></div>
+    <div class="card metric"><div class="label">Без обложки</div><div class="value" id="articlesNoPhotoMetric">0</div></div>
+  </div>
+  <div class="toolbar"><div class="search"><span>⌕</span><input id="articleSearch" placeholder="Заголовок, описание или lead" oninput="renderArticles()"></div></div>
+  <div class="card table-card"><div class="table-wrap"><table><thead><tr><th>Обложка</th><th>Статья</th><th>Дата</th><th>Разделы</th><th></th></tr></thead><tbody id="articlesBody"></tbody></table></div></div>
+</section>
+
+<section class="page" id="page-faq">
+  <div class="page-head"><div><h1>FAQ</h1><p>Вопросы и ответы на страницах «Автосервисам» и «Автовладельцам»</p></div><button class="btn primary" onclick="openModal('faq')">+ Добавить вопрос</button></div>
+  <div class="cards">
+    <div class="card metric"><div class="label">Всего</div><div class="value" id="faqTotalMetric">0</div></div>
+    <div class="card metric"><div class="label">Для автосервисов</div><div class="value" id="faqServicesMetric">0</div></div>
+    <div class="card metric"><div class="label">Для автовладельцев</div><div class="value" id="faqOwnersMetric">0</div></div>
+    <div class="card metric"><div class="label">Показано</div><div class="value" id="faqShownMetric">0</div></div>
+  </div>
+  <div class="audience-tabs" id="faqAudienceTabs">
+    <button type="button" class="pill active" data-audience="">Все аудитории</button>
+    <button type="button" class="pill" data-audience="services">Автосервисы</button>
+    <button type="button" class="pill" data-audience="owners">Автовладельцы</button>
+  </div>
+  <div class="toolbar"><div class="search"><span>⌕</span><input id="faqSearch" placeholder="Поиск по вопросу или ответу" oninput="renderFaqs()"></div></div>
+  <div class="card table-card"><div class="table-wrap"><table><thead><tr><th>Аудитория</th><th>Вопрос</th><th>Ответ</th><th></th></tr></thead><tbody id="faqBody"></tbody></table></div></div>
+</section>
+
 <section class="page" id="page-settings">
   <div class="page-head"><div><h1>Настройки</h1><p>Системные параметры внутренней админки</p></div></div>
   <div class="card settings"><div class="settings-nav"><button class="active">Общие</button><button>Платежи</button><button>Авторизация</button><button>Уведомления</button><button>Интеграции</button><button>Роли и права</button></div><div class="settings-pane"><h3 style="margin-top:0">Общие настройки</h3><div class="field"><label for="setPlatform">Название платформы</label><input id="setPlatform" value="ДВИЖОК"></div><div class="field"><label for="setDomain">Основной домен</label><input id="setDomain" value="dvizhok.tech"></div><div class="field"><label for="setTrial">Trial по умолчанию</label><select id="setTrial"><option>14 дней</option><option>7 дней</option><option>30 дней</option></select></div><div class="field"><label for="setSupport">Email поддержки</label><input id="setSupport" value="support@dvizhok.tech"></div><button class="btn primary" onclick="saveSettings()">Сохранить изменения</button></div></div>
@@ -213,14 +247,50 @@ button{cursor:pointer}
 </div>
 
 <div class="modal-back" id="modalBack">
-  <div class="modal"><div class="modal-head"><h3 id="modalTitle">Действие</h3><button class="kebab" onclick="closeModal()">×</button></div><div class="modal-body" id="modalBody"></div><div class="modal-foot"><button class="btn" onclick="closeModal()">Отмена</button><button class="btn primary" onclick="saveModal()">Сохранить</button></div></div>
+  <div class="modal" id="modalPanel"><div class="modal-head"><h3 id="modalTitle">Действие</h3><button class="kebab" onclick="closeModal()">×</button></div><div class="modal-body" id="modalBody"></div><div class="modal-foot"><button class="btn" onclick="closeModal()">Отмена</button><button class="btn primary" onclick="saveModal()">Сохранить</button></div></div>
 </div>
 <div class="toast" id="toast"></div>
 
 <script>
-const titles={dashboard:'Дашборд',services:'Автосервисы',users:'Пользователи',subscriptions:'Подписки',plans:'Тарифы',finance:'Финансы',economics:'Юнит-экономика',sales:'Продажи',marketing:'Маркетинг',team:'Сотрудники',system:'Система',settings:'Настройки'};
+const titles={dashboard:'Дашборд',services:'Автосервисы',users:'Пользователи',subscriptions:'Подписки',plans:'Тарифы',finance:'Финансы',economics:'Юнит-экономика',sales:'Продажи',marketing:'Маркетинг',articles:'Статьи',faq:'FAQ',team:'Сотрудники',system:'Система',settings:'Настройки'};
 const STORAGE_KEY='dvizhok_admin_v2';
+const CONTENT_STORAGE_KEY='dvizhok_site_content_v1';
 const clone=x=>JSON.parse(JSON.stringify(x));
+const defaultArticles=[
+  {id:1,date:'2026-09-12',photo:'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=1200&h=800&fit=crop',title:'Как выбрать автосервис без сюрпризов на выдаче',description:'На что смотреть в отзывах, прайсе и записи, чтобы визит прошёл спокойно и по делу.',lead:'Разбор для автовладельца: как заранее понять качество сервиса, что проверить до записи и почему прозрачность процесса важнее скидки на входе.',sections:[{title:'С чего начать поиск',text:'Сначала зафиксируйте задачу: диагностика, плановое ТО, кузовной ремонт или конкретная неисправность. От формулировки зависит, на какие отзывы и компетенции смотреть в первую очередь.',photo:{src:'https://images.unsplash.com/photo-1487754180451-c456f719a1fc?w=800&h=600&fit=crop',side:'left'}},{title:'Что проверить до записи',text:'Посмотрите прайс на базовые услуги, наличие онлайн-записи и понятных статусов ремонта.',photo:{src:'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=800&h=600&fit=crop',side:'right'}},{title:'Как проходит спокойная выдача',text:'На выдаче имеет смысл проверить не только сам факт «машина готова», но и прозрачность результата.'}]},
+  {id:2,date:'2026-08-21',photo:'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=1200&h=800&fit=crop',title:'Онлайн-запись и статусы ремонта',description:'Как цифровая очередь и понятные этапы работ снижают простой боксов и лишние звонки.',lead:'Для сервиса и клиента: зачем нужна онлайн-запись, как статусы убирают хаос в коммуникации и почему одна точка правды лучше разрозненных чатов.',sections:[{title:'Меньше звонков — больше фокуса',text:'Онлайн-запись снимает пиковую нагрузку с телефона: клиент сам выбирает слот, сервис видит загрузку заранее.',photo:{src:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=600&fit=crop',side:'left'}},{title:'Почему важен понятный статус',text:'Когда этапы ремонта прозрачны — диагностика, согласование, ремонт, готовность — клиент не звонит «просто узнать».',photo:{src:'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&h=600&fit=crop',side:'right'}},{title:'Что должно быть в карточке услуги',text:'Хорошая карточка услуги отвечает минимум на четыре вопроса: что входит, сколько занимает по времени, сколько стоит и что считается допработой.'}]},
+  {id:3,date:'2026-07-14',photo:'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1200&h=800&fit=crop',title:'История обслуживания и чек-лист перед ТО',description:'Единая лента работ и короткая подготовка к визиту помогают планировать расходы и не терять время на приёмке.',lead:'Как история обслуживания помогает автовладельцу и сервису, и что подготовить перед плановым ТО, чтобы визит прошёл быстрее.',sections:[{title:'Одна лента вместо папки бумаг',text:'История обслуживания показывает, что уже сделано, когда менялись расходники и какие работы ещё впереди.',photo:{src:'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=800&h=600&fit=crop',side:'left'}},{title:'Что подготовить перед ТО',text:'Перед плановым ТО соберите пробег, список замечаний по поведению авто и историю прошлых работ.',photo:{src:'https://images.unsplash.com/photo-1625047509168-a7026f36de04?w=800&h=600&fit=crop',side:'right'}},{title:'После визита',text:'После ТО имеет смысл сохранить не только чек, но и понятную запись о работах: что сделано, что рекомендовано, на каком пробеге стоит вернуться.'}]}
+];
+const defaultFaqs=[
+  {id:1,audience:'services',question:'Сколько занимает внедрение ДВИЖКА?',answer:'Обычно базовый запуск занимает от нескольких дней до двух недель: подключаем онлайн-запись, переносим клиентов и обучаем команду работе в системе.'},
+  {id:2,audience:'services',question:'Нужно ли устанавливать программу на компьютеры?',answer:'Нет. ДВИЖОК работает в браузере — достаточно интернета. Сотрудники заходят с любого устройства, а данные синхронизируются автоматически.'},
+  {id:3,audience:'services',question:'Можно ли перенести базу клиентов из другой CRM?',answer:'Да. Мы помогаем импортировать клиентов, историю визитов и контакты. Менеджер внедрения подскажет формат и проверит корректность переноса.'},
+  {id:4,audience:'services',question:'Есть ли поддержка после запуска?',answer:'Да. После внедрения остаётся личный механик и круглосуточная техподдержка: поможем с настройками, обучением и любыми рабочими вопросами.'},
+  {id:5,audience:'services',question:'Сколько стоит подключение?',answer:'Стоимость зависит от тарифа и числа рабочих мест. На странице тарифов можно сравнить планы; менеджер подскажет оптимальный вариант под ваш автосервис.'},
+  {id:6,audience:'services',question:'Подойдёт ли ДВИЖОК сети из нескольких точек?',answer:'Да. В одной системе можно вести несколько филиалов: общее расписание, единая база клиентов и сводная аналитика по всей сети.'},
+  {id:101,audience:'owners',question:'ДВИЖОК правда бесплатный для автовладельцев?',answer:'Да. Личный кабинет, цифровая сервисная книжка, онлайн-запись и история обслуживания — бесплатно. Платит автосервис, который работает в системе.'},
+  {id:102,audience:'owners',question:'Как сохраняется история обслуживания автомобиля?',answer:'Каждый ремонт и ТО, проведённые через ДВИЖОК, автоматически попадают в вашу цифровую книжку. Вы видите даты, работы и сервис в одном месте.'},
+  {id:103,audience:'owners',question:'Можно ли записаться в автосервис онлайн?',answer:'Да. Выберите сервис, удобную дату и время — запись подтверждается в приложении, а напоминания приходят в уведомлениях.'},
+  {id:104,audience:'owners',question:'Что будет, если я купил автомобиль с рук?',answer:'Если прежний владелец обслуживался через ДВИЖОК, история может уже быть в системе. Иначе вы начнёте вести свою книжку с первого визита.'},
+  {id:105,audience:'owners',question:'Нужно ли устанавливать приложение?',answer:'ДВИЖОК работает в браузере на телефоне и компьютере. Отдельная установка не обязательна — достаточно интернета и аккаунта.'},
+  {id:106,audience:'owners',question:'Как получать напоминания о ТО и записи?',answer:'Подключите бота ДВИЖОК в мессенджере или включите уведомления в личном кабинете — напомним о записи, приближающемся ТО и статусе работ.'}
+];
+function loadSiteContent(){
+  try{
+    const saved=JSON.parse(localStorage.getItem(CONTENT_STORAGE_KEY)||'null');
+    if(!saved||typeof saved!=='object')return{articles:clone(defaultArticles),faqs:clone(defaultFaqs)};
+    return{
+      articles:Array.isArray(saved.articles)?saved.articles:clone(defaultArticles),
+      faqs:Array.isArray(saved.faqs)?saved.faqs:clone(defaultFaqs)
+    };
+  }catch(e){return{articles:clone(defaultArticles),faqs:clone(defaultFaqs)}}
+}
+function persistSiteContent(){localStorage.setItem(CONTENT_STORAGE_KEY,JSON.stringify(siteContent))}
+let siteContent=loadSiteContent();
+let faqAudienceFilter='';
+const audienceLabel=a=>a==='owners'?'Автовладельцы':a==='services'?'Автосервисы':'—';
+function formatIsoDate(iso){if(!iso)return'—';const[y,m,d]=String(iso).split('-');return(d&&m&&y)?`${d}.${m}.${y}`:esc(iso)}
+function nextContentId(list){return Math.max(0,...list.map(x=>Number(x.id)||0))+1}
 const defaultState={
  services:[
   {id:'STO-1042',name:'АвтоЛига',city:'Казань',plan:'Про',users:284,staff:7,status:'Активна',active:'5 мин назад',email:'office@autoliga.local',note:''},
@@ -291,6 +361,72 @@ function renderUsers(){let q=(document.getElementById('userSearch')?.value||'').
 function renderPlans(){let grid=document.querySelector('#page-plans .plan-grid');if(!grid)return;grid.innerHTML=state.plans.map((p,i)=>`<div class="card plan ${p.featured?'featured':''}">${p.featured?'<span class="popular">ПОПУЛЯРНЫЙ</span>':''}<h3>${esc(p.name)}</h3><div class="price">${money(p.price)}<span style="font-size:14px;color:#667085;font-weight:500"> / мес</span></div><div class="sub">${esc(p.description||'')}</div><ul>${p.features.map(f=>`<li>${esc(f)}</li>`).join('')}</ul><button class="btn" onclick="openModal('plan',${i})">Редактировать</button></div>`).join('')}
 function renderSubscriptions(){let body=document.querySelector('#page-subscriptions tbody');if(!body)return;body.innerHTML=state.subscriptions.map((x,i)=>`<tr><td><div class="name">${esc(x.service)}</div></td><td>${esc(x.plan)}</td><td>${money(x.price)}</td><td>${esc(x.next||'—')}</td><td>${x.discount?x.discount+'%':'—'}</td><td>${statusBadge(x.status)}</td><td><button class="btn" onclick="openModal('subscription',${i})">Управление</button></td></tr>`).join('')}
 function renderTeam(){let body=document.querySelector('#page-team tbody');if(!body)return;body.innerHTML=state.employees.map((x,i)=>`<tr><td><div class="name">${esc(x.name)}</div><div class="sub">${esc(x.email)}</div></td><td>${esc(x.role)}</td><td>${esc(x.access)}</td><td>${esc(x.last)}</td><td>${statusBadge(x.status)}</td></tr>`).join('')}
+function renderArticles(){
+  const body=document.getElementById('articlesBody');if(!body)return;
+  const q=(document.getElementById('articleSearch')?.value||'').toLowerCase();
+  const list=[...siteContent.articles].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))).filter(x=>{
+    const hay=((x.title||'')+' '+(x.description||'')+' '+(x.lead||'')).toLowerCase();
+    return!q||hay.includes(q);
+  });
+  const now=new Date();const monthKey=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=String(v)};
+  set('articlesTotalMetric',siteContent.articles.length);
+  set('articlesMonthMetric',siteContent.articles.filter(x=>String(x.date||'').startsWith(monthKey)).length);
+  set('articlesSectionsMetric',siteContent.articles.filter(x=>(x.sections||[]).length>0).length);
+  set('articlesNoPhotoMetric',siteContent.articles.filter(x=>!x.photo).length);
+  body.innerHTML=list.length?list.map(x=>`<tr class="clickable" onclick="openModal('article',${x.id})"><td>${x.photo?`<img class="thumb" src="${esc(x.photo)}" alt="">`:'—'}</td><td><div class="name">${esc(x.title||'Без названия')}</div><div class="sub">${esc(x.description||'')}</div></td><td>${formatIsoDate(x.date)}</td><td>${(x.sections||[]).length}</td><td><button class="btn" onclick="event.stopPropagation();openModal('article',${x.id})">Изменить</button> <button class="btn danger" onclick="event.stopPropagation();deleteArticle(${x.id})">Удалить</button></td></tr>`).join(''):`<tr><td colspan="5" class="empty">Статей пока нет</td></tr>`;
+}
+function renderFaqs(){
+  const body=document.getElementById('faqBody');if(!body)return;
+  const q=(document.getElementById('faqSearch')?.value||'').toLowerCase();
+  const list=siteContent.faqs.filter(x=>{
+    if(faqAudienceFilter&&x.audience!==faqAudienceFilter)return false;
+    const hay=((x.question||'')+' '+(x.answer||'')).toLowerCase();
+    return!q||hay.includes(q);
+  });
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=String(v)};
+  set('faqTotalMetric',siteContent.faqs.length);
+  set('faqServicesMetric',siteContent.faqs.filter(x=>x.audience==='services').length);
+  set('faqOwnersMetric',siteContent.faqs.filter(x=>x.audience==='owners').length);
+  set('faqShownMetric',list.length);
+  body.innerHTML=list.length?list.map(x=>`<tr class="clickable" onclick="openModal('faq',${x.id})"><td><span class="badge ${x.audience==='owners'?'b-blue':'b-green'}">${esc(audienceLabel(x.audience))}</span></td><td><div class="name">${esc(x.question||'')}</div></td><td><div class="sub">${esc(x.answer||'')}</div></td><td><button class="btn" onclick="event.stopPropagation();openModal('faq',${x.id})">Изменить</button> <button class="btn danger" onclick="event.stopPropagation();deleteFaq(${x.id})">Удалить</button></td></tr>`).join(''):`<tr><td colspan="4" class="empty">Нет вопросов по фильтру</td></tr>`;
+}
+function deleteArticle(id){
+  if(!confirm('Удалить статью?'))return;
+  siteContent.articles=siteContent.articles.filter(x=>x.id!==id);
+  persistSiteContent();renderArticles();toast('Статья удалена','success');
+}
+function deleteFaq(id){
+  if(!confirm('Удалить вопрос FAQ?'))return;
+  siteContent.faqs=siteContent.faqs.filter(x=>x.id!==id);
+  persistSiteContent();renderFaqs();toast('Вопрос удалён','success');
+}
+function readArticleSectionsFromForm(){
+  return [...document.querySelectorAll('#articleSections .section-card')].map(card=>{
+    const title=card.querySelector('[data-f=title]')?.value?.trim()||'';
+    const text=card.querySelector('[data-f=text]')?.value?.trim()||'';
+    const src=card.querySelector('[data-f=photo]')?.value?.trim()||'';
+    const side=card.querySelector('[data-f=side]')?.value||'left';
+    const section={title,text};
+    if(src)section.photo={src,side};
+    return section;
+  }).filter(s=>s.title||s.text);
+}
+function articleSectionHtml(section={},index=0){
+  const photo=section.photo||{};
+  return `<div class="section-card"><div class="section-card__head"><span>Раздел ${index+1}</span><button type="button" class="btn danger" onclick="this.closest('.section-card').remove();renumberArticleSections()">Удалить</button></div><div class="field"><label>Заголовок раздела</label><input data-f="title" value="${esc(section.title||'')}" placeholder="Например, С чего начать поиск"></div><div class="field"><label>Текст</label><textarea data-f="text" rows="4" placeholder="Текст раздела">${esc(section.text||'')}</textarea></div><div class="field"><label>Фото раздела (URL, необязательно)</label><input data-f="photo" value="${esc(photo.src||'')}" placeholder="https://..."></div><div class="field"><label>Сторона фото</label><select data-f="side"><option value="left" ${photo.side!=='right'?'selected':''}>Слева</option><option value="right" ${photo.side==='right'?'selected':''}>Справа</option></select></div></div>`;
+}
+function renumberArticleSections(){
+  document.querySelectorAll('#articleSections .section-card').forEach((card,i)=>{
+    const head=card.querySelector('.section-card__head span');
+    if(head)head.textContent=`Раздел ${i+1}`;
+  });
+}
+function addArticleSection(){
+  const wrap=document.getElementById('articleSections');if(!wrap)return;
+  wrap.insertAdjacentHTML('beforeend',articleSectionHtml({},wrap.children.length));
+  renumberArticleSections();
+}
 function legacyRenderAll(){
   try{renderServices()}catch(e){console.error(e)}
   try{renderUsers()}catch(e){console.error(e)}
@@ -298,6 +434,8 @@ function legacyRenderAll(){
   try{renderPlans()}catch(e){console.error(e)}
   try{renderSubscriptions()}catch(e){console.error(e)}
   try{renderTeam()}catch(e){console.error(e)}
+  try{renderArticles()}catch(e){console.error(e)}
+  try{renderFaqs()}catch(e){console.error(e)}
   try{syncSettingsForm()}catch(e){console.error(e)}
 }
 ['serviceSearch','cityFilter','planFilter','statusFilter'].forEach(id=>{
@@ -353,6 +491,8 @@ function field(id,label,html){return `<div class="field"><label for="${id}">${la
 function openModal(type,arg){
   modalContext={type,arg};
   let title='Действие',body='';
+  const modalPanel=document.getElementById('modalPanel');
+  if(modalPanel)modalPanel.classList.toggle('wide',type==='article');
   if(type==='service'||type==='editService'){
     let s=type==='editService'?state.services.find(x=>x.id===arg):{};
     if(type==='editService'&&!s){toast('Автосервис не найден','error');return}
@@ -378,6 +518,18 @@ function openModal(type,arg){
   }else if(type==='employee'){
     title='Добавить сотрудника';
     body=field('mName','ФИО / название роли',`<input id="mName" required>`)+field('mEmail','Email',`<input id="mEmail" type="email" required>`)+field('mRole','Роль',`<select id="mRole"><option>Директор</option><option>Менеджер</option><option>Бухгалтер</option><option>Поддержка</option><option>Разработчик</option></select>`);
+  }else if(type==='article'){
+    const article=typeof arg==='number'?siteContent.articles.find(x=>x.id===arg):null;
+    if(typeof arg==='number'&&!article){toast('Статья не найдена','error');return}
+    const a=article||{title:'',date:new Date().toISOString().slice(0,10),photo:'',description:'',lead:'',sections:[{title:'',text:''}]};
+    title=article?'Редактировать статью':'Новая статья';
+    body=field('mTitle','Заголовок',`<input id="mTitle" required value="${esc(a.title||'')}" placeholder="Заголовок статьи">`)+field('mDate','Дата публикации',`<input id="mDate" type="date" required value="${esc(a.date||'')}">`)+field('mPhoto','Обложка (URL)',`<input id="mPhoto" value="${esc(a.photo||'')}" placeholder="https://...">`)+field('mDescription','Краткое описание (карточка)',`<textarea id="mDescription" rows="2" required>${esc(a.description||'')}</textarea>`)+field('mLead','Лид (страница статьи)',`<textarea id="mLead" rows="3">${esc(a.lead||'')}</textarea>`)+`<div class="field" style="max-width:none"><label>Разделы статьи</label><div id="articleSections">${(a.sections&&a.sections.length?a.sections:[{title:'',text:''}]).map((s,i)=>articleSectionHtml(s,i)).join('')}</div><button type="button" class="btn" style="margin-top:8px" onclick="addArticleSection()">+ Добавить раздел</button><div class="muted-note">Структура как на публичном сайте: обложка, lead и блоки с текстом и опциональным фото.</div></div>`;
+  }else if(type==='faq'){
+    const item=typeof arg==='number'?siteContent.faqs.find(x=>x.id===arg):null;
+    if(typeof arg==='number'&&!item){toast('Вопрос не найден','error');return}
+    const f=item||{audience:faqAudienceFilter||'services',question:'',answer:''};
+    title=item?'Редактировать FAQ':'Новый вопрос FAQ';
+    body=field('mAudience','Аудитория',`<select id="mAudience"><option value="services" ${f.audience!=='owners'?'selected':''}>Автосервисы</option><option value="owners" ${f.audience==='owners'?'selected':''}>Автовладельцы</option></select>`)+field('mQuestion','Вопрос',`<input id="mQuestion" required value="${esc(f.question||'')}">`)+field('mAnswer','Ответ',`<textarea id="mAnswer" rows="5" required>${esc(f.answer||'')}</textarea>`);
   }else{
     toast('Неизвестное действие','error');
     return;
@@ -387,7 +539,11 @@ function openModal(type,arg){
   if(type==='subscription')document.getElementById('mStatus').value=state.subscriptions[arg].status;
   document.getElementById('modalBack').classList.add('show');
 }
-function closeModal(){document.getElementById('modalBack').classList.remove('show');modalContext=null}
+function closeModal(){
+  document.getElementById('modalBack').classList.remove('show');
+  document.getElementById('modalPanel')?.classList.remove('wide');
+  modalContext=null;
+}
 function val(id){return document.getElementById(id)?.value?.trim()||''}
 function legacySaveModal(){
   if(!modalContext){closeModal();return}
@@ -701,6 +857,42 @@ async function saveModal(){
   if(!modalContext){closeModal();return}
   const c=modalContext;
   try{
+    if(c.type==='article'){
+      if(!val('mTitle'))throw Error('Укажите заголовок');
+      if(!val('mDate'))throw Error('Укажите дату');
+      if(!val('mDescription'))throw Error('Укажите краткое описание');
+      const payload={
+        title:val('mTitle'),
+        date:val('mDate'),
+        photo:val('mPhoto'),
+        description:val('mDescription'),
+        lead:val('mLead'),
+        sections:readArticleSectionsFromForm()
+      };
+      if(typeof c.arg==='number'){
+        const idx=siteContent.articles.findIndex(x=>x.id===c.arg);
+        if(idx<0)throw Error('Статья не найдена');
+        siteContent.articles[idx]={...siteContent.articles[idx],...payload};
+      }else{
+        siteContent.articles.push({id:nextContentId(siteContent.articles),...payload});
+      }
+      persistSiteContent();closeModal();renderArticles();toast('Статья сохранена','success');
+      return;
+    }
+    if(c.type==='faq'){
+      if(!val('mQuestion'))throw Error('Укажите вопрос');
+      if(!val('mAnswer'))throw Error('Укажите ответ');
+      const payload={audience:val('mAudience')||'services',question:val('mQuestion'),answer:val('mAnswer')};
+      if(typeof c.arg==='number'){
+        const idx=siteContent.faqs.findIndex(x=>x.id===c.arg);
+        if(idx<0)throw Error('Вопрос не найден');
+        siteContent.faqs[idx]={...siteContent.faqs[idx],...payload};
+      }else{
+        siteContent.faqs.push({id:nextContentId(siteContent.faqs),...payload});
+      }
+      persistSiteContent();closeModal();renderFaqs();toast('FAQ сохранён','success');
+      return;
+    }
     if(c.type==='serviceCard'){
       const service=state.services.find(x=>x.id===c.id);if(!service)throw Error('Автосервис не найден');
       await creatorRequest(`/platform-admin/services/${encodeURIComponent(c.id)}`,{method:'PATCH',body:{note:val('serviceNote')}});
@@ -744,6 +936,13 @@ function renderAll(){renderCreatorAll()}
 function drawAll(){drawCreatorAll()}
 renderAll();
 setTimeout(drawAll,100);
+document.querySelectorAll('#faqAudienceTabs .pill').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    faqAudienceFilter=btn.dataset.audience||'';
+    document.querySelectorAll('#faqAudienceTabs .pill').forEach(x=>x.classList.toggle('active',x===btn));
+    renderFaqs();
+  });
+});
 const initial=location.hash.slice(1);if(titles[initial])navigate(initial);
 loadCreatorBackend();
 </script>
